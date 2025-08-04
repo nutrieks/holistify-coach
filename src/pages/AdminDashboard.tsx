@@ -1,10 +1,9 @@
-import { useAuth } from '@/hooks/useAuth';
+import { AdminLayout } from '@/components/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, MessageSquare, Calendar, TrendingUp, PlusCircle, Activity } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { profile, signOut } = useAuth();
 
   const stats = [
     {
@@ -62,21 +61,8 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Dobrodošli natrag, {profile?.full_name}!</p>
-          </div>
-          <Button variant="outline" onClick={() => signOut()}>
-            Odjava
-          </Button>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-6 space-y-6">
+    <AdminLayout>
+      <div className="space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => {
@@ -180,7 +166,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

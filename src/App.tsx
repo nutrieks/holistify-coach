@@ -9,6 +9,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
+import ClientsList from "./pages/admin/ClientsList";
+import ClientDetail from "./pages/admin/ClientDetail";
+import Messages from "./pages/admin/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +58,30 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/clients" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <ClientsList />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/clients/:id" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <ClientDetail />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/messages" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Messages />
                 </ProtectedRoute>
               } 
             />
