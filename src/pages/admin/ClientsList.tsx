@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { supabase } from "@/integrations/supabase/client"
-import { Plus, Search, Calendar, Phone, Mail } from "lucide-react"
+import { Plus, Search, Calendar, Activity } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { AddClientModal } from "@/components/AddClientModal"
 
 interface Client {
   id: string
@@ -27,6 +29,7 @@ export default function ClientsList() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  const [showAddModal, setShowAddModal] = useState(false)
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -108,7 +111,7 @@ export default function ClientsList() {
               className="pl-10"
             />
           </div>
-          <Button>
+          <Button onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Dodaj klijenta
           </Button>
@@ -116,56 +119,66 @@ export default function ClientsList() {
 
         {/* Clients Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>Svi klijenti ({filteredClients.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Ime</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Datum početka</TableHead>
-                  <TableHead>Datum dodavanja</TableHead>
-                  <TableHead>Akcije</TableHead>
+                <TableRow className="hover:bg-transparent border-b">
+                  <TableHead className="w-[300px] pl-6">Klijent</TableHead>
+                  <TableHead>Tag</TableHead>
+                  <TableHead>Zadnji Check-In</TableHead>
+                  <TableHead>Zadnja aktivnost</TableHead>
+                  <TableHead>Trajanje</TableHead>
+                  <TableHead className="w-[100px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredClients.map((client) => (
                   <TableRow 
                     key={client.id}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className="cursor-pointer hover:bg-muted/50 border-b"
                     onClick={() => navigate(`/admin/clients/${client.client_id}`)}
                   >
-                    <TableCell>
+                    <TableCell className="pl-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          {client.client_profile?.full_name?.charAt(0) || 'K'}
+                        <Avatar className="w-10 h-10">
+                          <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                            {client.client_profile?.full_name?.charAt(0)?.toUpperCase() || 'K'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {client.client_profile?.full_name || 'Nepoznato ime'}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Dodan {new Date(client.created_at).toLocaleDateString('hr-HR')}
+                          </div>
                         </div>
-                        <span className="font-medium">
-                          {client.client_profile?.full_name || 'Nepoznato ime'}
-                        </span>
                       </div>
                     </TableCell>
-                    <TableCell>{getStatusBadge(client.status)}</TableCell>
                     <TableCell>
-                      {client.start_date ? 
-                        new Date(client.start_date).toLocaleDateString('hr-HR') : 
-                        '-'
-                      }
+                      {getStatusBadge(client.status)}
                     </TableCell>
                     <TableCell>
-                      {new Date(client.created_at).toLocaleDateString('hr-HR')}
+                      <div className="text-sm text-muted-foreground">-</div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Calendar className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Mail className="h-4 w-4" />
-                        </Button>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Activity className="h-3 w-3" />
+                        {new Date(client.created_at).toLocaleDateString('hr-HR')}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm text-muted-foreground">
+                        {client.start_date ? 
+                          Math.floor((new Date().getTime() - new Date(client.start_date).getTime()) / (1000 * 60 * 60 * 24)) + ' dana'
+                          : '-'
+                        }
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Calendar className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -173,12 +186,26 @@ export default function ClientsList() {
             </Table>
             
             {filteredClients.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                {searchTerm ? 'Nema klijenata koji odgovaraju pretraživanju.' : 'Nemate još klijenata.'}
+              <div className="text-center py-12 text-muted-foreground">
+                <div className="space-y-2">
+                  <p className="text-lg font-medium">
+                    {searchTerm ? 'Nema rezultata' : 'Nemate još klijenata'}
+                  </p>
+                  <p className="text-sm">
+                    {searchTerm ? 'Pokušajte s drugim pojmom za pretraživanje.' : 'Dodajte novog klijenta za početak.'}
+                  </p>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Add Client Modal */}
+        <AddClientModal 
+          open={showAddModal}
+          onOpenChange={setShowAddModal}
+          onClientAdded={fetchClients}
+        />
       </div>
     </AdminLayout>
   )

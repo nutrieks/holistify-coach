@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/integrations/supabase/client"
-import { ArrowLeft, Calendar, Mail, Phone, User } from "lucide-react"
+import { ArrowLeft, Calendar, Mail, Phone, User, Activity, TrendingUp, Clock, Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface ClientProfile {
@@ -27,6 +29,7 @@ export default function ClientDetail() {
   const navigate = useNavigate()
   const [client, setClient] = useState<ClientProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [newNote, setNewNote] = useState("")
   const { toast } = useToast()
 
   const fetchClient = async () => {
@@ -154,84 +157,175 @@ export default function ClientDetail() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="info" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="info">Informacije</TabsTrigger>
-            <TabsTrigger value="nutrition">Plan prehrane</TabsTrigger>
-            <TabsTrigger value="training">Plan treninga</TabsTrigger>
-            <TabsTrigger value="progress">Napredak</TabsTrigger>
-            <TabsTrigger value="forms">Upitnici</TabsTrigger>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="checkins">Check Ins</TabsTrigger>
+            <TabsTrigger value="training">Training</TabsTrigger>
+            <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
+            <TabsTrigger value="forms">Forms</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="chat">Chat</TabsTrigger>
-            <TabsTrigger value="notes">Bilješke</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="info" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Client Details */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Osnovne informacije</CardTitle>
+                  <CardTitle className="text-lg">Client Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Puno ime
-                    </label>
-                    <p className="text-sm">
-                      {client.client_profile?.full_name || 'Nije uneseno'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Status
-                    </label>
-                    <div className="mt-1">
-                      {getStatusBadge(client.status)}
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-12 h-12">
+                      <AvatarFallback className="bg-primary/10 text-primary font-medium text-lg">
+                        {client.client_profile?.full_name?.charAt(0)?.toUpperCase() || 'K'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-semibold">{client.client_profile?.full_name || 'Nepoznato ime'}</h3>
+                      <p className="text-sm text-muted-foreground">Client ID: {client.client_id.slice(0, 8)}</p>
                     </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Datum početka programa
-                    </label>
-                    <p className="text-sm">
-                      {client.start_date ? 
-                        new Date(client.start_date).toLocaleDateString('hr-HR') : 
-                        'Nije određeno'
-                      }
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Datum dodavanja
-                    </label>
-                    <p className="text-sm">
-                      {new Date(client.created_at).toLocaleDateString('hr-HR')}
-                    </p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Status:</span>
+                      {getStatusBadge(client.status)}
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Start Date:</span>
+                      <span className="text-sm">
+                        {client.start_date ? 
+                          new Date(client.start_date).toLocaleDateString('hr-HR') : 
+                          'Not set'
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Added:</span>
+                      <span className="text-sm">
+                        {new Date(client.created_at).toLocaleDateString('hr-HR')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Duration:</span>
+                      <span className="text-sm">
+                        {client.start_date ? 
+                          Math.floor((new Date().getTime() - new Date(client.start_date).getTime()) / (1000 * 60 * 60 * 24)) + ' days'
+                          : '-'
+                        }
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Metrics Avg */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Kontakt informacije</CardTitle>
+                  <CardTitle className="text-lg">Metrics Avg</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Phone className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Kontakt podaci će biti dodani naknadno</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center justify-center mb-2">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="text-2xl font-bold">-</div>
+                      <div className="text-xs text-muted-foreground">Weight</div>
+                    </div>
+                    <div className="text-center p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center justify-center mb-2">
+                        <Activity className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="text-2xl font-bold">-</div>
+                      <div className="text-xs text-muted-foreground">Body Fat</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center justify-center mb-2">
+                        <Clock className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="text-2xl font-bold">-</div>
+                      <div className="text-xs text-muted-foreground">Workouts</div>
+                    </div>
+                    <div className="text-center p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center justify-center mb-2">
+                        <Calendar className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="text-2xl font-bold">-</div>
+                      <div className="text-xs text-muted-foreground">Check-ins</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Activity Log */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Activity Log</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-primary mt-2"></div>
+                      <div>
+                        <p className="text-sm">Client added to system</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(client.created_at).toLocaleDateString('hr-HR')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-center py-4 text-xs text-muted-foreground">
+                      No recent activity
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
 
-          <TabsContent value="nutrition">
+            {/* Notes Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Plan prehrane</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Notes</CardTitle>
+                  <Button size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Note
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Textarea 
+                    placeholder="Add a note about this client..."
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    rows={3}
+                  />
+                  {newNote && (
+                    <div className="flex justify-end">
+                      <Button size="sm">Save Note</Button>
+                    </div>
+                  )}
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="text-sm">No notes yet. Add a note to track important information about this client.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="checkins">
+            <Card>
+              <CardHeader>
+                <CardTitle>Check Ins</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>Funkcionalnost plana prehrane će biti implementirana naknadno</p>
+                  <p>Check-ins functionality will be implemented soon</p>
                 </div>
               </CardContent>
             </Card>
@@ -240,37 +334,51 @@ export default function ClientDetail() {
           <TabsContent value="training">
             <Card>
               <CardHeader>
-                <CardTitle>Plan treninga</CardTitle>
+                <CardTitle>Training Plans</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>Funkcionalnost plana treninga će biti implementirana naknadno</p>
+                  <p>Training plans functionality will be implemented soon</p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="progress">
+          <TabsContent value="nutrition">
             <Card>
               <CardHeader>
-                <CardTitle>Napredak</CardTitle>
+                <CardTitle>Nutrition Plans</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>Praćenje napretka će biti implementirano naknadno</p>
+                  <p>Nutrition plans functionality will be implemented soon</p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
+
 
           <TabsContent value="forms">
             <Card>
               <CardHeader>
-                <CardTitle>Upitnici</CardTitle>
+                <CardTitle>Forms & Questionnaires</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>Upitnici će biti implementirani naknadno</p>
+                  <p>Forms functionality will be implemented soon</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notes">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>Notes are available in the Overview tab</p>
                 </div>
               </CardContent>
             </Card>
@@ -283,20 +391,7 @@ export default function ClientDetail() {
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>Chat funkcionalnost će biti implementirana naknadno</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="notes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Bilješke</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Bilješke će biti implementirane naknadno</p>
+                  <p>Chat functionality will be implemented soon</p>
                 </div>
               </CardContent>
             </Card>

@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, MessageSquare, Calendar, TrendingUp, PlusCircle, Activity } from 'lucide-react';
+import { AddClientModal } from '@/components/AddClientModal';
 
 const AdminDashboard = () => {
+  const [showAddModal, setShowAddModal] = useState(false)
 
   const stats = [
     {
@@ -112,7 +115,10 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <Button className="h-20 flex flex-col items-center justify-center space-y-2">
+                <Button 
+                  className="h-20 flex flex-col items-center justify-center space-y-2"
+                  onClick={() => setShowAddModal(true)}
+                >
                   <PlusCircle className="h-6 w-6" />
                   <span className="text-sm">Dodaj klijenta</span>
                 </Button>
@@ -165,6 +171,16 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Add Client Modal */}
+        <AddClientModal 
+          open={showAddModal}
+          onOpenChange={setShowAddModal}
+          onClientAdded={() => {
+            // Refresh dashboard data if needed
+            console.log('Client added successfully')
+          }}
+        />
       </div>
     </AdminLayout>
   );
