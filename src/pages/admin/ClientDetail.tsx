@@ -10,6 +10,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/integrations/supabase/client"
 import { ArrowLeft, Calendar, Mail, Phone, User, Activity, TrendingUp, Clock, Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { AssignTrainingPlanModal } from "@/components/AssignTrainingPlanModal"
+import { AssignNutritionPlanModal } from "@/components/AssignNutritionPlanModal"
+import { TrainingPlanView } from "@/components/TrainingPlanView"
+import { NutritionPlanView } from "@/components/NutritionPlanView"
 
 interface ClientProfile {
   id: string
@@ -30,6 +34,8 @@ export default function ClientDetail() {
   const [client, setClient] = useState<ClientProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [newNote, setNewNote] = useState("")
+  const [showAssignTrainingModal, setShowAssignTrainingModal] = useState(false)
+  const [showAssignNutritionModal, setShowAssignNutritionModal] = useState(false)
   const { toast } = useToast()
 
   const fetchClient = async () => {
@@ -334,12 +340,25 @@ export default function ClientDetail() {
           <TabsContent value="training">
             <Card>
               <CardHeader>
-                <CardTitle>Training Plans</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Training Plans</CardTitle>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setShowAssignTrainingModal(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Dodijeli Plan
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Training plans functionality will be implemented soon</p>
-                </div>
+                <TrainingPlanView 
+                  clientId={id!} 
+                  onPlanRemoved={() => {
+                    // Refresh plan view
+                    window.location.reload()
+                  }} 
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -347,12 +366,25 @@ export default function ClientDetail() {
           <TabsContent value="nutrition">
             <Card>
               <CardHeader>
-                <CardTitle>Nutrition Plans</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Nutrition Plans</CardTitle>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setShowAssignNutritionModal(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Dodijeli Plan
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Nutrition plans functionality will be implemented soon</p>
-                </div>
+                <NutritionPlanView 
+                  clientId={id!} 
+                  onPlanRemoved={() => {
+                    // Refresh plan view
+                    window.location.reload()
+                  }} 
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -398,6 +430,27 @@ export default function ClientDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modals */}
+      <AssignTrainingPlanModal
+        open={showAssignTrainingModal}
+        onOpenChange={setShowAssignTrainingModal}
+        clientId={id!}
+        onPlanAssigned={() => {
+          setShowAssignTrainingModal(false)
+          window.location.reload()
+        }}
+      />
+
+      <AssignNutritionPlanModal
+        open={showAssignNutritionModal}
+        onOpenChange={setShowAssignNutritionModal}
+        clientId={id!}
+        onPlanAssigned={() => {
+          setShowAssignNutritionModal(false)
+          window.location.reload()
+        }}
+      />
     </AdminLayout>
   )
 }
