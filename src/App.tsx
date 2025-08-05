@@ -19,6 +19,7 @@ import HabitsLibrary from "./pages/admin/HabitsLibrary";
 import CheckInsLibrary from "./pages/admin/CheckInsLibrary";
 import NutritionPlanCreator from "./pages/admin/NutritionPlanCreator";
 import TrainingPlanCreator from "./pages/admin/TrainingPlanCreator";
+import MyPlans from "./pages/MyPlans";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -153,6 +154,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="client">
                   <ClientDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route
+              path="/my-plans" 
+              element={
+                <ProtectedRoute requiredRole="client">
+                  <MyPlans />
                 </ProtectedRoute>
               } 
             />

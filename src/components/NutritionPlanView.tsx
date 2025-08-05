@@ -31,6 +31,7 @@ interface MealPlanEntry {
 interface NutritionPlanViewProps {
   clientId: string
   onPlanRemoved: () => void
+  readOnly?: boolean
 }
 
 const dayNames = [
@@ -44,7 +45,7 @@ const mealTypeNames = {
   'snack': 'Užina'
 }
 
-export function NutritionPlanView({ clientId, onPlanRemoved }: NutritionPlanViewProps) {
+export function NutritionPlanView({ clientId, onPlanRemoved, readOnly = false }: NutritionPlanViewProps) {
   const [plan, setPlan] = useState<NutritionPlan | null>(null)
   const [entries, setEntries] = useState<MealPlanEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -187,24 +188,26 @@ export function NutritionPlanView({ clientId, onPlanRemoved }: NutritionPlanView
                 </div>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={removePlan}
-              disabled={removing}
-            >
-              {removing ? (
-                <>
-                  <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
-                  Uklanjam...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Ukloni Plan
-                </>
-              )}
-            </Button>
+            {!readOnly && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={removePlan}
+                disabled={removing}
+              >
+                {removing ? (
+                  <>
+                    <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+                    Uklanjam...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Ukloni Plan
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </CardHeader>
       </Card>

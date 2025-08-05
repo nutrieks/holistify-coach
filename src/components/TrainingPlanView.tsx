@@ -34,13 +34,14 @@ interface WorkoutSession {
 interface TrainingPlanViewProps {
   clientId: string
   onPlanRemoved: () => void
+  readOnly?: boolean
 }
 
 const dayNames = [
   'Nedjelja', 'Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota'
 ]
 
-export function TrainingPlanView({ clientId, onPlanRemoved }: TrainingPlanViewProps) {
+export function TrainingPlanView({ clientId, onPlanRemoved, readOnly = false }: TrainingPlanViewProps) {
   const [plan, setPlan] = useState<TrainingPlan | null>(null)
   const [sessions, setSessions] = useState<WorkoutSession[]>([])
   const [loading, setLoading] = useState(true)
@@ -173,24 +174,26 @@ export function TrainingPlanView({ clientId, onPlanRemoved }: TrainingPlanViewPr
                 )}
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={removePlan}
-              disabled={removing}
-            >
-              {removing ? (
-                <>
-                  <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
-                  Uklanjam...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Ukloni Plan
-                </>
-              )}
-            </Button>
+            {!readOnly && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={removePlan}
+                disabled={removing}
+              >
+                {removing ? (
+                  <>
+                    <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+                    Uklanjam...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Ukloni Plan
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </CardHeader>
       </Card>
