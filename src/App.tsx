@@ -22,6 +22,7 @@ import NutritionPlanCreator from "./pages/admin/NutritionPlanCreator";
 import TrainingPlanCreator from "./pages/admin/TrainingPlanCreator";
 import MyPlans from "./pages/MyPlans";
 import CheckIn from "./pages/CheckIn";
+import MyProgress from "./pages/MyProgress";
 import NotFound from "./pages/NotFound";
 import QuestionnaireForm from "./pages/QuestionnaireForm";
 
@@ -173,6 +174,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="client">
                   <CheckIn />
+                </ProtectedRoute>
+              } 
+            />
+            <Route
+              path="/my-progress" 
+              element={
+                <ProtectedRoute requiredRole="client">
+                  <MyProgress />
                 </ProtectedRoute>
               } 
             />

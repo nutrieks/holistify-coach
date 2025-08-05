@@ -14,6 +14,7 @@ import { EnhancedAssignTrainingPlanModal } from "@/components/EnhancedAssignTrai
 import { EnhancedAssignNutritionPlanModal } from "@/components/EnhancedAssignNutritionPlanModal"
 import { TrainingPlanView } from "@/components/TrainingPlanView"
 import { EnhancedNutritionPlanView } from "@/components/EnhancedNutritionPlanView"
+import { ProgressTab } from "@/components/progress/ProgressTab"
 
 interface ClientProfile {
   id: string
@@ -164,8 +165,9 @@ export default function ClientDetail() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="progress">Progress</TabsTrigger>
             <TabsTrigger value="checkins">Check Ins</TabsTrigger>
             <TabsTrigger value="training">Training</TabsTrigger>
             <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
@@ -320,6 +322,17 @@ export default function ClientDetail() {
                     <p className="text-sm">No notes yet. Add a note to track important information about this client.</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="progress">
+            <Card>
+              <CardHeader>
+                <CardTitle>Progress Tracking</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ProgressTab clientId={id!} />
               </CardContent>
             </Card>
           </TabsContent>
