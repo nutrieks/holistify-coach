@@ -23,6 +23,7 @@ import TrainingPlanCreator from "./pages/admin/TrainingPlanCreator";
 import MyPlans from "./pages/MyPlans";
 import CheckIn from "./pages/CheckIn";
 import NotFound from "./pages/NotFound";
+import QuestionnaireForm from "./pages/QuestionnaireForm";
 
 const queryClient = new QueryClient();
 
@@ -180,6 +181,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="client">
                   <Messages />
+                </ProtectedRoute>
+              } 
+            />
+            <Route
+              path="/questionnaire/:id" 
+              element={
+                <ProtectedRoute requiredRole="client">
+                  <QuestionnaireForm />
                 </ProtectedRoute>
               } 
             />

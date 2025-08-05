@@ -194,6 +194,7 @@ export type Database = {
           coach_id: string
           created_at: string
           id: string
+          initial_questionnaire_id: string | null
           start_date: string | null
           status: string
           updated_at: string
@@ -203,6 +204,7 @@ export type Database = {
           coach_id: string
           created_at?: string
           id?: string
+          initial_questionnaire_id?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -212,6 +214,7 @@ export type Database = {
           coach_id?: string
           created_at?: string
           id?: string
+          initial_questionnaire_id?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -229,6 +232,13 @@ export type Database = {
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_initial_questionnaire_id_fkey"
+            columns: ["initial_questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaires"
             referencedColumns: ["id"]
           },
         ]
@@ -517,6 +527,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          options: Json | null
           question_order: number | null
           question_text: string
           question_type: string
@@ -525,6 +536,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          options?: Json | null
           question_order?: number | null
           question_text: string
           question_type: string
@@ -533,6 +545,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          options?: Json | null
           question_order?: number | null
           question_text?: string
           question_type?: string

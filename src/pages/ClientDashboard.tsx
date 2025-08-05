@@ -5,8 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, MessageSquare, TrendingUp, CheckCircle, Apple, Dumbbell, Clock, Users } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Calendar, MessageSquare, TrendingUp, CheckCircle, Apple, Dumbbell, Clock, Users, FileText, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClientDashboard = () => {
   const { profile, signOut } = useAuth();
@@ -20,6 +23,41 @@ const ClientDashboard = () => {
     isLoading,
     toggleHabit,
   } = useClientDashboard();
+
+  // Check for pending questionnaires
+  const { data: pendingQuestionnaire } = useQuery({
+    queryKey: ['pending-questionnaire', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return null
+
+      // First get client record to see if they have an initial questionnaire
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('initial_questionnaire_id, questionnaires(id, title, description)')
+        .eq('client_id', profile.id)
+        .single()
+
+      if (clientError || !clientData?.initial_questionnaire_id) return null
+
+      // Check if they've already submitted it
+      const { data: submission, error: submissionError } = await supabase
+        .from('client_submissions')
+        .select('id')
+        .eq('client_id', profile.id)
+        .eq('questionnaire_id', clientData.initial_questionnaire_id)
+        .single()
+
+      if (submissionError && submissionError.code !== 'PGRST116') throw submissionError
+      
+      // If no submission exists, return the questionnaire
+      if (!submission) {
+        return clientData.questionnaires
+      }
+      
+      return null
+    },
+    enabled: !!profile?.id
+  });
 
   // Calculate total calories from today's meals
   const totalCalories = todaysMeals?.reduce((sum, meal) => sum + (meal.calories || 0), 0) || 0;
@@ -57,6 +95,32 @@ const ClientDashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Pending Questionnaire Alert */}
+        {pendingQuestionnaire && (
+          <Alert className="border-orange-200 bg-orange-50">
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="flex items-center justify-between">
+              <div>
+                <span className="font-medium">Novi upitnik čeka ispunjavanje: </span>
+                <span>{pendingQuestionnaire.title}</span>
+                {pendingQuestionnaire.description && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {pendingQuestionnaire.description}
+                  </p>
+                )}
+              </div>
+              <Button 
+                size="sm" 
+                onClick={() => navigate(`/questionnaire/${pendingQuestionnaire.id}`)}
+                className="ml-4 shrink-0"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Ispuni sada
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Today's Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>

@@ -5,8 +5,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "@/hooks/useAuth"
 import { X } from "lucide-react"
 
 interface AddClientModalProps {
@@ -19,11 +22,29 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
   const [clientName, setClientName] = useState("")
   const [clientEmail, setClientEmail] = useState("")
   const [clientTag, setClientTag] = useState("")
+  const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<string>("")
   const [setStartDate, setSetStartDate] = useState(false)
   const [setEndDate, setSetEndDate] = useState(false)
   const [sendInstructions, setSendInstructions] = useState(true)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+  const { profile } = useAuth()
+
+  // Fetch available questionnaires
+  const { data: questionnaires = [] } = useQuery({
+    queryKey: ['questionnaires-for-assignment'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('questionnaires')
+        .select('id, title, description')
+        .eq('coach_id', profile?.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data
+    },
+    enabled: !!profile?.id && open
+  })
 
   const handleSubmit = async () => {
     if (!clientName.trim() || !clientEmail.trim()) {
@@ -56,7 +77,8 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
           client_id: authData.user.id,
           coach_id: (await supabase.auth.getUser()).data.user?.id,
           status: 'pending',
-          start_date: setStartDate ? new Date().toISOString().split('T')[0] : null
+          start_date: setStartDate ? new Date().toISOString().split('T')[0] : null,
+          initial_questionnaire_id: selectedQuestionnaire || null
         })
 
       if (clientError) throw clientError
@@ -70,6 +92,7 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
       setClientName("")
       setClientEmail("")
       setClientTag("")
+      setSelectedQuestionnaire("")
       setSetStartDate(false)
       setSetEndDate(false)
       setSendInstructions(true)
@@ -175,6 +198,27 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
                 Označiti završni datum (30 dana)
               </Label>
             </div>
+          </div>
+
+          {/* Initial Questionnaire */}
+          <div className="space-y-2">
+            <Label htmlFor="questionnaire">Početni upitnik (opcionalno)</Label>
+            <Select value={selectedQuestionnaire} onValueChange={setSelectedQuestionnaire}>
+              <SelectTrigger>
+                <SelectValue placeholder="Odaberite upitnik za dodjelu" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Bez upitnika</SelectItem>
+                {questionnaires.map((questionnaire) => (
+                  <SelectItem key={questionnaire.id} value={questionnaire.id}>
+                    {questionnaire.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Odabrani upitnik će biti automatski dodijeljen klijentu
+            </p>
           </div>
 
           {/* Email Instructions */}
