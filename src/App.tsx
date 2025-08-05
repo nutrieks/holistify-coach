@@ -13,6 +13,7 @@ import ClientsList from "./pages/admin/ClientsList";
 import ClientDetail from "./pages/admin/ClientDetail";
 import Messages from "./pages/admin/Messages";
 import NutritionLibrary from "./pages/admin/NutritionLibrary";
+import TrainingLibrary from "./pages/admin/TrainingLibrary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -91,6 +92,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <NutritionLibrary />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/training" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <TrainingLibrary />
                 </ProtectedRoute>
               } 
             />
