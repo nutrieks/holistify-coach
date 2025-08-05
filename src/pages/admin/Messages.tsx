@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { OnlineStatus } from "@/components/ui/online-status"
 import { supabase } from "@/integrations/supabase/client"
+import { useUserPresence } from "@/hooks/useUserPresence"
 import { Send, Search } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
@@ -38,8 +40,12 @@ export default function Messages() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
   const { user } = useAuth()
   const { toast } = useToast()
+
+  // Track admin presence
+  useUserPresence(user?.id || '')
 
   const fetchConversations = async () => {
     try {
@@ -205,6 +211,8 @@ export default function Messages() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Pretraži razgovore..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -212,7 +220,11 @@ export default function Messages() {
           <CardContent className="flex-1 p-0">
             <ScrollArea className="h-full">
               <div className="p-4 space-y-2">
-                {conversations.map((conversation) => (
+                {conversations
+                  .filter(conv => 
+                    conv.client_name.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((conversation) => (
                   <div
                     key={conversation.client_id}
                     className={`p-3 rounded-lg cursor-pointer transition-colors ${
