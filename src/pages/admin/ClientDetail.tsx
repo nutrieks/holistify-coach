@@ -10,10 +10,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/integrations/supabase/client"
 import { ArrowLeft, Calendar, Mail, Phone, User, Activity, TrendingUp, Clock, Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { AssignTrainingPlanModal } from "@/components/AssignTrainingPlanModal"
-import { AssignNutritionPlanModal } from "@/components/AssignNutritionPlanModal"
+import { EnhancedAssignTrainingPlanModal } from "@/components/EnhancedAssignTrainingPlanModal"
+import { EnhancedAssignNutritionPlanModal } from "@/components/EnhancedAssignNutritionPlanModal"
 import { TrainingPlanView } from "@/components/TrainingPlanView"
-import { NutritionPlanView } from "@/components/NutritionPlanView"
+import { EnhancedNutritionPlanView } from "@/components/EnhancedNutritionPlanView"
 
 interface ClientProfile {
   id: string
@@ -378,7 +378,7 @@ export default function ClientDetail() {
                 </div>
               </CardHeader>
               <CardContent>
-                <NutritionPlanView 
+                <EnhancedNutritionPlanView 
                   clientId={id!} 
                   onPlanRemoved={() => {
                     // Refresh plan view
@@ -432,7 +432,7 @@ export default function ClientDetail() {
       </div>
 
       {/* Modals */}
-      <AssignTrainingPlanModal
+      <EnhancedAssignTrainingPlanModal
         open={showAssignTrainingModal}
         onOpenChange={setShowAssignTrainingModal}
         clientId={id!}
@@ -442,7 +442,7 @@ export default function ClientDetail() {
         }}
       />
 
-      <AssignNutritionPlanModal
+      <EnhancedAssignNutritionPlanModal
         open={showAssignNutritionModal}
         onOpenChange={setShowAssignNutritionModal}
         clientId={id!}
