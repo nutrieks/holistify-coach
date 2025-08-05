@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import { Trash2, Plus, ArrowLeft } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { AddExerciseToSessionModal } from "@/components/AddExerciseToSessionModal"
 
 const daysOfWeek = [
   { value: 1, label: "Ponedjeljak" },
@@ -20,18 +22,28 @@ const daysOfWeek = [
   { value: 0, label: "Nedjelja" }
 ]
 
+interface WorkoutExercise {
+  id: string
+  exerciseId: string
+  exerciseName: string
+  muscleGroup: string
+  sets: number
+  reps: number
+  rest: number
+}
+
 interface WorkoutSession {
-  sessionName: string
-  dayOfWeek: number
+  id: string
+  name: string
   exercises: WorkoutExercise[]
 }
 
-interface WorkoutExercise {
-  exerciseId: string
-  exerciseName: string
-  sets: number
-  reps: number
-  restPeriod: number
+interface DayPlan {
+  sessions: WorkoutSession[]
+}
+
+interface WeekPlan {
+  [day: number]: DayPlan
 }
 
 export default function TrainingPlanCreator() {
@@ -39,76 +51,105 @@ export default function TrainingPlanCreator() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [planName, setPlanName] = useState("")
-  const [sessions, setSessions] = useState<WorkoutSession[]>([])
-  const [exercises, setExercises] = useState<any[]>([])
+  const [isTemplate, setIsTemplate] = useState(false)
+  const [weekPlan, setWeekPlan] = useState<WeekPlan>({})
+  const [addExerciseModalOpen, setAddExerciseModalOpen] = useState(false)
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
 
+  // Initialize empty week plan
   useEffect(() => {
-    fetchExercises()
+    const initPlan: WeekPlan = {}
+    daysOfWeek.forEach(day => {
+      initPlan[day.value] = { sessions: [] }
+    })
+    setWeekPlan(initPlan)
   }, [])
 
-  const fetchExercises = async () => {
-    const { data, error } = await supabase
-      .from('exercise_database')
-      .select('*')
-      .order('name')
-    
-    if (error) {
-      console.error('Error fetching exercises:', error)
-      return
-    }
-    
-    setExercises(data || [])
-  }
+  const generateId = () => Math.random().toString(36).substr(2, 9)
 
-  const addSession = () => {
-    setSessions([...sessions, {
-      sessionName: "",
-      dayOfWeek: 1,
+  const handleAddSession = (day: number) => {
+    const newSession: WorkoutSession = {
+      id: generateId(),
+      name: "",
       exercises: []
-    }])
-  }
-
-  const removeSession = (sessionIndex: number) => {
-    setSessions(sessions.filter((_, i) => i !== sessionIndex))
-  }
-
-  const updateSession = (sessionIndex: number, field: string, value: any) => {
-    const updated = [...sessions]
-    updated[sessionIndex] = { ...updated[sessionIndex], [field]: value }
-    setSessions(updated)
-  }
-
-  const addExercise = (sessionIndex: number) => {
-    const updated = [...sessions]
-    updated[sessionIndex].exercises.push({
-      exerciseId: "",
-      exerciseName: "",
-      sets: 3,
-      reps: 12,
-      restPeriod: 60
-    })
-    setSessions(updated)
-  }
-
-  const removeExercise = (sessionIndex: number, exerciseIndex: number) => {
-    const updated = [...sessions]
-    updated[sessionIndex].exercises = updated[sessionIndex].exercises.filter((_, i) => i !== exerciseIndex)
-    setSessions(updated)
-  }
-
-  const updateExercise = (sessionIndex: number, exerciseIndex: number, field: string, value: any) => {
-    const updated = [...sessions]
-    updated[sessionIndex].exercises[exerciseIndex] = {
-      ...updated[sessionIndex].exercises[exerciseIndex],
-      [field]: value
     }
 
-    if (field === 'exerciseId' && value) {
-      const exercise = exercises.find(e => e.id === value)
-      updated[sessionIndex].exercises[exerciseIndex].exerciseName = exercise?.name || ""
-    }
+    setWeekPlan(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        sessions: [...prev[day].sessions, newSession]
+      }
+    }))
+  }
 
-    setSessions(updated)
+  const handleRemoveSession = (day: number, sessionId: string) => {
+    setWeekPlan(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        sessions: prev[day].sessions.filter(session => session.id !== sessionId)
+      }
+    }))
+  }
+
+  const handleUpdateSessionName = (day: number, sessionId: string, name: string) => {
+    setWeekPlan(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        sessions: prev[day].sessions.map(session =>
+          session.id === sessionId ? { ...session, name } : session
+        )
+      }
+    }))
+  }
+
+  const handleAddExercise = (day: number, sessionId: string) => {
+    setSelectedDay(day)
+    setSelectedSessionId(sessionId)
+    setAddExerciseModalOpen(true)
+  }
+
+  const handleExerciseAdded = (exercise: any, sets: number, reps: number, rest: number) => {
+    if (selectedDay !== null && selectedSessionId !== null) {
+      const newExercise: WorkoutExercise = {
+        id: generateId(),
+        exerciseId: exercise.id,
+        exerciseName: exercise.name,
+        muscleGroup: exercise.muscle_group || "",
+        sets,
+        reps,
+        rest
+      }
+
+      setWeekPlan(prev => ({
+        ...prev,
+        [selectedDay]: {
+          ...prev[selectedDay],
+          sessions: prev[selectedDay].sessions.map(session =>
+            session.id === selectedSessionId
+              ? { ...session, exercises: [...session.exercises, newExercise] }
+              : session
+          )
+        }
+      }))
+    }
+  }
+
+  const handleRemoveExercise = (day: number, sessionId: string, exerciseId: string) => {
+    setWeekPlan(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        sessions: prev[day].sessions.map(session =>
+          session.id === sessionId
+            ? { ...session, exercises: session.exercises.filter(ex => ex.id !== exerciseId) }
+            : session
+        )
+      }
+    }))
   }
 
   const handleSubmit = async () => {
@@ -121,10 +162,15 @@ export default function TrainingPlanCreator() {
       return
     }
 
-    if (sessions.length === 0) {
+    // Check if at least one session with exercises is added
+    const hasAnySession = Object.values(weekPlan).some(dayPlan =>
+      dayPlan.sessions.some(session => session.exercises.length > 0)
+    )
+
+    if (!hasAnySession) {
       toast({
         title: "Greška",
-        description: "Molim dodajte barem jednu sesiju",
+        description: "Molim dodajte barem jednu sesiju s vježbama",
         variant: "destructive"
       })
       return
@@ -138,9 +184,8 @@ export default function TrainingPlanCreator() {
         .insert({
           plan_name: planName,
           coach_id: (await supabase.auth.getUser()).data.user?.id,
-          client_id: null, // Will be assigned when coach creates plan for specific client
-          start_date: new Date().toISOString().split('T')[0],
-          end_date: null
+          client_id: null, // Will be assigned when coach assigns plan to specific client
+          start_date: new Date().toISOString().split('T')[0]
         })
         .select()
         .single()
@@ -148,39 +193,41 @@ export default function TrainingPlanCreator() {
       if (planError) throw planError
 
       // Create workout sessions and exercises
-      for (const session of sessions) {
-        const { data: sessionData, error: sessionError } = await supabase
-          .from('workout_sessions')
-          .insert({
-            training_plan_id: plan.id,
-            session_name: session.sessionName,
-            day_of_week: session.dayOfWeek
-          })
-          .select()
-          .single()
+      for (const [day, dayPlan] of Object.entries(weekPlan)) {
+        for (const session of dayPlan.sessions) {
+          if (session.exercises.length > 0 && session.name.trim()) {
+            const { data: sessionData, error: sessionError } = await supabase
+              .from('workout_sessions')
+              .insert({
+                training_plan_id: plan.id,
+                session_name: session.name,
+                day_of_week: parseInt(day)
+              })
+              .select()
+              .single()
 
-        if (sessionError) throw sessionError
+            if (sessionError) throw sessionError
 
-        if (session.exercises.length > 0) {
-          const exerciseData = session.exercises.map(exercise => ({
-            workout_session_id: sessionData.id,
-            exercise_id: exercise.exerciseId,
-            sets: exercise.sets,
-            reps: exercise.reps,
-            rest_period_seconds: exercise.restPeriod
-          }))
+            const exerciseData = session.exercises.map(exercise => ({
+              workout_session_id: sessionData.id,
+              exercise_id: exercise.exerciseId,
+              sets: exercise.sets,
+              reps: exercise.reps,
+              rest_period_seconds: exercise.rest
+            }))
 
-          const { error: exercisesError } = await supabase
-            .from('workout_exercises')
-            .insert(exerciseData)
+            const { error: exercisesError } = await supabase
+              .from('workout_exercises')
+              .insert(exerciseData)
 
-          if (exercisesError) throw exercisesError
+            if (exercisesError) throw exercisesError
+          }
         }
       }
 
       toast({
         title: "Uspjeh",
-        description: "Plan treninga je uspješno kreiran"
+        description: `Plan treninga "${planName}" je uspješno kreiran`
       })
 
       navigate('/admin/training')
@@ -212,149 +259,129 @@ export default function TrainingPlanCreator() {
           <CardHeader>
             <CardTitle>Kreiranje Novog Plana Treninga</CardTitle>
             <CardDescription>
-              Kreirajte prilagođeni plan treninga za svoje klijente
+              Kreirajte tjedni plan treninga organizovan po danima i sesijama
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Label htmlFor="planName">Ime Plana</Label>
-              <Input
-                id="planName"
-                placeholder="Unesite ime plana..."
-                value={planName}
-                onChange={(e) => setPlanName(e.target.value)}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="planName">Ime Plana</Label>
+                <Input
+                  id="planName"
+                  placeholder="npr. Push Pull Legs - Tjedan 1"
+                  value={planName}
+                  onChange={(e) => setPlanName(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center space-x-2 mt-6">
+                <Checkbox
+                  id="isTemplate"
+                  checked={isTemplate}
+                  onCheckedChange={(checked) => setIsTemplate(checked as boolean)}
+                />
+                <Label htmlFor="isTemplate">Spremi kao predložak</Label>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Trening Sesije</h3>
-                <Button onClick={addSession} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Dodaj Sesiju
-                </Button>
-              </div>
-
-              {sessions.map((session, sessionIndex) => (
-                <Card key={sessionIndex} className="p-4">
-                  <div className="space-y-4">
-                    <div className="flex items-end gap-4">
-                      <div className="flex-1">
-                        <Label>Ime Sesije</Label>
-                        <Input
-                          placeholder="npr. Push Day, Pull Day..."
-                          value={session.sessionName}
-                          onChange={(e) => updateSession(sessionIndex, 'sessionName', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label>Dan</Label>
-                        <Select 
-                          value={session.dayOfWeek.toString()} 
-                          onValueChange={(value) => updateSession(sessionIndex, 'dayOfWeek', parseInt(value))}
-                        >
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {daysOfWeek.map(day => (
-                              <SelectItem key={day.value} value={day.value.toString()}>
-                                {day.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => removeSession(sessionIndex)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="space-y-2">
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold">Tjedni Plan Treninga</h3>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {daysOfWeek.map((day) => (
+                  <Card key={day.value} className="h-fit">
+                    <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
-                        <Label className="text-sm font-medium">Vježbe</Label>
+                        <CardTitle className="text-lg">{day.label}</CardTitle>
                         <Button
-                          variant="outline"
                           size="sm"
-                          onClick={() => addExercise(sessionIndex)}
+                          variant="outline"
+                          onClick={() => handleAddSession(day.value)}
                         >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Dodaj Vježbu
+                          <Plus className="h-3 w-3" />
                         </Button>
                       </div>
-
-                      {session.exercises.map((exercise, exerciseIndex) => (
-                        <Card key={exerciseIndex} className="p-3 bg-muted/50">
-                          <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
-                            <div className="md:col-span-2">
-                              <Label className="text-xs">Vježba</Label>
-                              <Select
-                                value={exercise.exerciseId}
-                                onValueChange={(value) => updateExercise(sessionIndex, exerciseIndex, 'exerciseId', value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Odaberite vježbu" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {exercises.map(ex => (
-                                    <SelectItem key={ex.id} value={ex.id}>
-                                      {ex.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label className="text-xs">Serije</Label>
-                              <Input
-                                type="number"
-                                value={exercise.sets}
-                                onChange={(e) => updateExercise(sessionIndex, exerciseIndex, 'sets', parseInt(e.target.value))}
-                                min="1"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">Ponavljanja</Label>
-                              <Input
-                                type="number"
-                                value={exercise.reps}
-                                onChange={(e) => updateExercise(sessionIndex, exerciseIndex, 'reps', parseInt(e.target.value))}
-                                min="1"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">Odmor (s)</Label>
-                              <Input
-                                type="number"
-                                value={exercise.restPeriod}
-                                onChange={(e) => updateExercise(sessionIndex, exerciseIndex, 'restPeriod', parseInt(e.target.value))}
-                                min="0"
-                              />
-                            </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {weekPlan[day.value]?.sessions.map((session) => (
+                        <div key={session.id} className="space-y-3 p-3 border rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              placeholder="Ime sesije..."
+                              value={session.name}
+                              onChange={(e) => handleUpdateSessionName(day.value, session.id, e.target.value)}
+                              className="text-sm"
+                            />
                             <Button
-                              variant="destructive"
                               size="sm"
-                              onClick={() => removeExercise(sessionIndex, exerciseIndex)}
+                              variant="ghost"
+                              onClick={() => handleRemoveSession(day.value, session.id)}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3 text-destructive" />
                             </Button>
                           </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-muted-foreground">Vježbe</span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleAddExercise(day.value, session.id)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
 
-              {sessions.length === 0 && (
-                <Card className="p-8 text-center text-muted-foreground">
-                  <p>Dodajte trening sesije za kreiranje plana treninga</p>
-                </Card>
-              )}
+                            {session.exercises.map((exercise) => (
+                              <div
+                                key={exercise.id}
+                                className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"
+                              >
+                                <div className="flex-1">
+                                  <span className="font-medium">{exercise.exerciseName}</span>
+                                  <div className="flex gap-1 mt-1">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {exercise.sets}x{exercise.reps}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs">
+                                      {exercise.rest}s
+                                    </Badge>
+                                    {exercise.muscleGroup && (
+                                      <Badge variant="outline" className="text-xs">
+                                        {exercise.muscleGroup}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleRemoveExercise(day.value, session.id, exercise.id)}
+                                >
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+
+                            {session.exercises.length === 0 && (
+                              <p className="text-xs text-muted-foreground p-2 text-center">
+                                Nema dodanih vježbi
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {weekPlan[day.value]?.sessions.length === 0 && (
+                        <p className="text-sm text-muted-foreground p-4 text-center">
+                          Nema sesija za ovaj dan
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
 
             <div className="flex gap-4 pt-4">
@@ -367,6 +394,12 @@ export default function TrainingPlanCreator() {
             </div>
           </CardContent>
         </Card>
+
+        <AddExerciseToSessionModal
+          isOpen={addExerciseModalOpen}
+          onClose={() => setAddExerciseModalOpen(false)}
+          onAddExercise={handleExerciseAdded}
+        />
       </div>
     </AdminLayout>
   )
