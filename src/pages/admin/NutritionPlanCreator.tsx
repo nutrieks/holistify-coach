@@ -1,14 +1,16 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AdminLayout } from "@/components/AdminLayout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Trash2, Plus, ArrowLeft } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
+import { Plus, ArrowLeft, Trash2 } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { AddMealModal } from "@/components/AddMealModal"
 
 const daysOfWeek = [
   { value: 1, label: "Ponedjeljak" },
@@ -20,15 +22,26 @@ const daysOfWeek = [
   { value: 0, label: "Nedjelja" }
 ]
 
-const mealTypes = ["doručak", "ručak", "večera", "užina"]
+const mealTypes = [
+  { key: "doručak", label: "Doručak" },
+  { key: "ručak", label: "Ručak" },
+  { key: "večera", label: "Večera" },
+  { key: "užina", label: "Užina" }
+]
 
-interface PlanEntry {
-  day: number
-  mealType: string
-  foodId?: string
-  recipeId?: string
-  quantity: number
+interface MealItem {
+  id: string
+  type: 'food' | 'recipe'
   name: string
+  quantity: number
+}
+
+interface DayPlan {
+  [mealType: string]: MealItem[]
+}
+
+interface WeekPlan {
+  [day: number]: DayPlan
 }
 
 export default function NutritionPlanCreator() {
@@ -36,52 +49,57 @@ export default function NutritionPlanCreator() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [planName, setPlanName] = useState("")
-  const [entries, setEntries] = useState<PlanEntry[]>([])
-  const [foods, setFoods] = useState<any[]>([])
-  const [recipes, setRecipes] = useState<any[]>([])
+  const [isTemplate, setIsTemplate] = useState(false)
+  const [weekPlan, setWeekPlan] = useState<WeekPlan>({})
+  const [addMealModalOpen, setAddMealModalOpen] = useState(false)
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  const [selectedMealType, setSelectedMealType] = useState<string | null>(null)
 
-  const fetchFoodsAndRecipes = async () => {
-    const [foodsResponse, recipesResponse] = await Promise.all([
-      supabase.from('food_database').select('*'),
-      supabase.from('recipes').select('*')
-    ])
-    
-    if (foodsResponse.data) setFoods(foodsResponse.data)
-    if (recipesResponse.data) setRecipes(recipesResponse.data)
+  // Initialize empty week plan
+  useEffect(() => {
+    const initPlan: WeekPlan = {}
+    daysOfWeek.forEach(day => {
+      initPlan[day.value] = {}
+      mealTypes.forEach(meal => {
+        initPlan[day.value][meal.key] = []
+      })
+    })
+    setWeekPlan(initPlan)
+  }, [])
+
+  const handleAddMeal = (day: number, mealType: string) => {
+    setSelectedDay(day)
+    setSelectedMealType(mealType)
+    setAddMealModalOpen(true)
   }
 
-  useState(() => {
-    fetchFoodsAndRecipes()
-  })
+  const handleMealAdded = (item: { type: 'food' | 'recipe'; id: string; name: string; quantity: number }) => {
+    if (selectedDay !== null && selectedMealType !== null) {
+      const newMealItem: MealItem = {
+        id: item.id,
+        type: item.type,
+        name: item.name,
+        quantity: item.quantity
+      }
 
-  const addEntry = () => {
-    setEntries([...entries, {
-      day: 1,
-      mealType: "doručak",
-      quantity: 100,
-      name: ""
-    }])
-  }
-
-  const removeEntry = (index: number) => {
-    setEntries(entries.filter((_, i) => i !== index))
-  }
-
-  const updateEntry = (index: number, field: string, value: any) => {
-    const updated = [...entries]
-    updated[index] = { ...updated[index], [field]: value }
-    
-    if (field === 'foodId' && value) {
-      const food = foods.find(f => f.id === value)
-      updated[index].name = food?.name || ""
-      updated[index].recipeId = undefined
-    } else if (field === 'recipeId' && value) {
-      const recipe = recipes.find(r => r.id === value)
-      updated[index].name = recipe?.name || ""
-      updated[index].foodId = undefined
+      setWeekPlan(prev => ({
+        ...prev,
+        [selectedDay]: {
+          ...prev[selectedDay],
+          [selectedMealType]: [...(prev[selectedDay]?.[selectedMealType] || []), newMealItem]
+        }
+      }))
     }
-    
-    setEntries(updated)
+  }
+
+  const handleRemoveMeal = (day: number, mealType: string, index: number) => {
+    setWeekPlan(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [mealType]: prev[day][mealType].filter((_, i) => i !== index)
+      }
+    }))
   }
 
   const handleSubmit = async () => {
@@ -94,9 +112,14 @@ export default function NutritionPlanCreator() {
       return
     }
 
-    if (entries.length === 0) {
+    // Check if at least one meal is added
+    const hasAnyMeal = Object.values(weekPlan).some(dayPlan =>
+      Object.values(dayPlan).some(meals => Array.isArray(meals) && meals.length > 0)
+    )
+
+    if (!hasAnyMeal) {
       toast({
-        title: "Greška", 
+        title: "Greška",
         description: "Molim dodajte barem jedan obrok",
         variant: "destructive"
       })
@@ -111,7 +134,7 @@ export default function NutritionPlanCreator() {
         .insert({
           plan_name: planName,
           coach_id: (await supabase.auth.getUser()).data.user?.id,
-          client_id: null, // Will be assigned when coach creates plan for specific client
+          client_id: null, // Will be assigned when coach assigns plan to specific client
           date: new Date().toISOString().split('T')[0]
         })
         .select()
@@ -120,24 +143,35 @@ export default function NutritionPlanCreator() {
       if (planError) throw planError
 
       // Create meal plan entries
-      const planEntries = entries.map(entry => ({
-        meal_plan_id: plan.id,
-        day_of_week: entry.day,
-        meal_type: entry.mealType,
-        food_id: entry.foodId || null,
-        recipe_id: entry.recipeId || null,
-        quantity: entry.quantity
-      }))
+      const planEntries: any[] = []
+      Object.entries(weekPlan).forEach(([day, dayPlan]) => {
+        Object.entries(dayPlan).forEach(([mealType, meals]) => {
+          if (Array.isArray(meals)) {
+            meals.forEach(meal => {
+              planEntries.push({
+                meal_plan_id: plan.id,
+                day_of_week: parseInt(day),
+                meal_type: mealType,
+                food_id: meal.type === 'food' ? meal.id : null,
+                recipe_id: meal.type === 'recipe' ? meal.id : null,
+                quantity: meal.quantity
+              })
+            })
+          }
+        })
+      })
 
-      const { error: entriesError } = await supabase
-        .from('meal_plan_entries')
-        .insert(planEntries)
+      if (planEntries.length > 0) {
+        const { error: entriesError } = await supabase
+          .from('meal_plan_entries')
+          .insert(planEntries)
 
-      if (entriesError) throw entriesError
+        if (entriesError) throw entriesError
+      }
 
       toast({
         title: "Uspjeh",
-        description: "Plan prehrane je uspješno kreiran"
+        description: `Plan prehrane "${planName}" je uspješno kreiran`
       })
 
       navigate('/admin/nutrition')
@@ -169,124 +203,92 @@ export default function NutritionPlanCreator() {
           <CardHeader>
             <CardTitle>Kreiranje Novog Plana Prehrane</CardTitle>
             <CardDescription>
-              Kreirajte prilagođeni plan prehrane za svoje klijente
+              Kreirajte tjedni plan prehrane organiziran po danima i obrocima
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Label htmlFor="planName">Ime Plana</Label>
-              <Input
-                id="planName"
-                placeholder="Unesite ime plana..."
-                value={planName}
-                onChange={(e) => setPlanName(e.target.value)}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="planName">Ime Plana</Label>
+                <Input
+                  id="planName"
+                  placeholder="npr. Ljetna definicija - Tjedan 1"
+                  value={planName}
+                  onChange={(e) => setPlanName(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center space-x-2 mt-6">
+                <Checkbox
+                  id="isTemplate"
+                  checked={isTemplate}
+                  onCheckedChange={(checked) => setIsTemplate(checked as boolean)}
+                />
+                <Label htmlFor="isTemplate">Spremi kao predložak</Label>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Obroci</h3>
-                <Button onClick={addEntry} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Dodaj Obrok
-                </Button>
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold">Tjedni Plan Prehrane</h3>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {daysOfWeek.map((day) => (
+                  <Card key={day.value} className="h-fit">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg">{day.label}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {mealTypes.map((meal) => (
+                        <div key={meal.key} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-sm">{meal.label}</h4>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAddMeal(day.value, meal.key)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            {weekPlan[day.value]?.[meal.key]?.map((mealItem, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"
+                              >
+                                <div className="flex-1">
+                                  <span className="font-medium">{mealItem.name}</span>
+                                  <div className="flex gap-1 mt-1">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {mealItem.quantity}g
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs">
+                                      {mealItem.type === 'food' ? 'Namirnica' : 'Recept'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleRemoveMeal(day.value, meal.key, index)}
+                                >
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              </div>
+                            )) || null}
+                            
+                            {(!weekPlan[day.value]?.[meal.key] || weekPlan[day.value][meal.key].length === 0) && (
+                              <p className="text-xs text-muted-foreground p-2 text-center">
+                                Nema dodanih stavki
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-
-              {entries.map((entry, index) => (
-                <Card key={index} className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                    <div>
-                      <Label>Dan</Label>
-                      <Select value={entry.day.toString()} onValueChange={(value) => updateEntry(index, 'day', parseInt(value))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {daysOfWeek.map(day => (
-                            <SelectItem key={day.value} value={day.value.toString()}>
-                              {day.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Obrok</Label>
-                      <Select value={entry.mealType} onValueChange={(value) => updateEntry(index, 'mealType', value)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {mealTypes.map(meal => (
-                            <SelectItem key={meal} value={meal}>
-                              {meal.charAt(0).toUpperCase() + meal.slice(1)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Namirnica</Label>
-                      <Select value={entry.foodId || ""} onValueChange={(value) => updateEntry(index, 'foodId', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Odaberite namirnicu" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {foods.map(food => (
-                            <SelectItem key={food.id} value={food.id}>
-                              {food.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Recept</Label>
-                      <Select value={entry.recipeId || ""} onValueChange={(value) => updateEntry(index, 'recipeId', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Ili odaberite recept" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {recipes.map(recipe => (
-                            <SelectItem key={recipe.id} value={recipe.id}>
-                              {recipe.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <Label>Količina (g)</Label>
-                        <Input
-                          type="number"
-                          value={entry.quantity}
-                          onChange={(e) => updateEntry(index, 'quantity', parseInt(e.target.value))}
-                          min="1"
-                        />
-                      </div>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => removeEntry(index)}
-                        className="mt-6"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-
-              {entries.length === 0 && (
-                <Card className="p-8 text-center text-muted-foreground">
-                  <p>Dodajte obroke za kreiranje plana prehrane</p>
-                </Card>
-              )}
             </div>
 
             <div className="flex gap-4 pt-4">
@@ -299,6 +301,12 @@ export default function NutritionPlanCreator() {
             </div>
           </CardContent>
         </Card>
+
+        <AddMealModal
+          open={addMealModalOpen}
+          onOpenChange={setAddMealModalOpen}
+          onAddMeal={handleMealAdded}
+        />
       </div>
     </AdminLayout>
   )
