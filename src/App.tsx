@@ -14,6 +14,9 @@ import ClientDetail from "./pages/admin/ClientDetail";
 import Messages from "./pages/admin/Messages";
 import NutritionLibrary from "./pages/admin/NutritionLibrary";
 import TrainingLibrary from "./pages/admin/TrainingLibrary";
+import FormsLibrary from "./pages/admin/FormsLibrary";
+import HabitsLibrary from "./pages/admin/HabitsLibrary";
+import CheckInsLibrary from "./pages/admin/CheckInsLibrary";
 import NutritionPlanCreator from "./pages/admin/NutritionPlanCreator";
 import TrainingPlanCreator from "./pages/admin/TrainingPlanCreator";
 import NotFound from "./pages/NotFound";
@@ -102,6 +105,30 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <TrainingLibrary />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/forms" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <FormsLibrary />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/habits" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <HabitsLibrary />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/checkins" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <CheckInsLibrary />
                 </ProtectedRoute>
               } 
             />
