@@ -14,6 +14,8 @@ import ClientDetail from "./pages/admin/ClientDetail";
 import Messages from "./pages/admin/Messages";
 import NutritionLibrary from "./pages/admin/NutritionLibrary";
 import TrainingLibrary from "./pages/admin/TrainingLibrary";
+import NutritionPlanCreator from "./pages/admin/NutritionPlanCreator";
+import TrainingPlanCreator from "./pages/admin/TrainingPlanCreator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -100,6 +102,22 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <TrainingLibrary />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/plans/nutrition/create" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <NutritionPlanCreator />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/plans/training/create" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <TrainingPlanCreator />
                 </ProtectedRoute>
               } 
             />

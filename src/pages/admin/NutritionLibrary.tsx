@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus } from "lucide-react"
+import { Link } from "react-router-dom"
 import { FoodDatabase } from "@/components/nutrition/FoodDatabase"
 import { RecipeDatabase } from "@/components/nutrition/RecipeDatabase"
 
@@ -18,6 +19,12 @@ export default function NutritionLibrary() {
               Upravljanje bazom namirnica i recepata
             </p>
           </div>
+          <Button asChild>
+            <Link to="/admin/plans/nutrition/create">
+              <Plus className="mr-2 h-4 w-4" />
+              Kreiraj Plan Prehrane
+            </Link>
+          </Button>
         </div>
 
         <Tabs defaultValue="food" className="space-y-4">
