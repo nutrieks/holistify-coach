@@ -20,6 +20,7 @@ import CheckInsLibrary from "./pages/admin/CheckInsLibrary";
 import NutritionPlanCreator from "./pages/admin/NutritionPlanCreator";
 import TrainingPlanCreator from "./pages/admin/TrainingPlanCreator";
 import MyPlans from "./pages/MyPlans";
+import CheckIn from "./pages/CheckIn";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -162,6 +163,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="client">
                   <MyPlans />
+                </ProtectedRoute>
+              } 
+            />
+            <Route
+              path="/check-in" 
+              element={
+                <ProtectedRoute requiredRole="client">
+                  <CheckIn />
                 </ProtectedRoute>
               } 
             />
