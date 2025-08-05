@@ -1,32 +1,45 @@
 import { useAuth } from '@/hooks/useAuth';
+import { useClientDashboard } from '@/hooks/useClientDashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MessageSquare, TrendingUp, CheckCircle, Apple, Dumbbell } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar, MessageSquare, TrendingUp, CheckCircle, Apple, Dumbbell, Clock, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ClientDashboard = () => {
   const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const {
+    todaysMeals,
+    todaysWorkout,
+    todaysHabits,
+    progressData,
+    unreadCount,
+    isLoading,
+    toggleHabit,
+  } = useClientDashboard();
 
-  const todaysMeals = [
-    { name: "Doručak", completed: true, calories: 350 },
-    { name: "Ručak", completed: false, calories: 650 },
-    { name: "Večera", completed: false, calories: 500 },
-    { name: "Užina", completed: false, calories: 200 }
-  ];
+  // Calculate total calories from today's meals
+  const totalCalories = todaysMeals?.reduce((sum, meal) => sum + (meal.calories || 0), 0) || 0;
+  const targetCalories = 1700; // This could come from user profile or meal plan
 
-  const habits = [
-    { name: "2L vode", completed: true, streak: 7 },
-    { name: "10,000 koraka", completed: false, current: 6840, target: 10000 },
-    { name: "8h sna", completed: true, streak: 3 },
-    { name: "Meditacija", completed: false, streak: 2 }
-  ];
+  // Group meals by type
+  const mealsByType = todaysMeals?.reduce((acc, meal) => {
+    const type = meal.meal_type;
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(meal);
+    return acc;
+  }, {} as Record<string, typeof todaysMeals>) || {};
 
-  const weeklyProgress = {
-    weight: { current: 68.5, target: 65, unit: 'kg' },
-    workouts: { completed: 3, planned: 4 },
-    habits: { completed: 12, total: 20 }
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-lg">Učitavam...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,9 +65,14 @@ const ClientDashboard = () => {
               <Apple className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">350 / 1700</div>
-              <Progress value={20.6} className="mt-2" />
-              <p className="text-xs text-muted-foreground mt-2">Još 1350 kcal do cilja</p>
+              <div className="text-2xl font-bold">{totalCalories} / {targetCalories}</div>
+              <Progress value={(totalCalories / targetCalories) * 100} className="mt-2" />
+              <p className="text-xs text-muted-foreground mt-2">
+                {targetCalories - totalCalories > 0 ? 
+                  `Još ${targetCalories - totalCalories} kcal do cilja` :
+                  'Cilj postignut!'
+                }
+              </p>
             </CardContent>
           </Card>
 
@@ -64,9 +82,25 @@ const ClientDashboard = () => {
               <Dumbbell className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Gornji dio tijela</div>
-              <p className="text-xs text-muted-foreground mt-2">Zakazano za 17:00</p>
-              <Button size="sm" className="mt-2 w-full">Počni trening</Button>
+              {todaysWorkout ? (
+                <>
+                  <div className="text-2xl font-bold">{todaysWorkout.session_name}</div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {todaysWorkout.exercises.length} vježbi zakazano
+                  </p>
+                  <Button size="sm" className="mt-2 w-full" onClick={() => navigate('/my-plans')}>
+                    Pogledaj detalje
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">Nema treninga</div>
+                  <p className="text-xs text-muted-foreground mt-2">Danas nema zakazanih treninga</p>
+                  <Button size="sm" variant="outline" className="mt-2 w-full" onClick={() => navigate('/my-plans')}>
+                    Pogledaj planove
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -76,9 +110,13 @@ const ClientDashboard = () => {
               <MessageSquare className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2</div>
-              <p className="text-xs text-muted-foreground mt-2">Od vašeg trenera</p>
-              <Button variant="outline" size="sm" className="mt-2 w-full">Pogledaj</Button>
+              <div className="text-2xl font-bold">{unreadCount || 0}</div>
+              <p className="text-xs text-muted-foreground mt-2">
+                {unreadCount ? 'Od vašeg trenera' : 'Nema novih poruka'}
+              </p>
+              <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => navigate('/messages')}>
+                {unreadCount ? 'Pogledaj' : 'Otvori chat'}
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -91,26 +129,38 @@ const ClientDashboard = () => {
               <CardDescription>Vaš plan prehrane za danas</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {todaysMeals.map((meal, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <CheckCircle 
-                        className={`h-5 w-5 ${meal.completed ? 'text-green-600' : 'text-gray-300'}`} 
-                      />
-                      <div>
-                        <p className="font-medium">{meal.name}</p>
-                        <p className="text-sm text-muted-foreground">{meal.calories} kcal</p>
+              {todaysMeals && todaysMeals.length > 0 ? (
+                <div className="space-y-3">
+                  {Object.entries(mealsByType).map(([mealType, meals]) => (
+                    <div key={mealType} className="p-3 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium capitalize">{mealType}</p>
+                          <div className="text-sm text-muted-foreground">
+                            {meals.map((meal, idx) => (
+                              <div key={idx}>
+                                {meal.food_name || meal.recipe_name} 
+                                {meal.quantity && ` (${meal.quantity}g)`}
+                                {meal.calories && ` - ${Math.round(meal.calories)} kcal`}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => navigate('/my-plans')}>
+                          Detalji
+                        </Button>
                       </div>
                     </div>
-                    {meal.completed ? (
-                      <Badge variant="secondary">Završeno</Badge>
-                    ) : (
-                      <Button variant="outline" size="sm">Označi</Button>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-4">
+                  <p>Nema dodijeljenih obroka za danas</p>
+                  <Button variant="outline" size="sm" className="mt-2" onClick={() => navigate('/my-plans')}>
+                    Pogledaj planove
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -121,33 +171,37 @@ const ClientDashboard = () => {
               <CardDescription>Vaše dnevne aktivnosti</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {habits.map((habit, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <CheckCircle 
-                        className={`h-5 w-5 ${habit.completed ? 'text-green-600' : 'text-gray-300'}`} 
-                      />
-                      <div>
-                        <p className="font-medium">{habit.name}</p>
-                        {habit.current && habit.target && (
-                          <p className="text-sm text-muted-foreground">
-                            {habit.current.toLocaleString()} / {habit.target.toLocaleString()}
-                          </p>
-                        )}
+              {todaysHabits && todaysHabits.length > 0 ? (
+                <div className="space-y-3">
+                  {todaysHabits.map((habit) => (
+                    <div key={habit.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={habit.completed}
+                          onCheckedChange={(checked) => 
+                            toggleHabit(habit.id, checked as boolean)
+                          }
+                        />
+                        <div>
+                          <p className="font-medium">{habit.habit_name}</p>
+                          {habit.description && (
+                            <p className="text-sm text-muted-foreground">{habit.description}</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {habit.streak && (
-                        <Badge variant="outline">{habit.streak} dana</Badge>
-                      )}
-                      {!habit.completed && (
-                        <Button variant="outline" size="sm">Označi</Button>
+                      {habit.completed ? (
+                        <Badge variant="secondary">Završeno</Badge>
+                      ) : (
+                        <Badge variant="outline">Čeka</Badge>
                       )}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-4">
+                  <p>Nema dodijeljenih navika za danas</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -162,30 +216,30 @@ const ClientDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">
-                  {weeklyProgress.weight.current} {weeklyProgress.weight.unit}
+                  {progressData?.weight || '--'} kg
                 </div>
                 <p className="text-sm text-muted-foreground">Trenutna težina</p>
                 <p className="text-xs text-muted-foreground">
-                  Cilj: {weeklyProgress.weight.target} {weeklyProgress.weight.unit}
+                  {progressData?.weight ? 'Zadnje ažuriranje ovog tjedna' : 'Nema podataka'}
                 </p>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">
-                  {weeklyProgress.workouts.completed}/{weeklyProgress.workouts.planned}
+                  {progressData?.workouts_completed || 0}
                 </div>
-                <p className="text-sm text-muted-foreground">Treninzi završeni</p>
+                <p className="text-sm text-muted-foreground">Treninzi završeni ovog tjedna</p>
                 <Progress 
-                  value={(weeklyProgress.workouts.completed / weeklyProgress.workouts.planned) * 100} 
+                  value={((progressData?.workouts_completed || 0) / 4) * 100} 
                   className="mt-2"
                 />
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">
-                  {weeklyProgress.habits.completed}/{weeklyProgress.habits.total}
+                  {progressData?.habits_completed || 0}
                 </div>
-                <p className="text-sm text-muted-foreground">Navike završene</p>
+                <p className="text-sm text-muted-foreground">Navike završene ovog tjedna</p>
                 <Progress 
-                  value={(weeklyProgress.habits.completed / weeklyProgress.habits.total) * 100} 
+                  value={((progressData?.habits_completed || 0) / 7) * 100} 
                   className="mt-2"
                 />
               </div>
@@ -200,19 +254,40 @@ const ClientDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center space-y-2">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col items-center justify-center space-y-2"
+                onClick={() => navigate('/check-in')}
+              >
                 <TrendingUp className="h-6 w-6" />
                 <span className="text-sm">Check-in</span>
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center space-y-2">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col items-center justify-center space-y-2"
+                onClick={() => navigate('/my-plans')}
+              >
                 <Calendar className="h-6 w-6" />
-                <span className="text-sm">Planovi</span>
+                <span className="text-sm">Moji Planovi</span>
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center space-y-2">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col items-center justify-center space-y-2"
+                onClick={() => navigate('/messages')}
+              >
                 <MessageSquare className="h-6 w-6" />
-                <span className="text-sm">Chat</span>
+                <span className="text-sm">Poruke</span>
+                {unreadCount && unreadCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                    {unreadCount}
+                  </Badge>
+                )}
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center space-y-2">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col items-center justify-center space-y-2"
+                onClick={() => navigate('/my-progress')}
+              >
                 <TrendingUp className="h-6 w-6" />
                 <span className="text-sm">Napredak</span>
               </Button>
