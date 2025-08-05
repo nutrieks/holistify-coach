@@ -11,7 +11,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
 import ClientsList from "./pages/admin/ClientsList";
 import ClientDetail from "./pages/admin/ClientDetail";
-import Messages from "./pages/admin/Messages";
+import AdminMessages from "./pages/admin/Messages";
+import Messages from "./pages/Messages";
 import NutritionLibrary from "./pages/admin/NutritionLibrary";
 import TrainingLibrary from "./pages/admin/TrainingLibrary";
 import FormsLibrary from "./pages/admin/FormsLibrary";
@@ -90,7 +91,7 @@ const App = () => (
               path="/admin/messages" 
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <Messages />
+                  <AdminMessages />
                 </ProtectedRoute>
               } 
             />
@@ -171,6 +172,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="client">
                   <CheckIn />
+                </ProtectedRoute>
+              } 
+            />
+            <Route
+              path="/messages" 
+              element={
+                <ProtectedRoute requiredRole="client">
+                  <Messages />
                 </ProtectedRoute>
               } 
             />

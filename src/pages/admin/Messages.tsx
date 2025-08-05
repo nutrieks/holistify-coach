@@ -134,6 +134,50 @@ export default function Messages() {
     fetchConversations()
   }, [])
 
+  // Realtime subscription for new messages
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = supabase
+      .channel('admin-chat-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages'
+        },
+        (payload) => {
+          const newMessage = payload.new as ChatMessage
+          
+          // Update conversations list with new message
+          setConversations(prev => prev.map(conv => {
+            if ((newMessage.sender_id === conv.client_id && newMessage.receiver_id === user.id) ||
+                (newMessage.sender_id === user.id && newMessage.receiver_id === conv.client_id)) {
+              return {
+                ...conv,
+                last_message: newMessage.message_text,
+                unread_count: newMessage.sender_id !== user.id ? conv.unread_count + 1 : conv.unread_count
+              }
+            }
+            return conv
+          }))
+          
+          // Add message to current conversation if it's the selected client
+          if (selectedClient && 
+              ((newMessage.sender_id === selectedClient && newMessage.receiver_id === user.id) ||
+               (newMessage.sender_id === user.id && newMessage.receiver_id === selectedClient))) {
+            setMessages(prev => [...prev, newMessage])
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id, selectedClient])
+
   useEffect(() => {
     if (selectedClient) {
       fetchMessages(selectedClient)
