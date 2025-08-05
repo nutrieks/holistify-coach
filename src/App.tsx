@@ -12,6 +12,7 @@ import ClientDashboard from "./pages/ClientDashboard";
 import ClientsList from "./pages/admin/ClientsList";
 import ClientDetail from "./pages/admin/ClientDetail";
 import Messages from "./pages/admin/Messages";
+import NutritionLibrary from "./pages/admin/NutritionLibrary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,14 @@ const App = () => (
               } 
             />
             <Route 
+              path="/admin/nutrition" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <NutritionLibrary />
+                </ProtectedRoute>
+              } 
+            />
+            <Route
               path="/client" 
               element={
                 <ProtectedRoute requiredRole="client">
