@@ -20,6 +20,10 @@ const ClientDashboard = () => {
     todaysHabits,
     progressData,
     unreadCount,
+    mealPlanLevel,
+    weeklyFocus,
+    weeklyHabits,
+    weeklyRecipes,
     isLoading,
     toggleHabit,
   } = useClientDashboard();
@@ -193,6 +197,52 @@ const ClientDashboard = () => {
               <CardDescription>Vaš plan prehrane za danas</CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Plan Level Indicator */}
+              {mealPlanLevel && (
+                <div className="mb-4 p-2 bg-muted rounded-lg">
+                  <Badge variant="secondary" className="mb-2">
+                    Plan Razine {mealPlanLevel}
+                  </Badge>
+                  {weeklyFocus && (
+                    <p className="text-sm text-muted-foreground">{weeklyFocus}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Level 1: Habits and Recipes */}
+              {mealPlanLevel === 1 && (
+                <div className="space-y-4">
+                  {weeklyHabits.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-2">Tjedne navike</h4>
+                      <div className="space-y-2">
+                        {weeklyHabits.map((habit: any) => (
+                          <div key={habit.id} className="p-2 border rounded">
+                            <p className="text-sm font-medium">{habit.habit_name}</p>
+                            {habit.description && (
+                              <p className="text-xs text-muted-foreground">{habit.description}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {weeklyRecipes.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-2">Preporučeni recepti</h4>
+                      <div className="space-y-2">
+                        {weeklyRecipes.map((recipe: any) => (
+                          <div key={recipe.id} className="p-2 border rounded">
+                            <p className="text-sm font-medium">{recipe.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Level 2 & 3: Meals */}
               {todaysMeals && todaysMeals.length > 0 ? (
                 <div className="space-y-3">
                   {Object.entries(mealsByType).map(([mealType, meals]) => (
@@ -203,7 +253,7 @@ const ClientDashboard = () => {
                           <div className="text-sm text-muted-foreground">
                             {meals.map((meal, idx) => (
                               <div key={idx}>
-                                {meal.food_name || meal.recipe_name} 
+                                {meal.food_name || meal.recipe_name || meal.category_name} 
                                 {meal.quantity && ` (${meal.quantity}g)`}
                                 {meal.calories && ` - ${Math.round(meal.calories)} kcal`}
                               </div>

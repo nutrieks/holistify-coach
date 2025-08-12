@@ -8,6 +8,7 @@ interface TodaysMeal {
   meal_type: string;
   food_name?: string;
   recipe_name?: string;
+  category_name?: string;
   quantity?: number;
   calories?: number;
 }
@@ -47,22 +48,43 @@ export function useClientDashboard() {
   const today = new Date().toISOString().split('T')[0];
   const dayOfWeek = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
 
-  // Fetch today's meals
-  const { data: todaysMeals, isLoading: mealsLoading } = useQuery({
+  // Fetch today's meals and plan data
+  const { data: mealPlanData, isLoading: mealsLoading } = useQuery({
     queryKey: ['todaysMeals', user?.id, today],
-    queryFn: async (): Promise<TodaysMeal[]> => {
-      if (!user?.id) return [];
+    queryFn: async () => {
+      if (!user?.id) return { meals: [], planLevel: null, weeklyFocus: null, habits: [], recipes: [] };
 
       const { data: mealPlan } = await supabase
         .from('meal_plans')
-        .select('id')
+        .select('id, plan_level, weekly_focus, weekly_habit_ids, weekly_recipe_ids')
         .eq('client_id', user.id)
         .gte('date', today)
         .lte('date', today)
         .single();
 
-      if (!mealPlan) return [];
+      if (!mealPlan) return { meals: [], planLevel: null, weeklyFocus: null, habits: [], recipes: [] };
 
+      // Fetch habits if Level 1 plan
+      let habits: any[] = [];
+      if (mealPlan.plan_level === 1 && mealPlan.weekly_habit_ids?.length > 0) {
+        const { data: habitsData } = await supabase
+          .from('habits')
+          .select('id, habit_name, description')
+          .in('id', mealPlan.weekly_habit_ids);
+        habits = habitsData || [];
+      }
+
+      // Fetch recipes if Level 1 plan
+      let recipes: any[] = [];
+      if (mealPlan.plan_level === 1 && mealPlan.weekly_recipe_ids?.length > 0) {
+        const { data: recipesData } = await supabase
+          .from('recipes')
+          .select('id, name, instructions, recipe_ingredients(quantity, food_database(name, calories))')
+          .in('id', mealPlan.weekly_recipe_ids);
+        recipes = recipesData || [];
+      }
+
+      // Fetch meal entries for all plan levels
       const { data: entries } = await supabase
         .from('meal_plan_entries')
         .select(`
@@ -71,24 +93,37 @@ export function useClientDashboard() {
           quantity,
           day_of_week,
           food_database (name, calories, serving_size_grams),
-          recipes (name, recipe_ingredients (quantity, food_database (calories, serving_size_grams)))
+          recipes (name, recipe_ingredients (quantity, food_database (calories, serving_size_grams))),
+          food_categories (id, category_name, avg_calories, avg_protein, avg_carbs, avg_fat, standard_portion_size)
         `)
         .eq('meal_plan_id', mealPlan.id)
         .eq('day_of_week', dayOfWeek);
 
-      return entries?.map(entry => ({
+      const meals = entries?.map(entry => ({
         id: entry.id,
         meal_type: entry.meal_type,
         food_name: entry.food_database?.name,
         recipe_name: entry.recipes?.name,
+        category_name: entry.food_categories?.category_name,
         quantity: entry.quantity,
         calories: entry.food_database?.calories || 
                  entry.recipes?.recipe_ingredients?.reduce((sum: number, ing: any) => 
-                   sum + (ing.food_database?.calories || 0) * (ing.quantity || 0) / 100, 0)
+                   sum + (ing.food_database?.calories || 0) * (ing.quantity || 0) / 100, 0) ||
+                 entry.food_categories?.avg_calories
       })) || [];
+
+      return {
+        meals,
+        planLevel: mealPlan.plan_level,
+        weeklyFocus: mealPlan.weekly_focus,
+        habits,
+        recipes
+      };
     },
     enabled: !!user?.id,
   });
+
+  const todaysMeals = mealPlanData?.meals || [];
 
   // Fetch today's workout
   const { data: todaysWorkout, isLoading: workoutLoading } = useQuery({
@@ -256,6 +291,10 @@ export function useClientDashboard() {
     todaysHabits,
     progressData,
     unreadCount,
+    mealPlanLevel: mealPlanData?.planLevel,
+    weeklyFocus: mealPlanData?.weeklyFocus,
+    weeklyHabits: mealPlanData?.habits || [],
+    weeklyRecipes: mealPlanData?.recipes || [],
     isLoading: mealsLoading || workoutLoading || habitsLoading,
     toggleHabit: (habitId: string, completed: boolean) => 
       toggleHabitMutation.mutate({ habitId, completed }),

@@ -30,6 +30,12 @@ interface MealPlanEntry {
   recipe: {
     name: string
   } | null
+  category: {
+    id: string
+    category_name: string
+    avg_calories: number | null
+    standard_portion_size: string | null
+  } | null
 }
 
 interface NutritionPlanViewProps {
@@ -72,24 +78,35 @@ export function NutritionPlanView({ clientId, onPlanRemoved, readOnly = false }:
 
       setPlan(planData)
 
-      const { data: entriesData, error: entriesError } = await supabase
-        .from('meal_plan_entries')
-        .select(`
-          *,
-          food:food_database (
-            name,
-            calories
-          ),
-          recipe:recipes (
-            name
-          )
-        `)
-        .eq('meal_plan_id', planData.id)
-        .order('day_of_week')
-        .order('meal_type')
+      // Only fetch entries for Level 2 and 3 plans
+      if (planData.plan_level > 1) {
+        const { data: entriesData, error: entriesError } = await supabase
+          .from('meal_plan_entries')
+          .select(`
+            *,
+            food:food_database (
+              name,
+              calories
+            ),
+            recipe:recipes (
+              name
+            ),
+            category:food_categories (
+              id,
+              category_name,
+              avg_calories,
+              standard_portion_size
+            )
+          `)
+          .eq('meal_plan_id', planData.id)
+          .order('day_of_week')
+          .order('meal_type')
 
-      if (entriesError) throw entriesError
-      setEntries(entriesData || [])
+        if (entriesError) throw entriesError
+        setEntries(entriesData || [])
+      } else {
+        setEntries([])
+      }
     } catch (error: any) {
       toast({
         title: "Greška",
@@ -226,74 +243,98 @@ export function NutritionPlanView({ clientId, onPlanRemoved, readOnly = false }:
         </CardHeader>
       </Card>
 
-      {/* Daily Meal Plans */}
-      <div className="space-y-4">
-        {[1, 2, 3, 4, 5, 6, 0].map((dayOfWeek) => {
-          const dayEntries = groupedEntries[dayOfWeek]
-          if (!dayEntries || Object.keys(dayEntries).length === 0) return null
+      {/* Level 1: Habits and Recipes Display */}
+      {plan.plan_level === 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Plan sadrži smjernice za navike i fokus</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center text-muted-foreground py-8">
+              <p>Ovaj plan se fokusira na izgradnju zdravih navika i prehranbenoj edukaciji.</p>
+              <p className="text-sm mt-2">Specifični obroci nisu definirani - slijedi preporučene navike i fokus tjedna.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          return (
-            <Collapsible key={dayOfWeek}>
-              <Card>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{dayNames[dayOfWeek]}</CardTitle>
-                        <span className="text-sm text-muted-foreground">
-                          {Object.keys(dayEntries).length} obroka
-                        </span>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => toggleDay(dayOfWeek)}>
-                        {expandedDays.has(dayOfWeek) ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <div className="space-y-4">
-                      {Object.entries(dayEntries).map(([mealType, mealEntries]) => (
-                        <div key={mealType} className="space-y-2">
-                          <h4 className="font-medium text-sm uppercase tracking-wide text-muted-foreground">
-                            {mealTypeNames[mealType as keyof typeof mealTypeNames] || mealType}
-                          </h4>
-                          <div className="space-y-2">
-                            {mealEntries.map((entry) => (
-                              <div key={entry.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                                <div>
-                                  <h5 className="font-medium">
-                                    {entry.food?.name || entry.recipe?.name || 'Nepoznato'}
-                                  </h5>
-                                  {entry.food?.calories && (
-                                    <p className="text-sm text-muted-foreground">
-                                      {entry.food.calories} kcal po 100g
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="text-sm">
-                                  {entry.quantity && (
-                                    <span>{entry.quantity}g</span>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+      {/* Level 2 & 3: Daily Meal Plans */}
+      {plan.plan_level > 1 && (
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5, 6, 0].map((dayOfWeek) => {
+            const dayEntries = groupedEntries[dayOfWeek]
+            if (!dayEntries || Object.keys(dayEntries).length === 0) return null
+
+            return (
+              <Collapsible key={dayOfWeek}>
+                <Card>
+                  <CollapsibleTrigger asChild>
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-lg">{dayNames[dayOfWeek]}</CardTitle>
+                          <span className="text-sm text-muted-foreground">
+                            {Object.keys(dayEntries).length} obroka
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          )
-        })}
-      </div>
+                        <Button variant="ghost" size="sm" onClick={() => toggleDay(dayOfWeek)}>
+                          {expandedDays.has(dayOfWeek) ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent>
+                    <CardContent className="pt-0">
+                      <div className="space-y-4">
+                        {Object.entries(dayEntries).map(([mealType, mealEntries]) => (
+                          <div key={mealType} className="space-y-2">
+                            <h4 className="font-medium text-sm uppercase tracking-wide text-muted-foreground">
+                              {mealTypeNames[mealType as keyof typeof mealTypeNames] || mealType}
+                            </h4>
+                            <div className="space-y-2">
+                              {mealEntries.map((entry) => (
+                                <div key={entry.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                                  <div>
+                                    <h5 className="font-medium">
+                                      {entry.food?.name || entry.recipe?.name || entry.category?.category_name || 'Nepoznato'}
+                                    </h5>
+                                    {entry.food?.calories && (
+                                      <p className="text-sm text-muted-foreground">
+                                        {entry.food.calories} kcal po 100g
+                                      </p>
+                                    )}
+                                    {entry.category?.avg_calories && (
+                                      <p className="text-sm text-muted-foreground">
+                                        ~{entry.category.avg_calories} kcal {entry.category.standard_portion_size && `po ${entry.category.standard_portion_size}`}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="text-sm">
+                                    {entry.quantity ? (
+                                      <span>{entry.quantity}g</span>
+                                    ) : entry.category?.standard_portion_size ? (
+                                      <span>{entry.category.standard_portion_size}</span>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
