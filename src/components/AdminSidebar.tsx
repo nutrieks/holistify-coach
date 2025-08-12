@@ -34,6 +34,7 @@ const mainItems = [
 
 const manageItems = [
   { title: "Prehrana", url: "/admin/nutrition", icon: Apple },
+  { title: "Kategorije Namirnica", url: "/admin/food-categories", icon: Apple },
   { title: "Trening", url: "/admin/training", icon: Dumbbell },
   { title: "Upitnici", url: "/admin/forms", icon: FileText },
   { title: "Navike", url: "/admin/habits", icon: Target },

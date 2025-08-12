@@ -20,6 +20,7 @@ import HabitsLibrary from "./pages/admin/HabitsLibrary";
 import CheckInsLibrary from "./pages/admin/CheckInsLibrary";
 import NutritionPlanCreator from "./pages/admin/NutritionPlanCreator";
 import TrainingPlanCreator from "./pages/admin/TrainingPlanCreator";
+import FoodCategories from "./pages/admin/FoodCategories";
 import MyPlans from "./pages/MyPlans";
 import CheckIn from "./pages/CheckIn";
 import MyProgress from "./pages/MyProgress";
@@ -150,6 +151,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <TrainingPlanCreator />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/food-categories" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <FoodCategories />
                 </ProtectedRoute>
               } 
             />

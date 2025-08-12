@@ -287,6 +287,56 @@ export type Database = {
           },
         ]
       }
+      food_categories: {
+        Row: {
+          avg_calories: number | null
+          avg_carbs: number | null
+          avg_fat: number | null
+          avg_protein: number | null
+          category_name: string
+          coach_id: string
+          created_at: string
+          id: string
+          parent_category_id: string | null
+          standard_portion_size: string | null
+          updated_at: string
+        }
+        Insert: {
+          avg_calories?: number | null
+          avg_carbs?: number | null
+          avg_fat?: number | null
+          avg_protein?: number | null
+          category_name: string
+          coach_id: string
+          created_at?: string
+          id?: string
+          parent_category_id?: string | null
+          standard_portion_size?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avg_calories?: number | null
+          avg_carbs?: number | null
+          avg_fat?: number | null
+          avg_protein?: number | null
+          category_name?: string
+          coach_id?: string
+          created_at?: string
+          id?: string
+          parent_category_id?: string | null
+          standard_portion_size?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_categories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "food_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       food_database: {
         Row: {
           calories: number | null
@@ -368,6 +418,7 @@ export type Database = {
         Row: {
           created_at: string
           day_of_week: number
+          food_category_id: string | null
           food_id: string | null
           id: string
           meal_plan_id: string
@@ -378,6 +429,7 @@ export type Database = {
         Insert: {
           created_at?: string
           day_of_week: number
+          food_category_id?: string | null
           food_id?: string | null
           id?: string
           meal_plan_id: string
@@ -388,6 +440,7 @@ export type Database = {
         Update: {
           created_at?: string
           day_of_week?: number
+          food_category_id?: string | null
           food_id?: string | null
           id?: string
           meal_plan_id?: string
@@ -396,6 +449,13 @@ export type Database = {
           recipe_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "meal_plan_entries_food_category_id_fkey"
+            columns: ["food_category_id"]
+            isOneToOne: false
+            referencedRelation: "food_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "meal_plan_entries_food_id_fkey"
             columns: ["food_id"]
@@ -426,8 +486,12 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          plan_level: number
           plan_name: string
           updated_at: string
+          weekly_focus: string | null
+          weekly_habit_ids: string[] | null
+          weekly_recipe_ids: string[] | null
         }
         Insert: {
           client_id: string
@@ -435,8 +499,12 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          plan_level?: number
           plan_name: string
           updated_at?: string
+          weekly_focus?: string | null
+          weekly_habit_ids?: string[] | null
+          weekly_recipe_ids?: string[] | null
         }
         Update: {
           client_id?: string
@@ -444,8 +512,12 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          plan_level?: number
           plan_name?: string
           updated_at?: string
+          weekly_focus?: string | null
+          weekly_habit_ids?: string[] | null
+          weekly_recipe_ids?: string[] | null
         }
         Relationships: [
           {

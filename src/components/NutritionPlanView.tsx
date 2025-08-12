@@ -10,6 +10,10 @@ import { Apple, ChevronDown, ChevronUp, Calendar, Trash2, RotateCcw } from "luci
 interface NutritionPlan {
   id: string
   plan_name: string
+  plan_level: number
+  weekly_focus: string | null
+  weekly_habit_ids: string[] | null
+  weekly_recipe_ids: string[] | null
   date: string
   created_at: string
 }
@@ -59,7 +63,7 @@ export function NutritionPlanView({ clientId, onPlanRemoved, readOnly = false }:
         .from('meal_plans')
         .select('*')
         .eq('client_id', clientId)
-        .single()
+        .maybeSingle()
 
       if (planError || !planData) {
         setPlan(null)
@@ -182,11 +186,21 @@ export function NutritionPlanView({ clientId, onPlanRemoved, readOnly = false }:
               </CardTitle>
               <div className="flex items-center gap-4 mt-2">
                 <Badge variant="default">Aktivan</Badge>
+                <Badge variant="outline">
+                  {plan.plan_level === 1 ? 'Navike & Fokus' : 
+                   plan.plan_level === 2 ? 'Fleksibilni' : 'Specifični'}
+                </Badge>
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   Dodijeljen {new Date(plan.date).toLocaleDateString('hr-HR')}
                 </div>
               </div>
+              {plan.weekly_focus && (
+                <div className="mt-3 p-3 bg-muted rounded-md">
+                  <h4 className="font-medium text-sm mb-1">Fokus Tjedna:</h4>
+                  <p className="text-sm">{plan.weekly_focus}</p>
+                </div>
+              )}
             </div>
             {!readOnly && (
               <Button 
