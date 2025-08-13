@@ -8,6 +8,9 @@ import { Plus, Search, Edit, Trash2 } from "lucide-react"
 import { AddFoodModal } from "./AddFoodModal"
 import { EditFoodModal } from "./EditFoodModal"
 import { useToast } from "@/hooks/use-toast"
+import { TableSkeleton } from "@/components/TableSkeleton"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { useAsyncOperation } from "@/hooks/useAsyncOperation"
 import type { Database } from "@/integrations/supabase/types"
 
 type FoodItem = Database['public']['Tables']['food_database']['Row']
@@ -18,7 +21,9 @@ export function FoodDatabase() {
   const [searchTerm, setSearchTerm] = useState("")
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingFood, setEditingFood] = useState<FoodItem | null>(null)
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; food: FoodItem | null }>({ open: false, food: null })
   const { toast } = useToast()
+  const { execute: executeDelete, loading: deleteLoading } = useAsyncOperation()
 
   useEffect(() => {
     fetchFoods()
@@ -45,30 +50,31 @@ export function FoodDatabase() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Jeste li sigurni da želite obrisati ovu namirnicu?')) return
+  const handleDelete = async (food: FoodItem) => {
+    setDeleteDialog({ open: true, food })
+  }
 
-    try {
-      const { error } = await supabase
-        .from('food_database')
-        .delete()
-        .eq('id', id)
+  const confirmDelete = async () => {
+    if (!deleteDialog.food) return
+    
+    await executeDelete(
+      async () => {
+        const { error } = await supabase
+          .from('food_database')
+          .delete()
+          .eq('id', deleteDialog.food!.id)
 
-      if (error) throw error
-
-      setFoods(foods.filter(food => food.id !== id))
-      toast({
-        title: "Success",
-        description: "Namirnica je uspješno obrisana"
-      })
-    } catch (error) {
-      console.error('Error deleting food:', error)
-      toast({
-        title: "Error", 
-        description: "Failed to delete food item",
-        variant: "destructive"
-      })
-    }
+        if (error) throw error
+        
+        setFoods(foods.filter(f => f.id !== deleteDialog.food!.id))
+      },
+      {
+        successMessage: "Namirnica je uspješno obrisana",
+        errorMessage: "Greška pri brisanju namirnice"
+      }
+    )
+    
+    setDeleteDialog({ open: false, food: null })
   }
 
   const filteredFoods = foods.filter(food =>
@@ -76,15 +82,7 @@ export function FoodDatabase() {
   )
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="animate-pulse text-lg">Učitavam...</div>
-          </div>
-        </CardContent>
-      </Card>
-    )
+    return <TableSkeleton columns={7} rows={5} />
   }
 
   return (
@@ -155,7 +153,8 @@ export function FoodDatabase() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDelete(food.id)}
+                              onClick={() => handleDelete(food)}
+                              disabled={deleteLoading}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -188,6 +187,17 @@ export function FoodDatabase() {
           fetchFoods()
           setEditingFood(null)
         }}
+      />
+
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, food: deleteDialog.food })}
+        title="Obriši namirnicu"
+        description={`Jeste li sigurni da želite obrisati "${deleteDialog.food?.name}"? Ova akcija se ne može poništiti.`}
+        onConfirm={confirmDelete}
+        confirmText="Obriši"
+        cancelText="Odustani"
+        variant="destructive"
       />
     </>
   )

@@ -10,6 +10,8 @@ import { Calendar, MessageSquare, TrendingUp, CheckCircle, Apple, Dumbbell, Cloc
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { LoadingCard } from '@/components/LoadingCard';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 const ClientDashboard = () => {
   const { profile, signOut } = useAuth();
@@ -77,8 +79,31 @@ const ClientDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-lg">Učitavam...</div>
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="h-8 w-48 bg-muted animate-pulse rounded"></div>
+                <div className="h-4 w-32 bg-muted animate-pulse rounded mt-2"></div>
+              </div>
+              <div className="h-10 w-20 bg-muted animate-pulse rounded"></div>
+            </div>
+          </div>
+        </header>
+        <div className="container mx-auto px-4 py-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <LoadingCard />
+            <LoadingCard />
+            <LoadingCard />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <LoadingCard lines={6} />
+            <LoadingCard lines={4} />
+          </div>
+          <LoadingCard lines={4} />
+          <LoadingCard lines={2} />
+        </div>
       </div>
     );
   }
@@ -87,7 +112,7 @@ const ClientDashboard = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Moj Dashboard</h1>
             <p className="text-muted-foreground">Dobrodošli, {profile?.full_name}!</p>

@@ -8,6 +8,9 @@ import { Plus, Search, Edit, Trash2, ChefHat } from "lucide-react"
 import { AddRecipeModal } from "./AddRecipeModal"
 import { EditRecipeModal } from "./EditRecipeModal"
 import { useToast } from "@/hooks/use-toast"
+import { TableSkeleton } from "@/components/TableSkeleton"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { useAsyncOperation } from "@/hooks/useAsyncOperation"
 import type { Database } from "@/integrations/supabase/types"
 
 type Recipe = Database['public']['Tables']['recipes']['Row']
@@ -18,7 +21,9 @@ export function RecipeDatabase() {
   const [searchTerm, setSearchTerm] = useState("")
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null)
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; recipe: Recipe | null }>({ open: false, recipe: null })
   const { toast } = useToast()
+  const { execute: executeDelete, loading: deleteLoading } = useAsyncOperation()
 
   useEffect(() => {
     fetchRecipes()
@@ -45,37 +50,38 @@ export function RecipeDatabase() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Jeste li sigurni da želite obrisati ovaj recept?')) return
+  const handleDelete = async (recipe: Recipe) => {
+    setDeleteDialog({ open: true, recipe })
+  }
 
-    try {
-      // First delete related recipe_ingredients
-      await supabase
-        .from('recipe_ingredients')
-        .delete()
-        .eq('recipe_id', id)
+  const confirmDelete = async () => {
+    if (!deleteDialog.recipe) return
+    
+    await executeDelete(
+      async () => {
+        // First delete related recipe_ingredients
+        await supabase
+          .from('recipe_ingredients')
+          .delete()
+          .eq('recipe_id', deleteDialog.recipe!.id)
 
-      // Then delete the recipe
-      const { error } = await supabase
-        .from('recipes')
-        .delete()
-        .eq('id', id)
+        // Then delete the recipe
+        const { error } = await supabase
+          .from('recipes')
+          .delete()
+          .eq('id', deleteDialog.recipe!.id)
 
-      if (error) throw error
-
-      setRecipes(recipes.filter(recipe => recipe.id !== id))
-      toast({
-        title: "Success",
-        description: "Recept je uspješno obrisan"
-      })
-    } catch (error) {
-      console.error('Error deleting recipe:', error)
-      toast({
-        title: "Error",
-        description: "Failed to delete recipe",
-        variant: "destructive"
-      })
-    }
+        if (error) throw error
+        
+        setRecipes(recipes.filter(r => r.id !== deleteDialog.recipe!.id))
+      },
+      {
+        successMessage: "Recept je uspješno obrisan",
+        errorMessage: "Greška pri brisanju recepta"
+      }
+    )
+    
+    setDeleteDialog({ open: false, recipe: null })
   }
 
   const filteredRecipes = recipes.filter(recipe =>
@@ -83,15 +89,7 @@ export function RecipeDatabase() {
   )
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="animate-pulse text-lg">Učitavam...</div>
-          </div>
-        </CardContent>
-      </Card>
-    )
+    return <TableSkeleton columns={5} rows={5} />
   }
 
   return (
@@ -177,7 +175,8 @@ export function RecipeDatabase() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDelete(recipe.id)}
+                              onClick={() => handleDelete(recipe)}
+                              disabled={deleteLoading}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -210,6 +209,17 @@ export function RecipeDatabase() {
           fetchRecipes()
           setEditingRecipe(null)
         }}
+      />
+
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, recipe: deleteDialog.recipe })}
+        title="Obriši recept"
+        description={`Jeste li sigurni da želite obrisati "${deleteDialog.recipe?.name}"? Ova akcija će također obrisati sve sastojke recepta i ne može se poništiti.`}
+        onConfirm={confirmDelete}
+        confirmText="Obriši"
+        cancelText="Odustani"
+        variant="destructive"
       />
     </>
   )

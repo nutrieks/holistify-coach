@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { Plus, Search, Calendar, Activity } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { AddClientModal } from "@/components/AddClientModal"
+import { TableSkeleton } from "@/components/TableSkeleton"
 
 interface Client {
   id: string
@@ -90,9 +91,7 @@ export default function ClientsList() {
   if (loading) {
     return (
       <AdminLayout title="Klijenti">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-pulse text-lg">Učitavam klijente...</div>
-        </div>
+        <TableSkeleton columns={5} rows={8} />
       </AdminLayout>
     )
   }
