@@ -14,6 +14,7 @@ import { useQuery, useMutation } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
+import { useNAQScoring } from "@/hooks/useNAQScoring"
 
 interface Question {
   id: string
@@ -40,6 +41,7 @@ export default function QuestionnaireForm() {
   const navigate = useNavigate()
   const { profile } = useAuth()
   const { toast } = useToast()
+  const { calculateAndStoreScores, isCalculating } = useNAQScoring()
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, any>>({})
@@ -97,20 +99,42 @@ export default function QuestionnaireForm() {
   // Submit answers
   const submitAnswers = useMutation({
     mutationFn: async (answersData: Record<string, any>) => {
-      const { error } = await supabase
+      const { data: submission, error } = await supabase
         .from('client_submissions')
         .insert({
           client_id: profile?.id,
           questionnaire_id: id,
           answers: answersData
         })
+        .select()
+        .single()
 
       if (error) throw error
+      return submission
     },
-    onSuccess: () => {
+    onSuccess: async (submission) => {
+      // Check if this is a NAQ questionnaire by checking if questionnaire title contains "NAQ"
+      const isNAQ = questionnaire?.title?.toLowerCase().includes('naq') || false
+      
+      if (isNAQ && submission.id && questionnaire?.id && profile?.id) {
+        // Convert answers to the format expected by NAQ scoring
+        const answerArray = Object.entries(answers).map(([questionId, answer]) => ({
+          question_id: questionId,
+          answer: String(answer)
+        }))
+        
+        // Trigger NAQ scoring
+        await calculateAndStoreScores({
+          submissionId: submission.id,
+          questionnaireId: questionnaire.id,
+          clientId: profile.id,
+          answers: answerArray
+        })
+      }
+      
       toast({
         title: "Uspješno poslano!",
-        description: "Vaši odgovori su uspješno zabilježeni."
+        description: isNAQ ? "Vaši odgovori su uspješno zabilježeni i analizirani." : "Vaši odgovori su uspješno zabilježeni."
       })
       navigate('/dashboard')
     },
@@ -149,6 +173,8 @@ export default function QuestionnaireForm() {
     setIsSubmitting(true)
     submitAnswers.mutate(answers)
   }
+
+  const isProcessing = isSubmitting || isCalculating
 
   if (isLoading) {
     return (
@@ -372,10 +398,10 @@ export default function QuestionnaireForm() {
                 {currentQuestionIndex === questionnaire.questions.length - 1 ? (
                   <Button
                     onClick={handleSubmit}
-                    disabled={isSubmitting}
+                    disabled={isProcessing}
                     className="min-w-[120px]"
                   >
-                    {isSubmitting ? 'Šalje se...' : 'Završi'}
+                    {isCalculating ? 'Analizira se...' : isSubmitting ? 'Šalje se...' : 'Završi'}
                   </Button>
                 ) : (
                   <Button onClick={goToNext}>

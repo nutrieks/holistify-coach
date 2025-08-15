@@ -12,6 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingCard } from '@/components/LoadingCard';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { ClientNAQDashboard } from '@/components/naq/ClientNAQDashboard';
 
 const ClientDashboard = () => {
   const { profile, signOut } = useAuth();
@@ -398,6 +399,11 @@ const ClientDashboard = () => {
           </CardContent>
         </Card>
 
+        {/* NAQ Dashboard Section */}
+        {profile?.id && (
+          <ClientNAQDashboard clientId={profile.id} />
+        )}
+
         {/* Quick Actions */}
         <Card>
           <CardHeader>
@@ -428,19 +434,14 @@ const ClientDashboard = () => {
               >
                 <MessageSquare className="h-6 w-6" />
                 <span className="text-sm">Poruke</span>
-                {unreadCount && unreadCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                    {unreadCount}
-                  </Badge>
-                )}
               </Button>
               <Button 
                 variant="outline" 
                 className="h-20 flex flex-col items-center justify-center space-y-2"
                 onClick={() => navigate('/my-progress')}
               >
-                <TrendingUp className="h-6 w-6" />
-                <span className="text-sm">Napredak</span>
+                <Users className="h-6 w-6" />
+                <span className="text-sm">Moj napredak</span>
               </Button>
             </div>
           </CardContent>

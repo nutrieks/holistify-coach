@@ -16,6 +16,7 @@ import { TrainingPlanView } from "@/components/TrainingPlanView"
 import { EnhancedNutritionPlanView } from "@/components/EnhancedNutritionPlanView"
 import { ProgressTab } from "@/components/progress/ProgressTab"
 import { ContractStatusCard } from "@/components/ContractStatusCard"
+import { FormsTab } from "@/components/FormsTab"
 
 interface ClientProfile {
   id: string
@@ -408,16 +409,7 @@ export default function ClientDetail() {
 
 
           <TabsContent value="forms">
-            <Card>
-              <CardHeader>
-                <CardTitle>Forms & Questionnaires</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Forms functionality will be implemented soon</p>
-                </div>
-              </CardContent>
-            </Card>
+            <FormsTab clientId={id!} clientName={client.client_profile?.full_name || 'Klijent'} />
           </TabsContent>
 
           <TabsContent value="notes">

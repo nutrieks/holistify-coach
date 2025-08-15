@@ -22,7 +22,7 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
   const [clientName, setClientName] = useState("")
   const [clientEmail, setClientEmail] = useState("")
   const [clientTag, setClientTag] = useState("")
-  const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<string>("")
+  const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<string>("auto-naq")
   const [setStartDate, setSetStartDate] = useState(false)
   const [setEndDate, setSetEndDate] = useState(false)
   const [sendInstructions, setSendInstructions] = useState(true)
@@ -70,6 +70,23 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
 
       if (authError) throw authError
 
+      let finalQuestionnaireId = selectedQuestionnaire
+
+      // If auto-NAQ is selected, create NAQ questionnaire
+      if (selectedQuestionnaire === "auto-naq") {
+        try {
+          const { data: naqData, error: naqError } = await supabase.functions.invoke('create-naq-questionnaire', {
+            body: { coachId: profile?.id }
+          })
+
+          if (naqError) throw naqError
+          finalQuestionnaireId = naqData.questionnaireId
+        } catch (naqError) {
+          console.warn('Failed to create NAQ questionnaire:', naqError)
+          finalQuestionnaireId = null
+        }
+      }
+
       // Create client record
       const { error: clientError } = await supabase
         .from('clients')
@@ -78,7 +95,7 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
           coach_id: (await supabase.auth.getUser()).data.user?.id,
           status: 'pending',
           start_date: setStartDate ? new Date().toISOString().split('T')[0] : null,
-          initial_questionnaire_id: selectedQuestionnaire || null
+          initial_questionnaire_id: finalQuestionnaireId === "auto-naq" ? null : finalQuestionnaireId
         })
 
       if (clientError) throw clientError
@@ -92,7 +109,7 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
       setClientName("")
       setClientEmail("")
       setClientTag("")
-      setSelectedQuestionnaire("")
+      setSelectedQuestionnaire("auto-naq")
       setSetStartDate(false)
       setSetEndDate(false)
       setSendInstructions(true)
@@ -208,6 +225,7 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
                 <SelectValue placeholder="Odaberite upitnik za dodjelu" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="auto-naq">Auto-kreiranje NAQ upitnika (preporučeno)</SelectItem>
                 <SelectItem value="">Bez upitnika</SelectItem>
                 {questionnaires.map((questionnaire) => (
                   <SelectItem key={questionnaire.id} value={questionnaire.id}>
@@ -217,7 +235,10 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Odabrani upitnik će biti automatski dodijeljen klijentu
+              {selectedQuestionnaire === "auto-naq" 
+                ? "NAQ upitnik će biti automatski kreiran i dodijeljen klijentu" 
+                : "Odabrani upitnik će biti automatski dodijeljen klijentu"
+              }
             </p>
           </div>
 
