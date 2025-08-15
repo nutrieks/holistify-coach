@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -195,9 +195,13 @@ export type Database = {
         Row: {
           client_id: string
           coach_id: string
+          contract_duration_months: number | null
+          contract_type: string | null
           created_at: string
+          end_date: string | null
           id: string
           initial_questionnaire_id: string | null
+          renewal_reminder_sent: boolean | null
           start_date: string | null
           status: string
           updated_at: string
@@ -205,9 +209,13 @@ export type Database = {
         Insert: {
           client_id: string
           coach_id: string
+          contract_duration_months?: number | null
+          contract_type?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
           initial_questionnaire_id?: string | null
+          renewal_reminder_sent?: boolean | null
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -215,9 +223,13 @@ export type Database = {
         Update: {
           client_id?: string
           coach_id?: string
+          contract_duration_months?: number | null
+          contract_type?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
           initial_questionnaire_id?: string | null
+          renewal_reminder_sent?: boolean | null
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -245,6 +257,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contract_history: {
+        Row: {
+          action_type: string
+          client_id: string
+          coach_id: string
+          contract_duration_months: number
+          contract_type: string
+          created_at: string
+          end_date: string
+          id: string
+          notes: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          client_id: string
+          coach_id: string
+          contract_duration_months: number
+          contract_type: string
+          created_at?: string
+          end_date: string
+          id?: string
+          notes?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          client_id?: string
+          coach_id?: string
+          contract_duration_months?: number
+          contract_type?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          notes?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       exercise_database: {
         Row: {
