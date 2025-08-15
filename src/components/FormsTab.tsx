@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { supabase } from "@/integrations/supabase/client"
 import { NAQScoringResults } from "@/components/naq/NAQScoringResults"
+import { NAQAnalytics } from "@/components/naq/NAQAnalytics"
 import { useNAQResults, useClientNAQHistory } from "@/hooks/useNAQScoring"
 import { FileText, TrendingUp, Calendar, AlertTriangle } from "lucide-react"
 import { format } from "date-fns"
@@ -80,8 +81,9 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="naq" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="naq">NAQ Rezultati</TabsTrigger>
+              <TabsTrigger value="analytics">NAQ Analitika</TabsTrigger>
               <TabsTrigger value="history">História NAQ</TabsTrigger>
               <TabsTrigger value="other">Ostale forme</TabsTrigger>
             </TabsList>
@@ -128,6 +130,10 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
                   <p className="text-sm">Klijent još nije ispunio NAQ upitnik</p>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-4">
+              <NAQAnalytics clientId={clientId} />
             </TabsContent>
 
             <TabsContent value="history" className="space-y-4">

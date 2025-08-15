@@ -7,6 +7,8 @@ import { Progress } from "@/components/ui/progress"
 import { supabase } from "@/integrations/supabase/client"
 import { useNAQResults, useClientNAQHistory } from "@/hooks/useNAQScoring"
 import { NAQClientResults } from "@/components/naq/NAQClientResults"
+import { NAQProgressChart } from "@/components/naq/NAQProgressChart"
+import { NAQOverallTrend } from "@/components/naq/NAQTrendIndicator"
 import { FileText, TrendingUp, AlertTriangle, Calendar, Star } from "lucide-react"
 import { format } from "date-fns"
 
@@ -47,6 +49,9 @@ export function ClientNAQDashboard({ clientId }: ClientNAQDashboardProps) {
 
   // Get NAQ history
   const { data: naqHistory } = useClientNAQHistory(clientId)
+
+  // Get previous results for trend comparison
+  const previousResults = naqHistory && naqHistory.length > 1 ? naqHistory[1] : null
 
   if (!latestSubmission) {
     return (
@@ -120,6 +125,16 @@ export function ClientNAQDashboard({ clientId }: ClientNAQDashboardProps) {
               <Badge variant={overallStatus.variant} className="mt-2">
                 {overallStatus.label}
               </Badge>
+              {previousResults && (
+                <NAQOverallTrend 
+                  currentOverallBurden={naqResults.overallBurden}
+                  previousOverallBurden={
+                    previousResults.scores.reduce((sum, score) => sum + score.totalScore, 0) / 
+                    previousResults.scores.reduce((sum, score) => sum + (score.maxPossibleScore / 3), 0)
+                  }
+                  className="mt-2 justify-center"
+                />
+              )}
             </div>
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold mb-1 text-red-600">
@@ -148,6 +163,14 @@ export function ClientNAQDashboard({ clientId }: ClientNAQDashboardProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Progress Chart */}
+      {naqHistory && naqHistory.length > 1 && (
+        <NAQProgressChart 
+          data={naqHistory} 
+          title="Napredak Ukupnog Tereta"
+        />
+      )}
 
       {/* Detailed Results */}
       <NAQClientResults 
