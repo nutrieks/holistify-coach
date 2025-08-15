@@ -151,7 +151,7 @@ const ClientDashboard = () => {
         )}
 
         {/* Today's Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Današnji kalorije</CardTitle>
@@ -210,6 +210,18 @@ const ClientDashboard = () => {
               <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => navigate('/messages')}>
                 {unreadCount ? 'Pogledaj' : 'Otvori chat'}
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Status Suradnje</p>
+                  <p className="text-2xl font-bold">Aktivan</p>
+                </div>
+                <Clock className="h-8 w-8 text-primary" />
+              </div>
             </CardContent>
           </Card>
         </div>

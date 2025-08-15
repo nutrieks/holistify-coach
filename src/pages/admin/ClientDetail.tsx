@@ -15,6 +15,7 @@ import { EnhancedAssignNutritionPlanModal } from "@/components/EnhancedAssignNut
 import { TrainingPlanView } from "@/components/TrainingPlanView"
 import { EnhancedNutritionPlanView } from "@/components/EnhancedNutritionPlanView"
 import { ProgressTab } from "@/components/progress/ProgressTab"
+import { ContractStatusCard } from "@/components/ContractStatusCard"
 
 interface ClientProfile {
   id: string
@@ -228,6 +229,9 @@ export default function ClientDetail() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Contract Status */}
+              <ContractStatusCard clientId={client.client_id} />
 
               {/* Metrics Avg */}
               <Card>

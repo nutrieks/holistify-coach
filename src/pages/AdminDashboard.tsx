@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Users, MessageSquare, Calendar, TrendingUp, PlusCircle, Activity } from 'lucide-react';
 import { AddClientModal } from '@/components/AddClientModal';
+import { ContractsExpiringWidget } from '@/components/ContractsExpiringWidget';
 
 const AdminDashboard = () => {
   const [showAddModal, setShowAddModal] = useState(false)
@@ -86,6 +87,9 @@ const AdminDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Contracts Expiring Soon */}
+          <ContractsExpiringWidget />
+
           {/* Recent Activities */}
           <Card>
             <CardHeader>

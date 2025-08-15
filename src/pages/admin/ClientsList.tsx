@@ -12,6 +12,7 @@ import { Plus, Search, Calendar, Activity } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { AddClientModal } from "@/components/AddClientModal"
 import { TableSkeleton } from "@/components/TableSkeleton"
+import { ContractProgressBar } from "@/components/ContractProgressBar"
 
 interface Client {
   id: string
@@ -124,7 +125,7 @@ export default function ClientsList() {
                 <TableRow className="hover:bg-transparent border-b">
                   <TableHead className="w-[300px] pl-6">Klijent</TableHead>
                   <TableHead>Tag</TableHead>
-                  <TableHead>Zadnji Check-In</TableHead>
+                  <TableHead>Status Ugovora</TableHead>
                   <TableHead>Zadnja aktivnost</TableHead>
                   <TableHead>Trajanje</TableHead>
                   <TableHead className="w-[100px]"></TableHead>
@@ -158,7 +159,7 @@ export default function ClientsList() {
                       {getStatusBadge(client.status)}
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm text-muted-foreground">-</div>
+                      <ContractProgressBar clientId={client.client_id} />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
