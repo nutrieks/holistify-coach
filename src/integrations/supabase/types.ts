@@ -661,6 +661,9 @@ export type Database = {
           question_text: string
           question_type: string
           questionnaire_id: string
+          scoring_category: string | null
+          scoring_weight: number | null
+          section_name: string | null
         }
         Insert: {
           created_at?: string
@@ -670,6 +673,9 @@ export type Database = {
           question_text: string
           question_type: string
           questionnaire_id: string
+          scoring_category?: string | null
+          scoring_weight?: number | null
+          section_name?: string | null
         }
         Update: {
           created_at?: string
@@ -679,6 +685,9 @@ export type Database = {
           question_text?: string
           question_type?: string
           questionnaire_id?: string
+          scoring_category?: string | null
+          scoring_weight?: number | null
+          section_name?: string | null
         }
         Relationships: [
           {
@@ -690,12 +699,55 @@ export type Database = {
           },
         ]
       }
+      questionnaire_scores: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          max_possible_score: number
+          priority_level: string
+          questionnaire_id: string
+          section_name: string
+          submission_id: string
+          symptom_burden: number
+          total_score: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          max_possible_score?: number
+          priority_level: string
+          questionnaire_id: string
+          section_name: string
+          submission_id: string
+          symptom_burden?: number
+          total_score?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          max_possible_score?: number
+          priority_level?: string
+          questionnaire_id?: string
+          section_name?: string
+          submission_id?: string
+          symptom_burden?: number
+          total_score?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       questionnaires: {
         Row: {
           coach_id: string
           created_at: string
           description: string | null
           id: string
+          is_default_questionnaire: boolean | null
           title: string
           updated_at: string
         }
@@ -704,6 +756,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_default_questionnaire?: boolean | null
           title: string
           updated_at?: string
         }
@@ -712,6 +765,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_default_questionnaire?: boolean | null
           title?: string
           updated_at?: string
         }
