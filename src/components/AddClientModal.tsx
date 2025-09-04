@@ -56,21 +56,56 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
       return
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(clientEmail)) {
+      toast({
+        title: "Greška",
+        description: "Molimo unesite valjani email format",
+        variant: "destructive"
+      })
+      return
+    }
+
     setLoading(true)
     try {
-      // First create user account
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Check if email already exists
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('id', `%${clientEmail}%`)
+      
+      if (checkError) {
+        console.warn('Could not check existing users:', checkError)
+      }
+
+      // Generate temporary password for client
+      const tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!'
+
+      // Create user account using standard signup
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: clientEmail,
-        email_confirm: true,
-        user_metadata: {
-          full_name: clientName,
-          role: 'client'
+        password: tempPassword,
+        options: {
+          data: {
+            full_name: clientName,
+            role: 'client'
+          }
         }
       })
 
-      if (authError) throw authError
+      if (authError) {
+        if (authError.message.includes('already registered')) {
+          throw new Error('Email je već registriran u sustavu')
+        }
+        throw authError
+      }
 
-      let finalQuestionnaireId = selectedQuestionnaire
+      if (!authData.user) {
+        throw new Error('Neuspješno kreiranje korisničkog računa')
+      }
+
+      let finalQuestionnaireId = selectedQuestionnaire === "none" ? null : selectedQuestionnaire
 
       // If auto-NAQ is selected, create NAQ questionnaire
       if (selectedQuestionnaire === "auto-naq") {
@@ -92,17 +127,17 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
         .from('clients')
         .insert({
           client_id: authData.user.id,
-          coach_id: (await supabase.auth.getUser()).data.user?.id,
+          coach_id: profile?.id,
           status: 'pending',
           start_date: setStartDate ? new Date().toISOString().split('T')[0] : null,
-          initial_questionnaire_id: finalQuestionnaireId === "auto-naq" ? null : finalQuestionnaireId
+          initial_questionnaire_id: finalQuestionnaireId
         })
 
       if (clientError) throw clientError
 
       toast({
         title: "Uspješno",
-        description: `Klijent ${clientName} je uspješno dodan`,
+        description: `Klijent ${clientName} je uspješno dodan. Privremena lozinka: ${tempPassword}`,
       })
 
       // Reset form
@@ -117,6 +152,7 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
       onClientAdded()
       onOpenChange(false)
     } catch (error: any) {
+      console.error('Add client error:', error)
       toast({
         title: "Greška",
         description: error.message || "Neuspješno dodavanje klijenta",
@@ -226,7 +262,7 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="auto-naq">Auto-kreiranje NAQ upitnika (preporučeno)</SelectItem>
-                <SelectItem value="">Bez upitnika</SelectItem>
+                <SelectItem value="none">Bez upitnika</SelectItem>
                 {questionnaires.map((questionnaire) => (
                   <SelectItem key={questionnaire.id} value={questionnaire.id}>
                     {questionnaire.title}
@@ -237,6 +273,8 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
             <p className="text-xs text-muted-foreground">
               {selectedQuestionnaire === "auto-naq" 
                 ? "NAQ upitnik će biti automatski kreiran i dodijeljen klijentu" 
+                : selectedQuestionnaire === "none"
+                ? "Klijent neće dobiti početni upitnik"
                 : "Odabrani upitnik će biti automatski dodijeljen klijentu"
               }
             </p>
