@@ -45,6 +45,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        console.debug('AuthStateChange', { event, hasSession: !!session, userId: session?.user?.id });
         
         if (session?.user) {
           // Defer profile fetch to avoid deadlock
@@ -56,6 +57,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 .eq('id', session.user.id)
                 .maybeSingle();
               setProfile(data);
+              console.debug('Profile loaded', { role: data?.role, id: data?.id });
             } catch (error) {
               console.error('Error fetching profile:', error);
             }
