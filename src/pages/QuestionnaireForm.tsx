@@ -46,6 +46,38 @@ export default function QuestionnaireForm() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, any>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
+
+  // Load draft answers on component mount
+  useEffect(() => {
+    if (id && profile?.id) {
+      const draftKey = `questionnaire-draft-${id}-${profile.id}`
+      const savedDraft = localStorage.getItem(draftKey)
+      if (savedDraft) {
+        try {
+          const draftData = JSON.parse(savedDraft)
+          setAnswers(draftData.answers || {})
+          setCurrentQuestionIndex(draftData.currentQuestionIndex || 0)
+        } catch (error) {
+          console.error('Error loading draft:', error)
+        }
+      }
+    }
+  }, [id, profile?.id])
+
+  // Save draft automatically every 30 seconds
+  useEffect(() => {
+    if (Object.keys(answers).length === 0) return
+    
+    const draftKey = `questionnaire-draft-${id}-${profile?.id}`
+    const draftData = {
+      answers,
+      currentQuestionIndex,
+      lastSaved: new Date().toISOString()
+    }
+    
+    localStorage.setItem(draftKey, JSON.stringify(draftData))
+  }, [answers, currentQuestionIndex, id, profile?.id])
 
   // Fetch questionnaire data
   const { data: questionnaire, isLoading, error } = useQuery({
@@ -171,7 +203,36 @@ export default function QuestionnaireForm() {
 
   const handleSubmit = () => {
     setIsSubmitting(true)
+    // Clear draft when submitting
+    if (id && profile?.id) {
+      const draftKey = `questionnaire-draft-${id}-${profile.id}`
+      localStorage.removeItem(draftKey)
+    }
     submitAnswers.mutate(answers)
+  }
+
+  const handleSaveDraft = () => {
+    setIsSavingDraft(true)
+    if (id && profile?.id) {
+      const draftKey = `questionnaire-draft-${id}-${profile.id}`
+      const draftData = {
+        answers,
+        currentQuestionIndex,
+        lastSaved: new Date().toISOString()
+      }
+      
+      localStorage.setItem(draftKey, JSON.stringify(draftData))
+      
+      toast({
+        title: "Napredak spremljen",
+        description: "Možete nastaviti ispunjavanje upitnika kasnije."
+      })
+      
+      setTimeout(() => {
+        navigate('/dashboard')
+      }, 1500)
+    }
+    setIsSavingDraft(false)
   }
 
   const isProcessing = isSubmitting || isCalculating
@@ -385,7 +446,7 @@ export default function QuestionnaireForm() {
               {renderQuestionInput(currentQuestion)}
 
               {/* Navigation */}
-              <div className="flex justify-between pt-6">
+              <div className="flex justify-between items-center pt-6">
                 <Button
                   variant="outline"
                   onClick={goToPrevious}
@@ -395,20 +456,32 @@ export default function QuestionnaireForm() {
                   Prethodno
                 </Button>
 
-                {currentQuestionIndex === questionnaire.questions.length - 1 ? (
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={isProcessing}
-                    className="min-w-[120px]"
-                  >
-                    {isCalculating ? 'Analizira se...' : isSubmitting ? 'Šalje se...' : 'Završi'}
-                  </Button>
-                ) : (
-                  <Button onClick={goToNext}>
-                    Sljedeće
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {Object.keys(answers).length > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={handleSaveDraft}
+                      disabled={isSavingDraft}
+                    >
+                      {isSavingDraft ? 'Sprema se...' : 'Spremi i nastavi kasnije'}
+                    </Button>
+                  )}
+                  
+                  {currentQuestionIndex === questionnaire.questions.length - 1 ? (
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={isProcessing}
+                      className="min-w-[120px]"
+                    >
+                      {isCalculating ? 'Analizira se...' : isSubmitting ? 'Šalje se...' : 'Završi'}
+                    </Button>
+                  ) : (
+                    <Button onClick={goToNext}>
+                      Sljedeće
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

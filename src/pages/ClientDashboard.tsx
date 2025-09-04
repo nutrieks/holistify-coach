@@ -6,17 +6,19 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, MessageSquare, TrendingUp, CheckCircle, Apple, Dumbbell, Clock, Users, FileText, AlertCircle } from 'lucide-react';
+import { Calendar, MessageSquare, TrendingUp, CheckCircle, Apple, Dumbbell, Clock, Users, FileText, AlertCircle, ClipboardCheck, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingCard } from '@/components/LoadingCard';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { ClientNAQDashboard } from '@/components/naq/ClientNAQDashboard';
+import { useToast } from '@/hooks/use-toast';
 
 const ClientDashboard = () => {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const {
     todaysMeals,
     todaysWorkout,
@@ -31,11 +33,14 @@ const ClientDashboard = () => {
     toggleHabit,
   } = useClientDashboard();
 
-  // Check for pending questionnaires
+  // Check for pending questionnaires and NAQ status
   const { data: pendingQuestionnaire } = useQuery({
     queryKey: ['pending-questionnaire', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return null
+
+      // Check if questionnaire was skipped
+      const skippedQuestionnaires = JSON.parse(localStorage.getItem(`skipped-questionnaires-${profile.id}`) || '[]');
 
       // First get client record to see if they have an initial questionnaire
       const { data: clientData, error: clientError } = await supabase
@@ -45,6 +50,9 @@ const ClientDashboard = () => {
         .single()
 
       if (clientError || !clientData?.initial_questionnaire_id) return null
+
+      // Check if this questionnaire was skipped
+      if (skippedQuestionnaires.includes(clientData.initial_questionnaire_id)) return null
 
       // Check if they've already submitted it
       const { data: submission, error: submissionError } = await supabase
@@ -65,6 +73,65 @@ const ClientDashboard = () => {
     },
     enabled: !!profile?.id
   });
+
+  // Get all available questionnaires for the client
+  const { data: allQuestionnaires } = useQuery({
+    queryKey: ['client-questionnaires', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return []
+
+      // Get all questionnaires from the client's coach
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('coach_id')
+        .eq('client_id', profile.id)
+        .single()
+
+      if (!clientData?.coach_id) return []
+
+      const { data: questionnaires, error } = await supabase
+        .from('questionnaires')
+        .select('id, title, description, created_at')
+        .eq('coach_id', clientData.coach_id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      // Get submission status for each questionnaire
+      const questionnairesWithStatus = await Promise.all(
+        questionnaires.map(async (q) => {
+          const { data: submission } = await supabase
+            .from('client_submissions')
+            .select('id, created_at')
+            .eq('client_id', profile.id)
+            .eq('questionnaire_id', q.id)
+            .single()
+
+          return {
+            ...q,
+            completed: !!submission,
+            completedAt: submission?.created_at || null
+          }
+        })
+      )
+
+      return questionnairesWithStatus
+    },
+    enabled: !!profile?.id
+  });
+
+  const handleSkipQuestionnaire = (questionnaireId: string) => {
+    if (!profile?.id) return
+    
+    const skippedQuestionnaires = JSON.parse(localStorage.getItem(`skipped-questionnaires-${profile.id}`) || '[]');
+    skippedQuestionnaires.push(questionnaireId);
+    localStorage.setItem(`skipped-questionnaires-${profile.id}`, JSON.stringify(skippedQuestionnaires));
+    
+    toast({
+      title: "Upitnik odgođen",
+      description: "Možete ga ispuniti kasnije kroz 'Moji Upitnici' sekciju."
+    });
+  };
 
   // Calculate total calories from today's meals
   const totalCalories = todaysMeals?.reduce((sum, meal) => sum + (meal.calories || 0), 0) || 0;
@@ -139,14 +206,22 @@ const ClientDashboard = () => {
                   </p>
                 )}
               </div>
-              <Button 
-                size="sm" 
-                onClick={() => navigate(`/questionnaire/${pendingQuestionnaire.id}`)}
-                className="ml-4 shrink-0"
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Ispuni sada
-              </Button>
+              <div className="flex gap-2 ml-4 shrink-0">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleSkipQuestionnaire(pendingQuestionnaire.id)}
+                >
+                  Preskoči za sada
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={() => navigate(`/questionnaire/${pendingQuestionnaire.id}`)}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Ispuni sada
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -399,6 +474,62 @@ const ClientDashboard = () => {
           </CardContent>
         </Card>
 
+        {/* My Questionnaires Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Moji Upitnici</CardTitle>
+            <CardDescription>Dostupni upitnici i rezultati</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {allQuestionnaires && allQuestionnaires.length > 0 ? (
+              <div className="space-y-3">
+                {allQuestionnaires.map((questionnaire) => (
+                  <div key={questionnaire.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{questionnaire.title}</p>
+                      {questionnaire.description && (
+                        <p className="text-sm text-muted-foreground">{questionnaire.description}</p>
+                      )}
+                      {questionnaire.completed && questionnaire.completedAt && (
+                        <p className="text-xs text-green-600">
+                          Završeno {new Date(questionnaire.completedAt).toLocaleDateString('hr-HR')}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {questionnaire.completed ? (
+                        <div className="flex gap-2">
+                          <Badge variant="secondary">Završeno</Badge>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => navigate(`/questionnaire/${questionnaire.id}`)}
+                          >
+                            Ispuni ponovo
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button 
+                          size="sm"
+                          onClick={() => navigate(`/questionnaire/${questionnaire.id}`)}
+                        >
+                          <FileText className="mr-2 h-4 w-4" />
+                          Ispuni
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                <ClipboardCheck className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>Nema dostupnih upitnika</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* NAQ Dashboard Section */}
         {profile?.id && (
           <ClientNAQDashboard clientId={profile.id} />
@@ -410,7 +541,7 @@ const ClientDashboard = () => {
             <CardTitle>Brze akcije</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <Button 
                 variant="outline" 
                 className="h-20 flex flex-col items-center justify-center space-y-2"
@@ -442,6 +573,25 @@ const ClientDashboard = () => {
               >
                 <Users className="h-6 w-6" />
                 <span className="text-sm">Moj napredak</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col items-center justify-center space-y-2"
+                onClick={() => {
+                  const naqQuestionnaire = allQuestionnaires?.find(q => q.title.toLowerCase().includes('naq'));
+                  if (naqQuestionnaire) {
+                    navigate(`/questionnaire/${naqQuestionnaire.id}`);
+                  } else {
+                    toast({
+                      title: "NAQ nedostupan",
+                      description: "NAQ upitnik trenutno nije dostupan.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                <BarChart3 className="h-6 w-6" />
+                <span className="text-sm">NAQ Upitnik</span>
               </Button>
             </div>
           </CardContent>
