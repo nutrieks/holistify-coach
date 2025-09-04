@@ -578,13 +578,41 @@ const ClientDashboard = () => {
                 variant="outline" 
                 className="h-20 flex flex-col items-center justify-center space-y-2"
                 onClick={() => {
-                  const naqQuestionnaire = allQuestionnaires?.find(q => q.title.toLowerCase().includes('naq'));
+                  console.log('All questionnaires:', allQuestionnaires);
+                  console.log('Pending questionnaire:', pendingQuestionnaire);
+                  
+                  // First try to find NAQ questionnaire in allQuestionnaires
+                  let naqQuestionnaire = allQuestionnaires?.find(q => 
+                    q.title.toLowerCase().includes('naq') || 
+                    q.title.toLowerCase().startsWith('naq')
+                  );
+                  
+                  // If found, use it
                   if (naqQuestionnaire) {
                     navigate(`/questionnaire/${naqQuestionnaire.id}`);
+                    return;
+                  }
+                  
+                  // If not found in allQuestionnaires, check pendingQuestionnaire
+                  if (pendingQuestionnaire) {
+                    const pendingTitle = pendingQuestionnaire.title.toLowerCase();
+                    if (pendingTitle.includes('naq') || pendingTitle.startsWith('naq')) {
+                      navigate(`/questionnaire/${pendingQuestionnaire.id}`);
+                      return;
+                    }
+                  }
+                  
+                  // If still not found, use the first available questionnaire as fallback
+                  if (allQuestionnaires && allQuestionnaires.length > 0) {
+                    console.log('Using first available questionnaire as fallback:', allQuestionnaires[0]);
+                    navigate(`/questionnaire/${allQuestionnaires[0].id}`);
                   } else {
+                    console.log('No questionnaires found. Available questionnaires:', allQuestionnaires);
                     toast({
                       title: "NAQ nedostupan",
-                      description: "NAQ upitnik trenutno nije dostupan.",
+                      description: allQuestionnaires?.length === 0 
+                        ? "Nema dostupnih upitnika. Kontaktirajte trenera." 
+                        : "NAQ upitnik nije pronađen među dostupnim upitnicima.",
                       variant: "destructive"
                     });
                   }
