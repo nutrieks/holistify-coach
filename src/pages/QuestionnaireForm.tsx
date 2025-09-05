@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useNAQScoring } from "@/hooks/useNAQScoring"
 import { useDraftSaving } from "@/hooks/useDraftSaving"
+import { SeedNAQButton } from "@/components/SeedNAQButton"
 
 interface Question {
   id: string
@@ -459,6 +460,11 @@ export default function QuestionnaireForm() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Temporary Seed Button - Remove after testing */}
+      <div className="fixed top-4 right-4 z-50">
+        <SeedNAQButton />
+      </div>
+      
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
