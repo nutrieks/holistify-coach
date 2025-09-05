@@ -1,20 +1,6 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://deno.land/x/supabase@2.39.3/mod.ts";
-
-// Complete NAQ Questions - first 70 questions as reference (full 321 would be included in production)
-const NAQ_QUESTIONS = [
-  { id: 1, text: "Alkohol", sectionName: "Analiza prehrane", scoringCategory: "nutrition", scoringWeight: 1, questionType: "scale_0_3" },
-  { id: 2, text: "Umjetni zaslađivači", sectionName: "Analiza prehrane", scoringCategory: "nutrition", scoringWeight: 1, questionType: "scale_0_3" },
-  { id: 3, text: "Slatkiši, deserti, rafinirani šećer", sectionName: "Analiza prehrane", scoringCategory: "nutrition", scoringWeight: 1, questionType: "scale_0_3" },
-  { id: 4, text: "Gazirana pića", sectionName: "Analiza prehrane", scoringCategory: "nutrition", scoringWeight: 1, questionType: "scale_0_3" },
-  { id: 5, text: "Duhan za žvakanje", sectionName: "Analiza prehrane", scoringCategory: "nutrition", scoringWeight: 1, questionType: "scale_0_3" },
-  { id: 6, text: "Cigarete", sectionName: "Analiza prehrane", scoringCategory: "nutrition", scoringWeight: 1, questionType: "scale_0_3" },
-  { id: 7, text: "Cigare/lule", sectionName: "Analiza prehrane", scoringCategory: "nutrition", scoringWeight: 1, questionType: "scale_0_3" },
-  { id: 8, text: "Kofeinska pića", sectionName: "Analiza prehrane", scoringCategory: "nutrition", scoringWeight: 1, questionType: "scale_0_3" },
-  { id: 9, text: "Brza hrana", sectionName: "Analiza prehrane", scoringCategory: "nutrition", scoringWeight: 1, questionType: "scale_0_3" },
-  { id: 10, text: "Pržena hrana", sectionName: "Analiza prehrane", scoringCategory: "nutrition", scoringWeight: 1, questionType: "scale_0_3" },
-  // ... continuing with remaining questions would be here in production
-];
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { NAQ_QUESTIONS } from "./naq-data.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,8 +73,8 @@ serve(async (req) => {
       };
     });
 
-    // Insert questions in batches of 50
-    const batchSize = 50;
+    // Insert questions in batches of 100 to handle large dataset efficiently
+    const batchSize = 100;
     let totalInserted = 0;
 
     for (let i = 0; i < questions.length; i += batchSize) {

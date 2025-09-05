@@ -652,6 +652,36 @@ export type Database = {
           },
         ]
       }
+      questionnaire_drafts: {
+        Row: {
+          answers: Json | null
+          client_id: string
+          created_at: string
+          current_question_index: number | null
+          id: string
+          questionnaire_id: string
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json | null
+          client_id: string
+          created_at?: string
+          current_question_index?: number | null
+          id?: string
+          questionnaire_id: string
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json | null
+          client_id?: string
+          created_at?: string
+          current_question_index?: number | null
+          id?: string
+          questionnaire_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       questionnaire_questions: {
         Row: {
           created_at: string

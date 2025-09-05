@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useNAQScoring } from "@/hooks/useNAQScoring"
+import { useDraftSaving } from "@/hooks/useDraftSaving"
 
 interface Question {
   id: string
@@ -45,45 +46,57 @@ export default function QuestionnaireForm() {
   const { profile } = useAuth()
   const { toast } = useToast()
   const { calculateAndStoreScores, isCalculating } = useNAQScoring()
+  const {
+    draftData,
+    isLoadingDraft,
+    autoSave,
+    saveDraft,
+    clearDraft,
+    isSaving,
+    lastSaved,
+  } = useDraftSaving(id || '', profile?.id || '')
 
   // Enhanced state for better UX
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, any>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSavingDraft, setIsSavingDraft] = useState(false)
   const [currentSection, setCurrentSection] = useState('')
   const [sectionsProgress, setSectionsProgress] = useState<Record<string, number>>({})
 
-  // Load draft answers on component mount
+  // Load draft data when available
   useEffect(() => {
-    if (id && profile?.id) {
-      const draftKey = `questionnaire-draft-${id}-${profile.id}`
-      const savedDraft = localStorage.getItem(draftKey)
-      if (savedDraft) {
-        try {
-          const draftData = JSON.parse(savedDraft)
-          setAnswers(draftData.answers || {})
-          setCurrentQuestionIndex(draftData.currentQuestionIndex || 0)
-        } catch (error) {
-          console.error('Error loading draft:', error)
-        }
-      }
+    if (draftData && !isLoadingDraft) {
+      // Merge server draft with any existing local data
+      const localStorageData = localStorage.getItem(`questionnaire-draft-${id}-${profile?.id}`)
+      const localAnswers = localStorageData 
+        ? (JSON.parse(localStorageData)?.answers || {})
+        : {}
+      
+      // Server data takes priority - ensure it's an object
+      const serverAnswers = (draftData.answers && typeof draftData.answers === 'object') 
+        ? draftData.answers as Record<string, any>
+        : {}
+      
+      const mergedAnswers = { ...localAnswers, ...serverAnswers }
+      
+      setAnswers(mergedAnswers)
+      setCurrentQuestionIndex(draftData.current_question_index || 0)
+      
+      // Clear local storage since we now have server data
+      localStorage.removeItem(`questionnaire-draft-${id}-${profile?.id}`)
     }
-  }, [id, profile?.id])
+  }, [draftData, isLoadingDraft, id, profile?.id])
 
-  // Save draft automatically when answers change
+  // Auto-save functionality with debouncing
   useEffect(() => {
-    if (Object.keys(answers).length === 0) return
+    if (!profile?.id || !id || Object.keys(answers).length === 0) return
     
-    const draftKey = `questionnaire-draft-${id}-${profile?.id}`
-    const draftData = {
-      answers,
-      currentQuestionIndex,
-      lastSaved: new Date().toISOString()
-    }
-    
-    localStorage.setItem(draftKey, JSON.stringify(draftData))
-  }, [answers, currentQuestionIndex, id, profile?.id])
+    const timeoutId = setTimeout(() => {
+      autoSave(answers, currentQuestionIndex)
+    }, 5000) // Auto-save after 5 seconds of inactivity
+
+    return () => clearTimeout(timeoutId)
+  }, [answers, currentQuestionIndex, autoSave, profile?.id, id])
 
   // Fetch questionnaire data
   const { data: questionnaire, isLoading, error } = useQuery({
@@ -240,43 +253,29 @@ export default function QuestionnaireForm() {
     }
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitting(true)
-    // Clear draft when submitting
-    if (id && profile?.id) {
-      const draftKey = `questionnaire-draft-${id}-${profile.id}`
-      localStorage.removeItem(draftKey)
+    try {
+      // Clear draft when submitting
+      await clearDraft()
+      
+      submitAnswers.mutate(answers)
+    } catch (error) {
+      console.error('Error clearing draft:', error)
+      // Continue with submission even if draft clearing fails
+      submitAnswers.mutate(answers)
     }
-    submitAnswers.mutate(answers)
   }
 
-  const handleSaveDraft = () => {
-    setIsSavingDraft(true)
+  const handleSaveDraft = async () => {
     if (id && profile?.id) {
-      const draftKey = `questionnaire-draft-${id}-${profile.id}`
-      const draftData = {
-        answers,
-        currentQuestionIndex,
-        lastSaved: new Date().toISOString()
-      }
-      
-      localStorage.setItem(draftKey, JSON.stringify(draftData))
-      
-      toast({
-        title: "Napredak spremljen",
-        description: "Možete nastaviti ispunjavanje upitnika kasnije."
-      })
-      
-      setTimeout(() => {
-        navigate('/dashboard')
-      }, 1500)
+      await saveDraft(answers, currentQuestionIndex)
     }
-    setIsSavingDraft(false)
   }
 
   const isProcessing = isSubmitting || isCalculating
 
-  if (isLoading) {
+  if (isLoading || isLoadingDraft) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-lg">Učitavam upitnik...</div>
@@ -484,6 +483,11 @@ export default function QuestionnaireForm() {
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">
               Pitanje {currentQuestionIndex + 1} od {questionnaire.questions.length}
+              {lastSaved && (
+                <span className="ml-4 text-xs text-green-600">
+                  • Zadnje spremljeno: {lastSaved.toLocaleTimeString()}
+                </span>
+              )}
             </span>
             <span className="text-sm text-muted-foreground">
               {Math.round(progress)}% završeno
@@ -538,9 +542,9 @@ export default function QuestionnaireForm() {
                     <Button
                       variant="outline"
                       onClick={handleSaveDraft}
-                      disabled={isSavingDraft}
+                      disabled={isSaving}
                     >
-                      {isSavingDraft ? 'Sprema se...' : 'Spremi i nastavi kasnije'}
+                      {isSaving ? 'Sprema se...' : 'Spremi i nastavi kasnije'}
                     </Button>
                   )}
                   
