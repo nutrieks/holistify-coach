@@ -326,7 +326,19 @@ export default function QuestionnaireForm() {
 
       case 'multiple_choice':
         if (!question.options) return null
-        const options = JSON.parse(question.options)
+        
+        // Handle both string and array formats for options
+        let options: string[] = []
+        if (typeof question.options === 'string') {
+          try {
+            options = JSON.parse(question.options)
+          } catch {
+            options = [question.options]
+          }
+        } else if (Array.isArray(question.options)) {
+          options = question.options
+        }
+        
         return (
           <div className="space-y-3">
             {options.map((option: string, index: number) => (
@@ -349,7 +361,19 @@ export default function QuestionnaireForm() {
 
       case 'checkbox':
         if (!question.options) return null
-        const checkboxOptions = JSON.parse(question.options)
+        
+        // Handle both string and array formats for options
+        let checkboxOptions: string[] = []
+        if (typeof question.options === 'string') {
+          try {
+            checkboxOptions = JSON.parse(question.options)
+          } catch {
+            checkboxOptions = [question.options]
+          }
+        } else if (Array.isArray(question.options)) {
+          checkboxOptions = question.options
+        }
+        
         const selectedOptions = currentAnswer || []
         return (
           <div className="space-y-3">
