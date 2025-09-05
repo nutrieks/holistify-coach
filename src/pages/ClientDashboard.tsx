@@ -49,24 +49,63 @@ const ClientDashboard = () => {
         .eq('client_id', profile.id)
         .single()
 
-      if (clientError || !clientData?.initial_questionnaire_id) return null
+      // If client has an assigned initial questionnaire, handle it normally
+      if (clientData?.initial_questionnaire_id) {
+        // Check if this questionnaire was skipped
+        if (skippedQuestionnaires.includes(clientData.initial_questionnaire_id)) return null
 
-      // Check if this questionnaire was skipped
-      if (skippedQuestionnaires.includes(clientData.initial_questionnaire_id)) return null
+        // Check if they've already submitted it
+        const { data: submission, error: submissionError } = await supabase
+          .from('client_submissions')
+          .select('id')
+          .eq('client_id', profile.id)
+          .eq('questionnaire_id', clientData.initial_questionnaire_id)
+          .single()
 
-      // Check if they've already submitted it
-      const { data: submission, error: submissionError } = await supabase
+        if (submissionError && submissionError.code !== 'PGRST116') throw submissionError
+        
+        // If no submission exists, return the questionnaire
+        if (!submission) {
+          return clientData.questionnaires
+        }
+        
+        return null
+      }
+
+      // If no client record or no initial questionnaire, try to find a default NAQ
+      console.log('No initial questionnaire assigned, checking for default NAQ...')
+      
+      const { data: defaultNAQ, error: naqError } = await supabase
+        .from('questionnaires')
+        .select('id, title, description')
+        .eq('is_default_questionnaire', true)
+        .ilike('title', '%NAQ%')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (naqError || !defaultNAQ) {
+        console.log('No default NAQ found')
+        return null
+      }
+
+      // Check if this default NAQ was skipped
+      if (skippedQuestionnaires.includes(defaultNAQ.id)) return null
+
+      // Check if they've already submitted the default NAQ
+      const { data: naqSubmission, error: naqSubmissionError } = await supabase
         .from('client_submissions')
         .select('id')
         .eq('client_id', profile.id)
-        .eq('questionnaire_id', clientData.initial_questionnaire_id)
+        .eq('questionnaire_id', defaultNAQ.id)
         .single()
 
-      if (submissionError && submissionError.code !== 'PGRST116') throw submissionError
+      if (naqSubmissionError && naqSubmissionError.code !== 'PGRST116') throw naqSubmissionError
       
-      // If no submission exists, return the questionnaire
-      if (!submission) {
-        return clientData.questionnaires
+      // If no submission exists, return the default NAQ
+      if (!naqSubmission) {
+        console.log('Found default NAQ for user:', defaultNAQ)
+        return defaultNAQ
       }
       
       return null
@@ -80,22 +119,41 @@ const ClientDashboard = () => {
     queryFn: async () => {
       if (!profile?.id) return []
 
-      // Get all questionnaires from the client's coach
+      let questionnaires: any[] = []
+
+      // First try to get questionnaires from the client's coach
       const { data: clientData } = await supabase
         .from('clients')
         .select('coach_id')
         .eq('client_id', profile.id)
         .single()
 
-      if (!clientData?.coach_id) return []
+      if (clientData?.coach_id) {
+        const { data: coachQuestionnaires, error } = await supabase
+          .from('questionnaires')
+          .select('id, title, description, created_at')
+          .eq('coach_id', clientData.coach_id)
+          .order('created_at', { ascending: false })
 
-      const { data: questionnaires, error } = await supabase
-        .from('questionnaires')
-        .select('id, title, description, created_at')
-        .eq('coach_id', clientData.coach_id)
-        .order('created_at', { ascending: false })
+        if (!error && coachQuestionnaires) {
+          questionnaires = coachQuestionnaires
+        }
+      }
 
-      if (error) throw error
+      // If no coach questionnaires found, get default questionnaires as fallback
+      if (questionnaires.length === 0) {
+        console.log('No coach questionnaires found, fetching default questionnaires...')
+        const { data: defaultQuestionnaires, error: defaultError } = await supabase
+          .from('questionnaires')
+          .select('id, title, description, created_at')
+          .eq('is_default_questionnaire', true)
+          .order('created_at', { ascending: false })
+
+        if (!defaultError && defaultQuestionnaires) {
+          questionnaires = defaultQuestionnaires
+          console.log('Found default questionnaires:', defaultQuestionnaires)
+        }
+      }
 
       // Get submission status for each questionnaire
       const questionnairesWithStatus = await Promise.all(
@@ -611,7 +669,7 @@ const ClientDashboard = () => {
                     toast({
                       title: "NAQ nedostupan",
                       description: allQuestionnaires?.length === 0 
-                        ? "Nema dostupnih upitnika. Kontaktirajte trenera." 
+                        ? "Nema dostupnih upitnika. NAQ upitnik još nije kreiran u sustavu." 
                         : "NAQ upitnik nije pronađen među dostupnim upitnicima.",
                       variant: "destructive"
                     });
