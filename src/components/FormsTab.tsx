@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client"
 import { NAQScoringResults } from "@/components/naq/NAQScoringResults"
 import { NAQAnalytics } from "@/components/naq/NAQAnalytics"
 import { useNAQResults, useClientNAQHistory } from "@/hooks/useNAQScoring"
-import { FileText, TrendingUp, Calendar, AlertTriangle } from "lucide-react"
+import { useSeedNAQQuestions } from "@/hooks/useSeedNAQQuestions"
+import { FileText, TrendingUp, Calendar, AlertTriangle, Plus } from "lucide-react"
 import { format } from "date-fns"
 
 interface FormsTabProps {
@@ -18,6 +19,7 @@ interface FormsTabProps {
 
 export function FormsTab({ clientId, clientName }: FormsTabProps) {
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null)
+  const seedNAQMutation = useSeedNAQQuestions()
 
   // Get client's submission history
   const { data: submissions, isLoading: submissionsLoading } = useQuery({
@@ -60,6 +62,12 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
 
   const latestNAQSubmission = naqSubmissions[0]
 
+  const handleSeedNAQQuestions = async () => {
+    if (latestNAQSubmission?.questionnaires?.id) {
+      await seedNAQMutation.mutateAsync(latestNAQSubmission.questionnaires.id);
+    }
+  };
+
   if (submissionsLoading) {
     return (
       <Card>
@@ -98,12 +106,23 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
                         Ispunjeno: {format(new Date(latestNAQSubmission.created_at), 'dd.MM.yyyy HH:mm')}
                       </p>
                     </div>
-                    <Button 
-                      onClick={() => setSelectedSubmissionId(latestNAQSubmission.id)}
-                      variant={selectedSubmissionId === latestNAQSubmission.id ? "default" : "outline"}
-                    >
-                      Prikaži rezultate
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={handleSeedNAQQuestions}
+                        disabled={seedNAQMutation.isPending}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {seedNAQMutation.isPending ? 'Dodajem...' : 'Dopuni pitanja'}
+                      </Button>
+                      <Button 
+                        onClick={() => setSelectedSubmissionId(latestNAQSubmission.id)}
+                        variant={selectedSubmissionId === latestNAQSubmission.id ? "default" : "outline"}
+                      >
+                        Prikaži rezultate
+                      </Button>
+                    </div>
                   </div>
 
                   {selectedSubmissionId === latestNAQSubmission.id && (
