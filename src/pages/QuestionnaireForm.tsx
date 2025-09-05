@@ -22,6 +22,9 @@ interface Question {
   question_type: string
   question_order: number | null
   options?: string | null
+  section_name?: string | null
+  scoring_category?: string | null
+  scoring_weight?: number | null
 }
 
 interface QuestionnaireData {
@@ -43,10 +46,13 @@ export default function QuestionnaireForm() {
   const { toast } = useToast()
   const { calculateAndStoreScores, isCalculating } = useNAQScoring()
 
+  // Enhanced state for better UX
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, any>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSavingDraft, setIsSavingDraft] = useState(false)
+  const [currentSection, setCurrentSection] = useState('')
+  const [sectionsProgress, setSectionsProgress] = useState<Record<string, number>>({})
 
   // Load draft answers on component mount
   useEffect(() => {
@@ -65,7 +71,7 @@ export default function QuestionnaireForm() {
     }
   }, [id, profile?.id])
 
-  // Save draft automatically every 30 seconds
+  // Save draft automatically when answers change
   useEffect(() => {
     if (Object.keys(answers).length === 0) return
     
@@ -108,6 +114,39 @@ export default function QuestionnaireForm() {
     },
     enabled: !!id
   })
+
+  // Track current section and calculate sections progress
+  useEffect(() => {
+    if (questionnaire?.questions && questionnaire.questions.length > 0) {
+      const currentQuestion = questionnaire.questions[currentQuestionIndex]
+      if (currentQuestion?.section_name) {
+        setCurrentSection(currentQuestion.section_name)
+      }
+
+      // Calculate progress for each section
+      const sections: Record<string, { total: number; answered: number }> = {}
+      
+      questionnaire.questions.forEach((q) => {
+        const sectionName = q.section_name || 'Općenito'
+        if (!sections[sectionName]) {
+          sections[sectionName] = { total: 0, answered: 0 }
+        }
+        sections[sectionName].total++
+        
+        if (answers[q.id] !== undefined && answers[q.id] !== null && answers[q.id] !== '') {
+          sections[sectionName].answered++
+        }
+      })
+
+      const progress: Record<string, number> = {}
+      Object.keys(sections).forEach(sectionName => {
+        const section = sections[sectionName]
+        progress[sectionName] = section.total > 0 ? (section.answered / section.total) * 100 : 0
+      })
+
+      setSectionsProgress(progress)
+    }
+  }, [questionnaire, currentQuestionIndex, answers])
 
   // Check if already submitted
   const { data: existingSubmission } = useQuery({
@@ -440,7 +479,7 @@ export default function QuestionnaireForm() {
       </header>
 
       <div className="container mx-auto px-4 py-6">
-        {/* Progress */}
+        {/* Current Section and Overall Progress */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">
@@ -450,7 +489,21 @@ export default function QuestionnaireForm() {
               {Math.round(progress)}% završeno
             </span>
           </div>
-          <Progress value={progress} className="w-full" />
+          <Progress value={progress} className="w-full mb-4" />
+          
+          {/* Section Progress */}
+          {currentSection && (
+            <div className="mb-4">
+              <Badge variant="secondary" className="mb-2">
+                Sekcija: {currentSection}
+              </Badge>
+              {sectionsProgress[currentSection] !== undefined && (
+                <div className="text-sm text-muted-foreground">
+                  Napredak u sekciji: {Math.round(sectionsProgress[currentSection])}%
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Question Card */}
