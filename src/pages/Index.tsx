@@ -4,9 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heart, Users, TrendingUp, Shield } from 'lucide-react';
-
 const Index = () => {
-  const { user, profile } = useAuth();
+  const {
+    user,
+    profile
+  } = useAuth();
   const navigate = useNavigate();
 
   // Redirect authenticated users to their dashboard
@@ -19,32 +21,24 @@ const Index = () => {
       }
     }
   }, [user, profile, navigate]);
-
-  const features = [
-    {
-      icon: Heart,
-      title: "Holistički pristup",
-      description: "Sveobuhvatan pristup zdravlju koji uključuje prehranu, trening i mentalno zdravlje"
-    },
-    {
-      icon: Users,
-      title: "Personalizirano praćenje",
-      description: "Individualni planovi prehrane i treninga prilagođeni vašim potrebama"
-    },
-    {
-      icon: TrendingUp,
-      title: "Napredak u realnom vremenu",
-      description: "Pratite svoj napredak kroz detaljne analize i grafove"
-    },
-    {
-      icon: Shield,
-      title: "Sigurno i privatno",
-      description: "Vaši podaci su sigurni i privatni sa najnovijim sigurnosnim mjerama"
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+  const features = [{
+    icon: Heart,
+    title: "Holistički pristup",
+    description: "Sveobuhvatan pristup zdravlju koji uključuje prehranu, trening i mentalno zdravlje"
+  }, {
+    icon: Users,
+    title: "Personalizirano praćenje",
+    description: "Individualni planovi prehrane i treninga prilagođeni vašim potrebama"
+  }, {
+    icon: TrendingUp,
+    title: "Napredak u realnom vremenu",
+    description: "Pratite svoj napredak kroz detaljne analize i grafove"
+  }, {
+    icon: Shield,
+    title: "Sigurno i privatno",
+    description: "Vaši podaci su sigurni i privatni sa najnovijim sigurnosnim mjerama"
+  }];
+  return <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="max-w-3xl mx-auto">
@@ -60,9 +54,7 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="text-lg px-8 py-6" onClick={() => navigate('/auth')}>
-              Počnite odmah
-            </Button>
+            <Button size="lg" className="text-lg px-8 py-6" onClick={() => navigate('/auth')}>Započnite odmah</Button>
             <Button size="lg" variant="outline" className="text-lg px-8 py-6" onClick={() => navigate('/auth')}>
               Saznajte više
             </Button>
@@ -81,9 +73,8 @@ const Index = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <Card key={index} className="text-center">
+          const Icon = feature.icon;
+          return <Card key={index} className="text-center">
                 <CardHeader>
                   <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                     <Icon className="h-6 w-6 text-primary" />
@@ -95,9 +86,8 @@ const Index = () => {
                     {feature.description}
                   </CardDescription>
                 </CardContent>
-              </Card>
-            );
-          })}
+              </Card>;
+        })}
         </div>
       </div>
 
@@ -122,8 +112,6 @@ const Index = () => {
           <p>&copy; 2024 Holistic Health Coach. Sva prava zadržana.</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
