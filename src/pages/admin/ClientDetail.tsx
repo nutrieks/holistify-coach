@@ -19,6 +19,9 @@ import { ContractStatusCard } from "@/components/ContractStatusCard"
 import { FormsTab } from "@/components/FormsTab"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import AnthropometricDataCard from "@/components/client/AnthropometricDataCard"
+import AnthropometryTab from "@/components/client/AnthropometryTab"
+import EnergyCalculationTab from "@/components/client/EnergyCalculationTab"
+import { ClientNAQDashboard } from "@/components/naq/ClientNAQDashboard"
 
 interface ClientProfile {
   id: string
@@ -117,6 +120,18 @@ export default function ClientDetail() {
     )
   }
 
+  const calculateAge = (dateOfBirth: string | null): number | null => {
+    if (!dateOfBirth) return null;
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
   if (loading) {
     return (
       <AdminLayout>
@@ -189,14 +204,17 @@ export default function ClientDetail() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-11 overflow-x-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="anthropometry">Antropometrija</TabsTrigger>
+            <TabsTrigger value="energy">Energija</TabsTrigger>
+            <TabsTrigger value="progress">Napredak</TabsTrigger>
+            <TabsTrigger value="diagnostics">NAQ</TabsTrigger>
+            <TabsTrigger value="training">Trening</TabsTrigger>
+            <TabsTrigger value="nutrition">Prehrana</TabsTrigger>
             <TabsTrigger value="checkins">Check Ins</TabsTrigger>
-            <TabsTrigger value="training">Training</TabsTrigger>
-            <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
-            <TabsTrigger value="forms">Forms</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="forms">Obrasci</TabsTrigger>
+            <TabsTrigger value="notes">Bilješke</TabsTrigger>
             <TabsTrigger value="chat">Chat</TabsTrigger>
           </TabsList>
 
@@ -339,6 +357,20 @@ export default function ClientDetail() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="anthropometry">
+            <AnthropometryTab data={anthropometricData} />
+          </TabsContent>
+
+          <TabsContent value="energy">
+            <EnergyCalculationTab
+              clientGender={client.gender}
+              latestWeight={anthropometricData[0]?.weight || null}
+              latestHeight={anthropometricData[0]?.height || null}
+              latestLBM={anthropometricData[0]?.lean_body_mass || null}
+              clientAge={calculateAge(client.date_of_birth)}
+            />
+          </TabsContent>
+
           <TabsContent value="progress">
             <Card>
               <CardHeader>
@@ -346,6 +378,17 @@ export default function ClientDetail() {
               </CardHeader>
               <CardContent>
                 <ProgressTab clientId={id!} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="diagnostics">
+            <Card>
+              <CardHeader>
+                <CardTitle>Nutritivna Dijagnostika (NAQ)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ClientNAQDashboard clientId={id!} />
               </CardContent>
             </Card>
           </TabsContent>
