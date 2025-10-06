@@ -126,11 +126,11 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
       const { error: clientError } = await supabase
         .from('clients')
         .insert({
-          client_id: authData.user.id,
-          coach_id: profile?.id,
-          status: 'pending',
-          start_date: setStartDate ? new Date().toISOString().split('T')[0] : null,
-          initial_questionnaire_id: finalQuestionnaireId
+          user_id: authData.user.id,
+          full_name: clientName,
+          email: clientEmail,
+          contract_start_date: setStartDate ? new Date().toISOString().split('T')[0] : null,
+          contract_end_date: setEndDate ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null
         })
 
       if (clientError) throw clientError

@@ -14,11 +14,10 @@ import { Dumbbell, Clock, Calendar, Search, Filter, Eye, ChevronDown, ChevronUp 
 
 interface TrainingPlan {
   id: string
-  plan_name: string
+  name: string
   start_date: string | null
   end_date: string | null
   created_at: string
-  coach_id: string
   client_id: string | null
 }
 
@@ -75,7 +74,6 @@ export function EnhancedAssignTrainingPlanModal({
       const { data, error } = await supabase
         .from('training_plans')
         .select('*')
-        .eq('coach_id', user.id)
         .is('client_id', null)
         .order('created_at', { ascending: false })
 
@@ -104,21 +102,19 @@ export function EnhancedAssignTrainingPlanModal({
     try {
       const { data, error } = await supabase
         .from('workout_sessions')
-        .select(`
-          *,
-          workout_exercises (
-            *,
-            exercise:exercise_database (
-              name,
-              muscle_group
-            )
-          )
-        `)
+        .select('*')
         .eq('training_plan_id', planId)
         .order('day_of_week')
 
       if (error) throw error
-      setPreviewSessions(data || [])
+      
+      // Parse the exercises JSONB field since there's no workout_exercises table
+      const sessionsWithExercises = (data || []).map(session => ({
+        ...session,
+        workout_exercises: session.exercises ? JSON.parse(JSON.stringify(session.exercises)) : []
+      }))
+      
+      setPreviewSessions(sessionsWithExercises)
     } catch (error: any) {
       toast({
         title: "Greška",
@@ -172,7 +168,7 @@ export function EnhancedAssignTrainingPlanModal({
   // Filter and search logic
   useEffect(() => {
     let filtered = plans.filter(plan =>
-      plan.plan_name.toLowerCase().includes(searchTerm.toLowerCase())
+      plan.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
     // Sort
@@ -180,7 +176,7 @@ export function EnhancedAssignTrainingPlanModal({
       if (sortBy === "created_at") {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       } else if (sortBy === "name") {
-        return a.plan_name.localeCompare(b.plan_name)
+        return a.name.localeCompare(b.name)
       }
       return 0
     })
@@ -212,7 +208,7 @@ export function EnhancedAssignTrainingPlanModal({
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="plans">Planovi</TabsTrigger>
             <TabsTrigger value="preview" disabled={!previewPlan}>
-              Pregled {previewPlan && `(${plans.find(p => p.id === previewPlan)?.plan_name})`}
+              Pregled {previewPlan && `(${plans.find(p => p.id === previewPlan)?.name})`}
             </TabsTrigger>
           </TabsList>
 
@@ -261,7 +257,7 @@ export function EnhancedAssignTrainingPlanModal({
                     <Card key={plan.id} className="cursor-pointer hover:shadow-md transition-shadow">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{plan.plan_name}</CardTitle>
+                          <CardTitle className="text-lg">{plan.name}</CardTitle>
                           <Badge variant="outline">
                             <Calendar className="h-3 w-3 mr-1" />
                             {new Date(plan.created_at).toLocaleDateString('hr-HR')}

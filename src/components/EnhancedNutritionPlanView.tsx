@@ -10,8 +10,8 @@ import { Apple, ChevronDown, ChevronUp, Calendar, Trash2, RotateCcw, Download, C
 
 interface NutritionPlan {
   id: string
-  plan_name: string
-  date: string
+  name: string
+  start_date: string | null
   created_at: string
 }
 
@@ -25,7 +25,7 @@ interface MealPlanEntry {
     calories: number | null
     protein: number | null
     carbs: number | null
-    fat: number | null
+    fats: number | null
   } | null
   recipe: {
     name: string
@@ -81,7 +81,7 @@ export function EnhancedNutritionPlanView({ clientId, onPlanRemoved }: EnhancedN
             calories,
             protein,
             carbs,
-            fat
+            fats
           ),
           recipe:recipes (
             name
@@ -142,10 +142,9 @@ export function EnhancedNutritionPlanView({ clientId, onPlanRemoved }: EnhancedN
       const { data: newPlan, error: planError } = await supabase
         .from('meal_plans')
         .insert({
-          plan_name: `${plan.plan_name} (Kopija)`,
-          coach_id: (await supabase.auth.getUser()).data.user?.id,
+          name: `${plan.name} (Kopija)`,
           client_id: null,
-          date: new Date().toISOString().split('T')[0]
+          start_date: new Date().toISOString().split('T')[0]
         })
         .select()
         .single()
@@ -206,7 +205,7 @@ export function EnhancedNutritionPlanView({ clientId, onPlanRemoved }: EnhancedN
         totalCalories += (entry.food.calories || 0) * multiplier
         totalProtein += (entry.food.protein || 0) * multiplier
         totalCarbs += (entry.food.carbs || 0) * multiplier
-        totalFat += (entry.food.fat || 0) * multiplier
+        totalFat += (entry.food.fats || 0) * multiplier
       }
     })
 
@@ -279,13 +278,13 @@ export function EnhancedNutritionPlanView({ clientId, onPlanRemoved }: EnhancedN
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Apple className="h-5 w-5" />
-                {plan.plan_name}
+                {plan.name}
               </CardTitle>
               <div className="flex items-center gap-4 mt-2">
                 <Badge variant="default">Aktivan</Badge>
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  Dodijeljen {new Date(plan.date).toLocaleDateString('hr-HR')}
+                  Dodijeljen {plan.start_date ? new Date(plan.start_date).toLocaleDateString('hr-HR') : 'N/A'}
                 </div>
               </div>
             </div>

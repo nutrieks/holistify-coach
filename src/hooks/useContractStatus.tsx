@@ -8,8 +8,8 @@ export function useContractStatus(clientId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('start_date, end_date, contract_duration_months, contract_type, status')
-        .eq('client_id', clientId)
+        .select('contract_start_date, contract_end_date')
+        .eq('user_id', clientId)
         .single()
 
       if (error) throw error
@@ -18,11 +18,12 @@ export function useContractStatus(clientId: string) {
     enabled: !!clientId
   })
 
-  const contractStatus: ContractStatus | null = contractData 
+  // Simplified - just return basic contract info
+  const contractStatus: ContractStatus | null = contractData && contractData.contract_start_date
     ? calculateContractProgress(
-        contractData.start_date,
-        contractData.contract_duration_months,
-        contractData.end_date
+        contractData.contract_start_date,
+        null,
+        contractData.contract_end_date
       )
     : null
 
@@ -40,17 +41,11 @@ export function useAllContractsStatus() {
       const { data, error } = await supabase
         .from('clients')
         .select(`
-          client_id,
-          start_date,
-          end_date,
-          contract_duration_months,
-          contract_type,
-          status,
-          client_profile:profiles!clients_client_id_fkey (
-            full_name
-          )
+          user_id,
+          contract_start_date,
+          contract_end_date,
+          full_name
         `)
-        .eq('status', 'active')
 
       if (error) throw error
       return data
@@ -59,15 +54,15 @@ export function useAllContractsStatus() {
 
   const contractsWithStatus = contractsData?.map(contract => ({
     ...contract,
-    contractStatus: calculateContractProgress(
-      contract.start_date,
-      contract.contract_duration_months,
-      contract.end_date
-    )
+    contractStatus: contract.contract_start_date ? calculateContractProgress(
+      contract.contract_start_date,
+      null,
+      contract.contract_end_date
+    ) : null
   }))
 
   const expiringContracts = contractsWithStatus?.filter(
-    contract => contract.contractStatus.status === 'warning' || contract.contractStatus.status === 'critical'
+    contract => contract.contractStatus && (contract.contractStatus.status === 'warning' || contract.contractStatus.status === 'critical')
   )
 
   return {

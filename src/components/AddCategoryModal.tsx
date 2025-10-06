@@ -28,7 +28,7 @@ interface FoodCategory {
   avg_calories: number | null
   avg_protein: number | null
   avg_carbs: number | null
-  avg_fat: number | null
+  avg_fats: number | null
 }
 
 export function AddCategoryModal({ open, onOpenChange, onAddCategory }: AddCategoryModalProps) {
@@ -48,7 +48,6 @@ export function AddCategoryModal({ open, onOpenChange, onAddCategory }: AddCateg
       const { data, error } = await supabase
         .from('food_categories')
         .select('*')
-        .eq('coach_id', user.id)
         .order('category_name')
 
       if (error) throw error
@@ -177,7 +176,7 @@ export function AddCategoryModal({ open, onOpenChange, onAddCategory }: AddCateg
                     <span>{selectedCategoryData.avg_calories} kcal</span>
                     <span>P: {selectedCategoryData.avg_protein || 0}g</span>
                     <span>C: {selectedCategoryData.avg_carbs || 0}g</span>
-                    <span>F: {selectedCategoryData.avg_fat || 0}g</span>
+                    <span>F: {selectedCategoryData.avg_fats || 0}g</span>
                   </div>
                 </div>
               )}

@@ -10,11 +10,10 @@ import { Dumbbell, Clock, Calendar } from "lucide-react"
 
 interface TrainingPlan {
   id: string
-  plan_name: string
+  name: string
   start_date: string | null
   end_date: string | null
   created_at: string
-  coach_id: string
   client_id: string | null
 }
 
@@ -42,10 +41,9 @@ export function AssignTrainingPlanModal({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('training_plans')
         .select('*')
-        .eq('coach_id', user.id)
         .is('client_id', null)
         .order('created_at', { ascending: false })
 
@@ -126,7 +124,7 @@ export function AssignTrainingPlanModal({
                 <Card key={plan.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{plan.plan_name}</CardTitle>
+                      <CardTitle className="text-lg">{plan.name}</CardTitle>
                       <Badge variant="outline">
                         <Calendar className="h-3 w-3 mr-1" />
                         {new Date(plan.created_at).toLocaleDateString('hr-HR')}

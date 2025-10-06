@@ -14,10 +14,9 @@ import { Apple, Clock, Calendar, Search, Filter, Eye, ChevronDown, ChevronUp } f
 
 interface NutritionPlan {
   id: string
-  plan_name: string
-  date: string
+  name: string
+  start_date: string | null
   created_at: string
-  coach_id: string
   client_id: string | null
 }
 
@@ -79,7 +78,6 @@ export function EnhancedAssignNutritionPlanModal({
       const { data, error } = await supabase
         .from('meal_plans')
         .select('*')
-        .eq('coach_id', user.id)
         .is('client_id', null)
         .order('created_at', { ascending: false })
 
@@ -177,7 +175,7 @@ export function EnhancedAssignNutritionPlanModal({
   // Filter and search logic
   useEffect(() => {
     let filtered = plans.filter(plan =>
-      plan.plan_name.toLowerCase().includes(searchTerm.toLowerCase())
+      plan.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
     // Sort
@@ -185,7 +183,7 @@ export function EnhancedAssignNutritionPlanModal({
       if (sortBy === "created_at") {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       } else if (sortBy === "name") {
-        return a.plan_name.localeCompare(b.plan_name)
+        return a.name.localeCompare(b.name)
       }
       return 0
     })
@@ -228,7 +226,7 @@ export function EnhancedAssignNutritionPlanModal({
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="plans">Planovi</TabsTrigger>
             <TabsTrigger value="preview" disabled={!previewPlan}>
-              Pregled {previewPlan && `(${plans.find(p => p.id === previewPlan)?.plan_name})`}
+              Pregled {previewPlan && `(${plans.find(p => p.id === previewPlan)?.name})`}
             </TabsTrigger>
           </TabsList>
 
@@ -277,7 +275,7 @@ export function EnhancedAssignNutritionPlanModal({
                     <Card key={plan.id} className="cursor-pointer hover:shadow-md transition-shadow">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{plan.plan_name}</CardTitle>
+                          <CardTitle className="text-lg">{plan.name}</CardTitle>
                           <Badge variant="outline">
                             <Calendar className="h-3 w-3 mr-1" />
                             {new Date(plan.created_at).toLocaleDateString('hr-HR')}

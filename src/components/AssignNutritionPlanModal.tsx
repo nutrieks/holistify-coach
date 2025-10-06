@@ -10,10 +10,9 @@ import { Apple, Clock, Calendar } from "lucide-react"
 
 interface NutritionPlan {
   id: string
-  plan_name: string
-  date: string
+  name: string
+  start_date: string | null
   created_at: string
-  coach_id: string
   client_id: string | null
 }
 
@@ -44,7 +43,6 @@ export function AssignNutritionPlanModal({
       const { data, error } = await supabase
         .from('meal_plans')
         .select('*')
-        .eq('coach_id', user.id)
         .is('client_id', null)
         .order('created_at', { ascending: false })
 
@@ -68,7 +66,7 @@ export function AssignNutritionPlanModal({
         .from('meal_plans')
         .update({ 
           client_id: clientId,
-          date: new Date().toISOString().split('T')[0]
+          start_date: new Date().toISOString().split('T')[0]
         })
         .eq('id', planId)
 
@@ -125,7 +123,7 @@ export function AssignNutritionPlanModal({
                 <Card key={plan.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{plan.plan_name}</CardTitle>
+                      <CardTitle className="text-lg">{plan.name}</CardTitle>
                       <Badge variant="outline">
                         <Calendar className="h-3 w-3 mr-1" />
                         {new Date(plan.created_at).toLocaleDateString('hr-HR')}
