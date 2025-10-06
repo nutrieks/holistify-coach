@@ -34,19 +34,18 @@ export function CoachNAQDashboard() {
       // Get all clients for this coach
       const { data: clients, error: clientsError } = await supabase
         .from('clients')
-        .select('client_id, profiles!clients_client_id_fkey(full_name)')
-        .eq('coach_id', user.id);
+        .select('user_id, full_name');
 
       if (clientsError) throw clientsError;
 
       const clientsOverview: ClientNAQOverview[] = [];
 
       for (const client of clients) {
-        // Get latest NAQ submission for each client
+        // Get latest submission via client_submissions
         const { data: latestSubmission } = await supabase
-          .from('questionnaire_scores')
-          .select('submission_id, created_at')
-          .eq('client_id', client.client_id)
+          .from('client_submissions')
+          .select('id, created_at')
+          .eq('client_id', client.user_id)
           .order('created_at', { ascending: false })
           .limit(1)
           .single();
@@ -56,40 +55,34 @@ export function CoachNAQDashboard() {
           const { data: scores } = await supabase
             .from('questionnaire_scores')
             .select('*')
-            .eq('submission_id', latestSubmission.submission_id);
+            .eq('submission_id', latestSubmission.id);
 
           if (scores && scores.length > 0) {
             // Calculate overall burden
-            const totalQuestions = scores.reduce((sum, score) => sum + (score.max_possible_score / 3), 0);
-            const totalScore = scores.reduce((sum, score) => sum + score.total_score, 0);
+            const totalQuestions = scores.reduce((sum, score) => sum + (score.max_score / 3), 0);
+            const totalScore = scores.reduce((sum, score) => sum + score.score, 0);
             const overallBurden = totalScore / totalQuestions;
 
-            // Count priority levels
-            const highPriorityCount = scores.filter(s => s.priority_level === 'high').length;
-            const mediumPriorityCount = scores.filter(s => s.priority_level === 'medium').length;
+            // Count severity levels (replaces priority_level)
+            const highPriorityCount = scores.filter(s => s.severity_level === 'high').length;
+            const mediumPriorityCount = scores.filter(s => s.severity_level === 'medium').length;
 
             // Get total submissions count
-            const { count } = await supabase
-              .from('questionnaire_scores')
-              .select('submission_id', { count: 'exact', head: true })
-              .eq('client_id', client.client_id);
-
-            const uniqueSubmissions = new Set();
             const { data: allSubmissions } = await supabase
-              .from('questionnaire_scores')
-              .select('submission_id')
-              .eq('client_id', client.client_id);
+              .from('client_submissions')
+              .select('id')
+              .eq('client_id', client.user_id);
             
-            allSubmissions?.forEach(s => uniqueSubmissions.add(s.submission_id));
+            const uniqueSubmissions = allSubmissions?.length || 0;
 
             clientsOverview.push({
-              clientId: client.client_id,
-              clientName: (client.profiles as any)?.full_name || 'Nepoznat klijent',
+              clientId: client.user_id,
+              clientName: client.full_name || 'Nepoznat klijent',
               latestSubmissionDate: latestSubmission.created_at.split('T')[0],
               overallBurden: Math.round(overallBurden * 100) / 100,
               highPriorityCount,
               mediumPriorityCount,
-              totalSubmissions: uniqueSubmissions.size
+              totalSubmissions: uniqueSubmissions
             });
           }
         }

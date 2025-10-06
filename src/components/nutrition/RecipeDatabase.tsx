@@ -127,7 +127,6 @@ export function RecipeDatabase() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Naziv</TableHead>
-                    <TableHead>Slika</TableHead>
                     <TableHead>Instrukcije</TableHead>
                     <TableHead>Kreiran</TableHead>
                     <TableHead className="text-right">Akcije</TableHead>
@@ -136,7 +135,7 @@ export function RecipeDatabase() {
                 <TableBody>
                   {filteredRecipes.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center text-muted-foreground">
                         {searchTerm ? "Nema rezultata pretrage" : "Nema recepata u bazi"}
                       </TableCell>
                     </TableRow>
@@ -144,19 +143,6 @@ export function RecipeDatabase() {
                     filteredRecipes.map((recipe) => (
                       <TableRow key={recipe.id}>
                         <TableCell className="font-medium">{recipe.name}</TableCell>
-                        <TableCell>
-                          {recipe.image_url ? (
-                            <img 
-                              src={recipe.image_url} 
-                              alt={recipe.name}
-                              className="w-12 h-12 object-cover rounded"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                              <ChefHat className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
-                        </TableCell>
                         <TableCell className="max-w-xs truncate">
                           {recipe.instructions || 'Nema instrukcija'}
                         </TableCell>

@@ -121,7 +121,7 @@ export function FoodDatabase() {
                     <TableHead>Proteini (g)</TableHead>
                     <TableHead>Ugljikohidrati (g)</TableHead>
                     <TableHead>Masti (g)</TableHead>
-                    <TableHead>Količina (g)</TableHead>
+                    <TableHead>Porcija</TableHead>
                     <TableHead className="text-right">Akcije</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -139,8 +139,8 @@ export function FoodDatabase() {
                         <TableCell>{food.calories}</TableCell>
                         <TableCell>{food.protein}</TableCell>
                         <TableCell>{food.carbs}</TableCell>
-                        <TableCell>{food.fat}</TableCell>
-                        <TableCell>{food.serving_size_grams}</TableCell>
+                        <TableCell>{food.fats}</TableCell>
+                        <TableCell>{food.portion_size || '-'}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end space-x-2">
                             <Button

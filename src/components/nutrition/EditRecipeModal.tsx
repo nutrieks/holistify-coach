@@ -36,8 +36,7 @@ export function EditRecipeModal({ recipe, open, onOpenChange, onSuccess }: EditR
   const [foods, setFoods] = useState<FoodItem[]>([])
   const [formData, setFormData] = useState({
     name: "",
-    instructions: "",
-    image_url: ""
+    instructions: ""
   })
   const [ingredients, setIngredients] = useState<RecipeIngredientForm[]>([])
   const { toast } = useToast()
@@ -48,8 +47,7 @@ export function EditRecipeModal({ recipe, open, onOpenChange, onSuccess }: EditR
       fetchRecipeIngredients()
       setFormData({
         name: recipe.name || "",
-        instructions: recipe.instructions || "",
-        image_url: recipe.image_url || ""
+        instructions: recipe.instructions || ""
       })
     }
   }, [open, recipe])
@@ -127,8 +125,7 @@ export function EditRecipeModal({ recipe, open, onOpenChange, onSuccess }: EditR
         .from('recipes')
         .update({
           name: formData.name,
-          instructions: formData.instructions || null,
-          image_url: formData.image_url || null
+          instructions: formData.instructions || null
         })
         .eq('id', recipe.id)
 
@@ -196,17 +193,6 @@ export function EditRecipeModal({ recipe, open, onOpenChange, onSuccess }: EditR
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
               required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="image_url">URL slike</Label>
-            <Input
-              id="image_url"
-              type="url"
-              value={formData.image_url}
-              onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-              placeholder="https://example.com/image.jpg"
             />
           </div>
 

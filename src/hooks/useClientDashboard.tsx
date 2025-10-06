@@ -52,73 +52,70 @@ export function useClientDashboard() {
   const { data: mealPlanData, isLoading: mealsLoading } = useQuery({
     queryKey: ['todaysMeals', user?.id, today],
     queryFn: async () => {
-      if (!user?.id) return { meals: [], planLevel: null, weeklyFocus: null, habits: [], recipes: [] };
+      if (!user?.id) return { meals: [] };
 
       const { data: mealPlan } = await supabase
         .from('meal_plans')
-        .select('id, plan_level, weekly_focus, weekly_habit_ids, weekly_recipe_ids')
+        .select('id, name, notes')
         .eq('client_id', user.id)
-        .gte('date', today)
-        .lte('date', today)
+        .eq('is_active', true)
         .single();
 
-      if (!mealPlan) return { meals: [], planLevel: null, weeklyFocus: null, habits: [], recipes: [] };
+      if (!mealPlan) return { meals: [] };
 
-      // Fetch habits if Level 1 plan
-      let habits: any[] = [];
-      if (mealPlan.plan_level === 1 && mealPlan.weekly_habit_ids?.length > 0) {
-        const { data: habitsData } = await supabase
-          .from('habits')
-          .select('id, habit_name, description')
-          .in('id', mealPlan.weekly_habit_ids);
-        habits = habitsData || [];
-      }
-
-      // Fetch recipes if Level 1 plan
-      let recipes: any[] = [];
-      if (mealPlan.plan_level === 1 && mealPlan.weekly_recipe_ids?.length > 0) {
-        const { data: recipesData } = await supabase
-          .from('recipes')
-          .select('id, name, instructions, recipe_ingredients(quantity, food_database(name, calories))')
-          .in('id', mealPlan.weekly_recipe_ids);
-        recipes = recipesData || [];
-      }
-
-      // Fetch meal entries for all plan levels
+      // Fetch meal entries
       const { data: entries } = await supabase
         .from('meal_plan_entries')
         .select(`
           id,
           meal_type,
           quantity,
-          day_of_week,
-          food_database (name, calories, serving_size_grams),
-          recipes (name, recipe_ingredients (quantity, food_database (calories, serving_size_grams))),
-          food_categories (id, category_name, avg_calories, avg_protein, avg_carbs, avg_fat, standard_portion_size)
+          unit,
+          notes,
+          food_id,
+          recipe_id,
+          day_of_week
         `)
         .eq('meal_plan_id', mealPlan.id)
         .eq('day_of_week', dayOfWeek);
 
-      const meals = entries?.map(entry => ({
-        id: entry.id,
-        meal_type: entry.meal_type,
-        food_name: entry.food_database?.name,
-        recipe_name: entry.recipes?.name,
-        category_name: entry.food_categories?.category_name,
-        quantity: entry.quantity,
-        calories: entry.food_database?.calories || 
-                 entry.recipes?.recipe_ingredients?.reduce((sum: number, ing: any) => 
-                   sum + (ing.food_database?.calories || 0) * (ing.quantity || 0) / 100, 0) ||
-                 entry.food_categories?.avg_calories
-      })) || [];
+      if (!entries) return { meals: [] };
 
-      return {
-        meals,
-        planLevel: mealPlan.plan_level,
-        weeklyFocus: mealPlan.weekly_focus,
-        habits,
-        recipes
-      };
+      // Fetch food and recipe details for entries
+      const meals = await Promise.all(entries.map(async (entry) => {
+        let food_name, recipe_name, calories;
+
+        if (entry.food_id) {
+          const { data: food } = await supabase
+            .from('food_database')
+            .select('name, calories')
+            .eq('id', entry.food_id)
+            .single();
+          food_name = food?.name;
+          calories = food?.calories;
+        }
+
+        if (entry.recipe_id) {
+          const { data: recipe } = await supabase
+            .from('recipes')
+            .select('name, total_calories')
+            .eq('id', entry.recipe_id)
+            .single();
+          recipe_name = recipe?.name;
+          calories = recipe?.total_calories;
+        }
+
+        return {
+          id: entry.id,
+          meal_type: entry.meal_type,
+          food_name,
+          recipe_name,
+          quantity: entry.quantity,
+          calories
+        };
+      }));
+
+      return { meals };
     },
     enabled: !!user?.id,
   });
@@ -143,61 +140,57 @@ export function useClientDashboard() {
 
       const { data: session } = await supabase
         .from('workout_sessions')
-        .select(`
-          id,
-          session_name,
-          day_of_week,
-          workout_exercises (
-            sets,
-            reps,
-            exercise_database (name)
-          )
-        `)
+        .select('id, session_name, day_of_week, exercises')
         .eq('training_plan_id', trainingPlan.id)
         .eq('day_of_week', dayOfWeek)
         .single();
 
       if (!session) return null;
 
+      // Parse exercises from JSONB column
+      const exercises = Array.isArray(session.exercises) 
+        ? session.exercises.map((ex: any) => ({
+            exercise_name: ex.name || ex.exercise_name || '',
+            sets: ex.sets,
+            reps: ex.reps,
+          }))
+        : [];
+
       return {
         id: session.id,
         session_name: session.session_name,
         day_of_week: session.day_of_week,
-        exercises: session.workout_exercises?.map((ex: any) => ({
-          exercise_name: ex.exercise_database?.name || '',
-          sets: ex.sets,
-          reps: ex.reps,
-        })) || []
+        exercises
       };
     },
     enabled: !!user?.id,
   });
 
-  // Fetch today's habits
+  // Fetch today's habits - disabled as client_habits doesn't have completed/date columns
   const { data: todaysHabits, isLoading: habitsLoading } = useQuery({
     queryKey: ['todaysHabits', user?.id, today],
     queryFn: async (): Promise<ClientHabit[]> => {
       if (!user?.id) return [];
 
-      const { data: habits } = await supabase
+      const { data: clientHabits } = await supabase
         .from('client_habits')
         .select(`
           id,
           habit_id,
-          completed,
-          date,
-          habits (habit_name, description)
+          is_active,
+          habits (name, description)
         `)
         .eq('client_id', user.id)
-        .eq('date', today);
+        .eq('is_active', true);
 
-      return habits?.map(habit => ({
+      // Return habits without completion tracking
+      return clientHabits?.map(habit => ({
         id: habit.id,
         habit_id: habit.habit_id,
-        habit_name: habit.habits?.habit_name || '',
+        habit_name: habit.habits?.name || '',
         description: habit.habits?.description,
-        completed: habit.completed,
-        date: habit.date,
+        completed: false, // No completion tracking in schema
+        date: today,
       })) || [];
     },
     enabled: !!user?.id,
@@ -223,14 +216,8 @@ export function useClientDashboard() {
       const latestWeight = progress?.find(p => p.metric_type === 'weight')?.value;
       const workoutsThisWeek = progress?.filter(p => p.metric_type === 'workout_completed').length || 0;
       
-      // Count completed habits this week
-      const { data: weeklyHabits } = await supabase
-        .from('client_habits')
-        .select('completed')
-        .eq('client_id', user.id)
-        .gte('date', weekStartStr);
-
-      const habitsCompleted = weeklyHabits?.filter(h => h.completed).length || 0;
+      // Habits don't have completion tracking in current schema
+      const habitsCompleted = 0;
 
       return {
         weight: latestWeight ? parseFloat(latestWeight) : undefined,
@@ -241,29 +228,17 @@ export function useClientDashboard() {
     enabled: !!user?.id,
   });
 
-  // Mutation to toggle habit completion
+  // Toggle habit - disabled as schema doesn't support completion tracking
   const toggleHabitMutation = useMutation({
     mutationFn: async ({ habitId, completed }: { habitId: string, completed: boolean }) => {
-      const { error } = await supabase
-        .from('client_habits')
-        .update({ completed })
-        .eq('id', habitId);
-      
-      if (error) throw error;
+      // Placeholder - client_habits doesn't have completed column
+      console.log('Habit toggle not implemented:', habitId, completed);
+      return Promise.resolve();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todaysHabits'] });
-      queryClient.invalidateQueries({ queryKey: ['progressData'] });
       toast({
-        title: "Uspješno ažurirano",
-        description: "Stanje navike je ažurirano.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Greška",
-        description: "Došlo je do greške pri ažuriranju navike.",
-        variant: "destructive",
+        title: "Info",
+        description: "Praćenje navika trenutno nije dostupno.",
       });
     },
   });
@@ -291,10 +266,6 @@ export function useClientDashboard() {
     todaysHabits,
     progressData,
     unreadCount,
-    mealPlanLevel: mealPlanData?.planLevel,
-    weeklyFocus: mealPlanData?.weeklyFocus,
-    weeklyHabits: mealPlanData?.habits || [],
-    weeklyRecipes: mealPlanData?.recipes || [],
     isLoading: mealsLoading || workoutLoading || habitsLoading,
     toggleHabit: (habitId: string, completed: boolean) => 
       toggleHabitMutation.mutate({ habitId, completed }),

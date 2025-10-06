@@ -19,9 +19,8 @@ export function AddFoodModal({ open, onOpenChange, onSuccess }: AddFoodModalProp
     calories: "",
     protein: "",
     carbs: "",
-    fat: "",
-    serving_size_grams: "",
-    fiber: ""
+    fats: "",
+    portion_size: ""
   })
   const { toast } = useToast()
 
@@ -34,12 +33,11 @@ export function AddFoodModal({ open, onOpenChange, onSuccess }: AddFoodModalProp
         .from('food_database')
         .insert({
           name: formData.name,
-          calories: formData.calories ? parseFloat(formData.calories) : null,
-          protein: formData.protein ? parseFloat(formData.protein) : null,
-          carbs: formData.carbs ? parseFloat(formData.carbs) : null,
-          fat: formData.fat ? parseFloat(formData.fat) : null,
-          serving_size_grams: formData.serving_size_grams ? parseFloat(formData.serving_size_grams) : null,
-          fiber: formData.fiber ? parseFloat(formData.fiber) : null
+          calories: formData.calories ? parseFloat(formData.calories) : 0,
+          protein: formData.protein ? parseFloat(formData.protein) : 0,
+          carbs: formData.carbs ? parseFloat(formData.carbs) : 0,
+          fats: formData.fats ? parseFloat(formData.fats) : 0,
+          portion_size: formData.portion_size || null
         })
 
       if (error) throw error
@@ -54,9 +52,8 @@ export function AddFoodModal({ open, onOpenChange, onSuccess }: AddFoodModalProp
         calories: "",
         protein: "",
         carbs: "",
-        fat: "",
-        serving_size_grams: "",
-        fiber: ""
+        fats: "",
+        portion_size: ""
       })
       onSuccess()
     } catch (error) {
@@ -103,13 +100,13 @@ export function AddFoodModal({ open, onOpenChange, onSuccess }: AddFoodModalProp
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="serving_size_grams">Količina (g)</Label>
+              <Label htmlFor="portion_size">Veličina porcije</Label>
               <Input
-                id="serving_size_grams"
-                type="number"
-                step="0.1"
-                value={formData.serving_size_grams}
-                onChange={(e) => setFormData({...formData, serving_size_grams: e.target.value})}
+                id="portion_size"
+                type="text"
+                value={formData.portion_size}
+                onChange={(e) => setFormData({...formData, portion_size: e.target.value})}
+                placeholder="npr. 100g, 1 kom"
               />
             </div>
           </div>
@@ -137,27 +134,15 @@ export function AddFoodModal({ open, onOpenChange, onSuccess }: AddFoodModalProp
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fat">Masti (g)</Label>
-              <Input
-                id="fat"
-                type="number"
-                step="0.1"
-                value={formData.fat}
-                onChange={(e) => setFormData({...formData, fat: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="fiber">Vlakna (g)</Label>
-              <Input
-                id="fiber"
-                type="number"
-                step="0.1"
-                value={formData.fiber}
-                onChange={(e) => setFormData({...formData, fiber: e.target.value})}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="fats">Masti (g)</Label>
+            <Input
+              id="fats"
+              type="number"
+              step="0.1"
+              value={formData.fats}
+              onChange={(e) => setFormData({...formData, fats: e.target.value})}
+            />
           </div>
 
           <div className="flex justify-end space-x-2">

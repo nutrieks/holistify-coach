@@ -25,8 +25,8 @@ export function ClientNAQDashboard({ clientId }: ClientNAQDashboardProps) {
         .from('client_submissions')
         .select(`
           id,
-          submission_date,
           created_at,
+          submitted_at,
           questionnaires!inner (
             id,
             title
