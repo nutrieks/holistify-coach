@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MonthlyCalendarView } from "./MonthlyCalendarView";
-import { WeeklyView } from "./WeeklyView";
-import { DailyView } from "./DailyView";
-import { Calendar, CalendarDays, CalendarClock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { MonthlyCalendarView } from "./MonthlyCalendarView"
+import { WeeklyView } from "./WeeklyView"
+import { DailyView } from "./DailyView"
+import { AddMealToTimelineModal } from "./AddMealToTimelineModal"
+import { AddTrainingSessionModal } from "./AddTrainingSessionModal"
+import { Calendar, CalendarDays, CalendarClock } from "lucide-react"
+import { supabase } from "@/integrations/supabase/client"
+import { LoadingSpinner } from "@/components/LoadingSpinner"
+import { useToast } from "@/hooks/use-toast"
 
 interface NutritionPlanViewerProps {
   planId: string;
@@ -15,74 +17,123 @@ interface NutritionPlanViewerProps {
 }
 
 export function NutritionPlanViewer({ planId, clientId, editable = false }: NutritionPlanViewerProps) {
-  const [viewMode, setViewMode] = useState<'monthly' | 'weekly' | 'daily'>('weekly');
-  const [loading, setLoading] = useState(true);
-  const [planData, setPlanData] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const { toast } = useToast();
+  const [viewMode, setViewMode] = useState<'monthly' | 'weekly' | 'daily'>('weekly')
+  const [loading, setLoading] = useState(true)
+  const [planData, setPlanData] = useState<any>(null)
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const { toast } = useToast()
+  
+  // Modal states
+  const [addMealModalOpen, setAddMealModalOpen] = useState(false)
+  const [addTrainingModalOpen, setAddTrainingModalOpen] = useState(false)
+  const [selectedDay, setSelectedDay] = useState<number>(1)
 
   useEffect(() => {
-    fetchPlanData();
-  }, [planId]);
+    fetchPlanData()
+  }, [planId])
 
   const fetchPlanData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      // Fetch meal plan
-      const { data: plan, error: planError } = await supabase
+      const { data, error } = await supabase
         .from('meal_plans')
-        .select('*')
+        .select(`
+          *,
+          meal_plan_entries!inner (
+            *,
+            food:food_database (*),
+            recipe:recipes (*)
+          )
+        `)
         .eq('id', planId)
         .single();
 
-      if (planError) throw planError;
+      if (error) throw error;
 
-      // Fetch meal entries
-      const { data: entries, error: entriesError } = await supabase
-        .from('meal_plan_entries')
-        .select(`
-          *,
-          food:food_database(*),
-          recipe:recipes(*)
-        `)
-        .eq('meal_plan_id', planId);
-
-      if (entriesError) throw entriesError;
-
-      // Fetch training sessions
-      const { data: trainings, error: trainingsError } = await supabase
+      const { data: trainings } = await supabase
         .from('training_sessions')
         .select('*')
         .eq('meal_plan_id', planId);
 
-      if (trainingsError) throw trainingsError;
-
-      // Fetch daily training types
-      const { data: dailyTypes, error: dailyTypesError } = await supabase
+      const { data: dailyTypes } = await supabase
         .from('daily_training_types')
         .select('*')
         .eq('meal_plan_id', planId);
 
-      if (dailyTypesError) throw dailyTypesError;
-
       setPlanData({
-        plan,
-        entries: entries || [],
+        plan: data,
+        entries: data.meal_plan_entries || [],
         trainings: trainings || [],
         dailyTypes: dailyTypes || []
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching plan data:', error);
       toast({
         title: "Greška",
-        description: "Nije moguće učitati plan prehrane",
+        description: "Nije moguće učitati plan",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
+
+  const handleAddMeal = (dayOfWeek: number) => {
+    setSelectedDay(dayOfWeek)
+    setAddMealModalOpen(true)
+  }
+
+  const handleAddTraining = (dayOfWeek: number) => {
+    setSelectedDay(dayOfWeek)
+    setAddTrainingModalOpen(true)
+  }
+
+  const handleMealAdded = () => {
+    fetchPlanData()
+  }
+
+  const handleTrainingAdded = () => {
+    fetchPlanData()
+  }
+
+  const handleDayTypeChange = async (dayOfWeek: number, type: 'no_training' | 'light_training' | 'moderate_training' | 'heavy_training') => {
+    try {
+      const { data: existing } = await supabase
+        .from('daily_training_types')
+        .select('id')
+        .eq('meal_plan_id', planId)
+        .eq('day_of_week', dayOfWeek)
+        .maybeSingle()
+
+      if (existing) {
+        const { error } = await supabase
+          .from('daily_training_types')
+          .update({ training_day_type: type })
+          .eq('id', existing.id)
+
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('daily_training_types')
+          .insert({
+            meal_plan_id: planId,
+            day_of_week: dayOfWeek,
+            training_day_type: type
+          })
+
+        if (error) throw error
+      }
+
+      fetchPlanData()
+    } catch (error) {
+      console.error('Error updating day type:', error)
+      toast({
+        title: "Greška",
+        description: "Nije moguće ažurirati tip dana",
+        variant: "destructive"
+      })
+    }
+  }
 
   if (loading) {
     return <LoadingSpinner />;
@@ -177,11 +228,14 @@ export function NutritionPlanViewer({ planId, clientId, editable = false }: Nutr
         </TabsContent>
 
         <TabsContent value="weekly" className="mt-6">
-          <WeeklyView
-            weekData={weekData}
-            baseMacros={baseMacros}
-            editable={editable}
-          />
+            <WeeklyView 
+              weekData={weekData}
+              baseMacros={baseMacros}
+              editable={editable}
+              onAddMeal={handleAddMeal}
+              onAddTraining={handleAddTraining}
+              onDayTypeChange={handleDayTypeChange}
+            />
         </TabsContent>
 
         <TabsContent value="daily" className="mt-6">
@@ -205,6 +259,27 @@ export function NutritionPlanViewer({ planId, clientId, editable = false }: Nutr
           />
         </TabsContent>
       </Tabs>
+
+      {/* Modals */}
+      {editable && (
+        <>
+          <AddMealToTimelineModal
+            open={addMealModalOpen}
+            onOpenChange={setAddMealModalOpen}
+            planId={planId}
+            dayOfWeek={selectedDay}
+            onMealAdded={handleMealAdded}
+          />
+
+          <AddTrainingSessionModal
+            open={addTrainingModalOpen}
+            onOpenChange={setAddTrainingModalOpen}
+            planId={planId}
+            dayOfWeek={selectedDay}
+            onSessionAdded={handleTrainingAdded}
+          />
+        </>
+      )}
     </div>
-  );
+  )
 }
