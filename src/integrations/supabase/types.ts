@@ -44,6 +44,74 @@ export type Database = {
         }
         Relationships: []
       }
+      client_anthropometric_data: {
+        Row: {
+          body_fat_manual: number | null
+          body_fat_navy: number | null
+          client_id: string
+          created_at: string
+          digit_ratio_2d4d: number | null
+          fat_mass: number | null
+          height: number | null
+          hip_circumference: number | null
+          id: string
+          lean_body_mass: number | null
+          measurement_date: string
+          neck_circumference: number | null
+          notes: string | null
+          updated_at: string
+          waist_circumference: number | null
+          weight: number | null
+          wrist_circumference: number | null
+        }
+        Insert: {
+          body_fat_manual?: number | null
+          body_fat_navy?: number | null
+          client_id: string
+          created_at?: string
+          digit_ratio_2d4d?: number | null
+          fat_mass?: number | null
+          height?: number | null
+          hip_circumference?: number | null
+          id?: string
+          lean_body_mass?: number | null
+          measurement_date?: string
+          neck_circumference?: number | null
+          notes?: string | null
+          updated_at?: string
+          waist_circumference?: number | null
+          weight?: number | null
+          wrist_circumference?: number | null
+        }
+        Update: {
+          body_fat_manual?: number | null
+          body_fat_navy?: number | null
+          client_id?: string
+          created_at?: string
+          digit_ratio_2d4d?: number | null
+          fat_mass?: number | null
+          height?: number | null
+          hip_circumference?: number | null
+          id?: string
+          lean_body_mass?: number | null
+          measurement_date?: string
+          neck_circumference?: number | null
+          notes?: string | null
+          updated_at?: string
+          waist_circumference?: number | null
+          weight?: number | null
+          wrist_circumference?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_anthropometric_data_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       client_habits: {
         Row: {
           client_id: string

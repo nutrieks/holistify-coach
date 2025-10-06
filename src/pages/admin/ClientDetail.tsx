@@ -18,6 +18,7 @@ import { ProgressTab } from "@/components/progress/ProgressTab"
 import { ContractStatusCard } from "@/components/ContractStatusCard"
 import { FormsTab } from "@/components/FormsTab"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
+import AnthropometricDataCard from "@/components/client/AnthropometricDataCard"
 
 interface ClientProfile {
   id: string
@@ -47,6 +48,7 @@ export default function ClientDetail() {
   const [showAssignNutritionModal, setShowAssignNutritionModal] = useState(false)
   const [nutritionPlanId, setNutritionPlanId] = useState<string | null>(null)
   const [loadingPlan, setLoadingPlan] = useState(true)
+  const [anthropometricData, setAnthropometricData] = useState<any[]>([])
   const { toast } = useToast()
 
   const fetchClient = async () => {
@@ -70,6 +72,9 @@ export default function ClientDetail() {
         .maybeSingle()
       
       setNutritionPlanId(planData?.id || null)
+      
+      // Fetch anthropometric data
+      await fetchAnthropometricData()
     } catch (error: any) {
       toast({
         title: "Greška",
@@ -80,6 +85,23 @@ export default function ClientDetail() {
     } finally {
       setLoading(false)
       setLoadingPlan(false)
+    }
+  }
+
+  const fetchAnthropometricData = async () => {
+    if (!id) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('client_anthropometric_data')
+        .select('*')
+        .eq('client_id', id)
+        .order('measurement_date', { ascending: false })
+      
+      if (error) throw error
+      setAnthropometricData(data || [])
+    } catch (error: any) {
+      console.error('Error fetching anthropometric data:', error)
     }
   }
 
@@ -179,13 +201,13 @@ export default function ClientDetail() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Client Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Client Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+            {/* Opći Podaci */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Opći Podaci</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-12 h-12">
                       <AvatarFallback className="bg-primary/10 text-primary font-medium text-lg">
@@ -193,111 +215,97 @@ export default function ClientDetail() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
+                      <p className="text-sm text-muted-foreground">Ime i Prezime</p>
                       <h3 className="font-semibold">{client.full_name || 'Nepoznato ime'}</h3>
-                      <p className="text-sm text-muted-foreground">Client ID: {client.user_id.slice(0, 8)}</p>
                     </div>
                   </div>
                   
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Status:</span>
-                      {getStatusBadge()}
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Contract Start:</span>
-                      <span className="text-sm">
-                        {client.contract_start_date ? 
-                          new Date(client.contract_start_date).toLocaleDateString('hr-HR') : 
-                          'Not set'
-                        }
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Added:</span>
-                      <span className="text-sm">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="font-medium">{client.email || '-'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Telefon</p>
+                    <p className="font-medium">{client.phone || '-'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Spol</p>
+                    <p className="font-medium">{client.gender === 'male' ? 'Muško' : client.gender === 'female' ? 'Žensko' : '-'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Datum Rođenja</p>
+                    <p className="font-medium">
+                      {client.date_of_birth ? 
+                        new Date(client.date_of_birth).toLocaleDateString('hr-HR') : 
+                        '-'
+                      }
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <div className="mt-1">{getStatusBadge()}</div>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Početak Ugovora</p>
+                    <p className="font-medium">
+                      {client.contract_start_date ? 
+                        new Date(client.contract_start_date).toLocaleDateString('hr-HR') : 
+                        '-'
+                      }
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Trajanje Suradnje</p>
+                    <p className="font-medium">
+                      {client.contract_start_date ? 
+                        Math.floor((new Date().getTime() - new Date(client.contract_start_date).getTime()) / (1000 * 60 * 60 * 24)) + ' dana'
+                        : '-'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Antropometrijski Podaci */}
+            <AnthropometricDataCard
+              clientId={id!}
+              clientGender={client.gender}
+              data={anthropometricData}
+              onDataAdded={fetchAnthropometricData}
+            />
+
+            {/* Contract Status */}
+            <ContractStatusCard clientId={client.user_id} />
+
+            {/* Activity Log */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Aktivnost</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-2"></div>
+                    <div>
+                      <p className="text-sm">Klijent dodan u sustav</p>
+                      <p className="text-xs text-muted-foreground">
                         {new Date(client.created_at).toLocaleDateString('hr-HR')}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Duration:</span>
-                      <span className="text-sm">
-                        {client.contract_start_date ? 
-                          Math.floor((new Date().getTime() - new Date(client.contract_start_date).getTime()) / (1000 * 60 * 60 * 24)) + ' days'
-                          : '-'
-                        }
-                      </span>
+                      </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Contract Status */}
-              <ContractStatusCard clientId={client.user_id} />
-
-              {/* Metrics Avg */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Metrics Avg</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center justify-center mb-2">
-                        <TrendingUp className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="text-2xl font-bold">-</div>
-                      <div className="text-xs text-muted-foreground">Weight</div>
-                    </div>
-                    <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center justify-center mb-2">
-                        <Activity className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="text-2xl font-bold">-</div>
-                      <div className="text-xs text-muted-foreground">Body Fat</div>
-                    </div>
+                  <div className="text-center py-4 text-xs text-muted-foreground">
+                    Nema nedavnih aktivnosti
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center justify-center mb-2">
-                        <Clock className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="text-2xl font-bold">-</div>
-                      <div className="text-xs text-muted-foreground">Workouts</div>
-                    </div>
-                    <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center justify-center mb-2">
-                        <Calendar className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="text-2xl font-bold">-</div>
-                      <div className="text-xs text-muted-foreground">Check-ins</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Activity Log */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Activity Log</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 rounded-full bg-primary mt-2"></div>
-                      <div>
-                        <p className="text-sm">Client added to system</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(client.created_at).toLocaleDateString('hr-HR')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-center py-4 text-xs text-muted-foreground">
-                      No recent activity
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Notes Section */}
             <Card>
