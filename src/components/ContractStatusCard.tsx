@@ -138,7 +138,7 @@ export function ContractStatusCard({ clientId, variant = 'default' }: ContractSt
               <div>
                 <p className="text-muted-foreground">Tip ugovora</p>
                 <p className="font-medium">
-                  {getContractTypeLabel(contractData.contract_type)}
+                  Ugovor aktiviran
                 </p>
               </div>
             </div>
@@ -154,11 +154,11 @@ export function ContractStatusCard({ clientId, variant = 'default' }: ContractSt
           </div>
         )}
 
-        {contractData.start_date && !isCompact && (
+        {contractData.contract_start_date && !isCompact && (
           <div className="text-xs text-muted-foreground pt-2 border-t">
-            Početak: {new Date(contractData.start_date).toLocaleDateString('hr-HR')}
-            {contractData.end_date && (
-              <> • Kraj: {new Date(contractData.end_date).toLocaleDateString('hr-HR')}</>
+            Početak: {new Date(contractData.contract_start_date).toLocaleDateString('hr-HR')}
+            {contractData.contract_end_date && (
+              <> • Kraj: {new Date(contractData.contract_end_date).toLocaleDateString('hr-HR')}</>
             )}
           </div>
         )}
