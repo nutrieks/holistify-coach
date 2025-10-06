@@ -5,8 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 interface Profile {
   id: string;
   full_name: string | null;
-  role: 'admin' | 'client';
   profile_image_url: string | null;
+  role?: 'admin' | 'client';
 }
 
 interface AuthContextType {
@@ -51,13 +51,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // Defer profile fetch to avoid deadlock
           setTimeout(async () => {
             try {
-              const { data } = await supabase
+              const { data: profileData } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
                 .maybeSingle();
-              setProfile(data);
-              console.debug('Profile loaded', { role: data?.role, id: data?.id });
+              
+              const { data: roleData } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+              
+              setProfile(profileData ? { ...profileData, role: roleData?.role } : null);
+              console.debug('Profile loaded', { role: roleData?.role, id: profileData?.id });
             } catch (error) {
               console.error('Error fetching profile:', error);
             }
