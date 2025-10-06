@@ -15,6 +15,8 @@ import ClientDetail from "./pages/admin/ClientDetail";
 import AdminMessages from "./pages/admin/Messages";
 import Messages from "./pages/Messages";
 import NutritionLibrary from "./pages/admin/NutritionLibrary";
+import NutritionPlansList from "./pages/admin/NutritionPlansList";
+import NutritionPlanViewer from "./pages/admin/NutritionPlanViewer";
 import TrainingLibrary from "./pages/admin/TrainingLibrary";
 import FormsLibrary from "./pages/admin/FormsLibrary";
 import HabitsLibrary from "./pages/admin/HabitsLibrary";
@@ -141,10 +143,26 @@ const App = () => (
               } 
             />
             <Route 
+              path="/admin/plans/nutrition" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <NutritionPlansList />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/admin/plans/nutrition/create" 
               element={
                 <ProtectedRoute requiredRole="admin">
                   <NutritionPlanCreator />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/plans/nutrition/:planId" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <NutritionPlanViewer />
                 </ProtectedRoute>
               } 
             />
