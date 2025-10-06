@@ -26,7 +26,7 @@ export function useNAQScoring() {
       // First, get the questionnaire questions with their scoring info
       const { data: questions, error: questionsError } = await supabase
         .from('questionnaire_questions')
-        .select('id, section_name, scoring_category, scoring_weight')
+        .select('id, section, category')
         .eq('questionnaire_id', questionnaireId);
 
       if (questionsError) throw questionsError;
@@ -36,9 +36,9 @@ export function useNAQScoring() {
       
       answers.forEach(answer => {
         const question = questions?.find(q => q.id === answer.question_id);
-        if (question && question.scoring_category) {
+        if (question && question.category) {
           const answerValue = parseInt(answer.answer) || 0;
-          const key = `${question.scoring_category}_${question.id}`;
+          const key = `${question.category}_${question.id}`;
           scoringAnswers[key] = answerValue;
         }
       });
@@ -46,16 +46,14 @@ export function useNAQScoring() {
       // Calculate NAQ results
       const results = NAQScoringEngine.calculateOverallResults(scoringAnswers);
 
-      // Store scores in database
+      // Store scores in database - map to actual DB schema
       const scoresToInsert = results.scores.map(score => ({
-        client_id: clientId,
-        questionnaire_id: questionnaireId,
         submission_id: submissionId,
-        section_name: score.sectionName,
-        total_score: score.totalScore,
-        max_possible_score: score.maxPossibleScore,
-        symptom_burden: score.symptomBurden,
-        priority_level: score.priorityLevel
+        category: score.sectionName,
+        score: score.totalScore,
+        max_score: score.maxPossibleScore,
+        percentage: score.symptomBurden * 100,
+        severity_level: score.priorityLevel
       }));
 
       const { error: insertError } = await supabase
@@ -106,11 +104,11 @@ export function useNAQResults(submissionId: string) {
 
       // Convert database scores back to NAQResults format
       const naqScores = scores.map(score => ({
-        sectionName: score.section_name,
-        totalScore: score.total_score,
-        maxPossibleScore: score.max_possible_score,
-        symptomBurden: Number(score.symptom_burden),
-        priorityLevel: score.priority_level as 'low' | 'medium' | 'high'
+        sectionName: score.category,
+        totalScore: score.score,
+        maxPossibleScore: score.max_score,
+        symptomBurden: Number(score.percentage) / 100,
+        priorityLevel: score.severity_level as 'low' | 'medium' | 'high'
       }));
 
       // Calculate overall burden
@@ -141,44 +139,41 @@ export function useClientNAQHistory(clientId: string) {
   return useQuery({
     queryKey: ['client-naq-history', clientId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('questionnaire_scores')
-        .select('*')
+      // Get submissions with scores
+      const { data: submissions, error: submissionsError } = await supabase
+        .from('client_submissions')
+        .select('id, created_at, submitted_at, questionnaire_id')
         .eq('client_id', clientId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-      if (error) throw error;
+      if (submissionsError) throw submissionsError;
 
-      // Group by submission and get additional data
-      const submissionIds = [...new Set(data.map(score => score.submission_id))];
-      
       const results = [];
-      for (const submissionId of submissionIds.slice(0, 10)) { // Limit to last 10 submissions
-        const { data: submission } = await supabase
-          .from('client_submissions')
-          .select('submission_date, questionnaire_id')
-          .eq('id', submissionId)
-          .single();
+      for (const submission of submissions || []) {
+        // Get scores for this submission
+        const { data: scores } = await supabase
+          .from('questionnaire_scores')
+          .select('*')
+          .eq('submission_id', submission.id);
 
-        if (submission) {
+        if (scores && scores.length > 0) {
           const { data: questionnaire } = await supabase
             .from('questionnaires')
             .select('title')
             .eq('id', submission.questionnaire_id)
             .single();
 
-          const submissionScores = data.filter(score => score.submission_id === submissionId);
-          
           results.push({
-            submissionId,
-            submissionDate: submission.submission_date,
+            submissionId: submission.id,
+            submissionDate: submission.submitted_at || submission.created_at,
             questionnaireName: questionnaire?.title || 'NAQ Upitnik',
-            scores: submissionScores.map(score => ({
-              sectionName: score.section_name,
-              totalScore: score.total_score,
-              maxPossibleScore: score.max_possible_score,
-              symptomBurden: Number(score.symptom_burden),
-              priorityLevel: score.priority_level as 'low' | 'medium' | 'high'
+            scores: scores.map(score => ({
+              sectionName: score.category,
+              totalScore: score.score,
+              maxPossibleScore: score.max_score,
+              symptomBurden: Number(score.percentage) / 100,
+              priorityLevel: score.severity_level as 'low' | 'medium' | 'high'
             }))
           });
         }

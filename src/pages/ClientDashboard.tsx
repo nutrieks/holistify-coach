@@ -25,10 +25,6 @@ const ClientDashboard = () => {
     todaysHabits,
     progressData,
     unreadCount,
-    mealPlanLevel,
-    weeklyFocus,
-    weeklyHabits,
-    weeklyRecipes,
     isLoading,
     toggleHabit,
   } = useClientDashboard();
@@ -42,37 +38,8 @@ const ClientDashboard = () => {
       // Check if questionnaire was skipped
       const skippedQuestionnaires = JSON.parse(localStorage.getItem(`skipped-questionnaires-${profile.id}`) || '[]');
 
-      // First get client record to see if they have an initial questionnaire
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .select('initial_questionnaire_id, questionnaires(id, title, description)')
-        .eq('client_id', profile.id)
-        .single()
-
-      // If client has an assigned initial questionnaire, handle it normally
-      if (clientData?.initial_questionnaire_id) {
-        // Check if this questionnaire was skipped
-        if (skippedQuestionnaires.includes(clientData.initial_questionnaire_id)) return null
-
-        // Check if they've already submitted it
-        const { data: submission, error: submissionError } = await supabase
-          .from('client_submissions')
-          .select('id')
-          .eq('client_id', profile.id)
-          .eq('questionnaire_id', clientData.initial_questionnaire_id)
-          .single()
-
-        if (submissionError && submissionError.code !== 'PGRST116') throw submissionError
-        
-        // If no submission exists, return the questionnaire
-        if (!submission) {
-          return clientData.questionnaires
-        }
-        
-        return null
-      }
-
-      // If no client record or no initial questionnaire, try to find a default NAQ
+      // Try to find a default NAQ or active questionnaire
+      // Note: clients table doesn't have initial_questionnaire_id
       console.log('No initial questionnaire assigned, checking for default NAQ...')
       
       const { data: defaultNAQ, error: naqError } = await supabase
@@ -121,38 +88,16 @@ const ClientDashboard = () => {
 
       let questionnaires: any[] = []
 
-      // First try to get questionnaires from the client's coach
-      const { data: clientData } = await supabase
-        .from('clients')
-        .select('coach_id')
-        .eq('client_id', profile.id)
-        .single()
+      // Get all active questionnaires (clients table doesn't have coach_id)
+      // Just get active questionnaires
+      const { data: activeQuestionnaires, error: questError } = await supabase
+        .from('questionnaires')
+        .select('id, title, description, created_at')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-      if (clientData?.coach_id) {
-        const { data: coachQuestionnaires, error } = await supabase
-          .from('questionnaires')
-          .select('id, title, description, created_at')
-          .eq('coach_id', clientData.coach_id)
-          .order('created_at', { ascending: false })
-
-        if (!error && coachQuestionnaires) {
-          questionnaires = coachQuestionnaires
-        }
-      }
-
-      // If no coach questionnaires found, get default questionnaires as fallback
-      if (questionnaires.length === 0) {
-        console.log('No coach questionnaires found, fetching default questionnaires...')
-        const { data: defaultQuestionnaires, error: defaultError } = await supabase
-          .from('questionnaires')
-          .select('id, title, description, created_at')
-          .eq('is_default_questionnaire', true)
-          .order('created_at', { ascending: false })
-
-        if (!defaultError && defaultQuestionnaires) {
-          questionnaires = defaultQuestionnaires
-          console.log('Found default questionnaires:', defaultQuestionnaires)
-        }
+      if (!questError && activeQuestionnaires) {
+        questionnaires = activeQuestionnaires;
       }
 
       // Get submission status for each questionnaire
@@ -368,69 +313,24 @@ const ClientDashboard = () => {
               <CardDescription>Vaš plan prehrane za danas</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Plan Level Indicator */}
-              {mealPlanLevel && (
-                <div className="mb-4 p-2 bg-muted rounded-lg">
-                  <Badge variant="secondary" className="mb-2">
-                    Plan Razine {mealPlanLevel}
-                  </Badge>
-                  {weeklyFocus && (
-                    <p className="text-sm text-muted-foreground">{weeklyFocus}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Level 1: Habits and Recipes */}
-              {mealPlanLevel === 1 && (
-                <div className="space-y-4">
-                  {weeklyHabits.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2">Tjedne navike</h4>
-                      <div className="space-y-2">
-                        {weeklyHabits.map((habit: any) => (
-                          <div key={habit.id} className="p-2 border rounded">
-                            <p className="text-sm font-medium">{habit.habit_name}</p>
-                            {habit.description && (
-                              <p className="text-xs text-muted-foreground">{habit.description}</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {weeklyRecipes.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2">Preporučeni recepti</h4>
-                      <div className="space-y-2">
-                        {weeklyRecipes.map((recipe: any) => (
-                          <div key={recipe.id} className="p-2 border rounded">
-                            <p className="text-sm font-medium">{recipe.name}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Level 2 & 3: Meals */}
+              {/* Meals for today */}
               {todaysMeals && todaysMeals.length > 0 ? (
                 <div className="space-y-3">
                   {Object.entries(mealsByType).map(([mealType, meals]) => (
                     <div key={mealType} className="p-3 border rounded-lg">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium capitalize">{mealType}</p>
-                          <div className="text-sm text-muted-foreground">
-                            {meals.map((meal, idx) => (
-                              <div key={idx}>
-                                {meal.food_name || meal.recipe_name || meal.category_name} 
-                                {meal.quantity && ` (${meal.quantity}g)`}
-                                {meal.calories && ` - ${Math.round(meal.calories)} kcal`}
-                              </div>
-                            ))}
+                          <div>
+                            <p className="font-medium capitalize">{mealType}</p>
+                            <div className="text-sm text-muted-foreground">
+                              {meals.map((meal, idx) => (
+                                <div key={idx}>
+                                  {meal.food_name || meal.recipe_name} 
+                                  {meal.quantity && ` (${meal.quantity}g)`}
+                                  {meal.calories && ` - ${Math.round(meal.calories)} kcal`}
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
                         <Button variant="outline" size="sm" onClick={() => navigate('/my-plans')}>
                           Detalji
                         </Button>

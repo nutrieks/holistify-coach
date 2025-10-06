@@ -129,13 +129,13 @@ export default function Messages() {
       try {
         const { data } = await supabase
           .from('user_presence')
-          .select('is_online, last_seen')
+          .select('status, last_seen')
           .eq('user_id', coachInfo.id)
           .single()
 
         if (data) {
           const isRecentlyActive = new Date(data.last_seen).getTime() > Date.now() - 5 * 60 * 1000 // 5 minutes
-          setCoachInfo(prev => prev ? { ...prev, is_online: data.is_online && isRecentlyActive } : null)
+          setCoachInfo(prev => prev ? { ...prev, is_online: data.status === 'online' && isRecentlyActive } : null)
         }
       } catch (error) {
         console.error('Error checking online status:', error)
@@ -157,25 +157,27 @@ export default function Messages() {
     try {
       setIsLoading(true)
 
-      // Get coach info from clients table
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
+      // Get user's own profile - this is simplified as we don't have coach relationship in clients table
+      // For now, just find admin users to chat with
+      const { data: adminUsers, error: adminError } = await supabase
+        .from('user_roles')
         .select(`
-          coach_id,
-          profiles!clients_coach_id_fkey (
+          user_id,
+          profiles!inner (
             id,
             full_name
           )
         `)
-        .eq('client_id', profile?.id)
+        .eq('role', 'admin')
+        .limit(1)
         .single()
 
-      if (clientError || !clientData) {
+      if (adminError || !adminUsers) {
         toast.error("Ne mogu dohvatiti informacije o treneru")
         return
       }
 
-      const coachProfile = clientData.profiles as CoachInfo
+      const coachProfile = adminUsers.profiles as any as CoachInfo
       setCoachInfo(coachProfile)
 
       // Fetch messages between client and coach
@@ -191,8 +193,12 @@ export default function Messages() {
       }
 
       setMessages((messagesData || []).map(msg => ({
-        ...msg,
-        status: (msg.status as 'sent' | 'delivered' | 'read') || 'sent'
+        id: msg.id,
+        sender_id: msg.sender_id,
+        receiver_id: msg.receiver_id,
+        message_text: msg.message,
+        timestamp: msg.created_at,
+        status: 'delivered' as 'sent' | 'delivered' | 'read'
       })))
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -212,7 +218,8 @@ export default function Messages() {
         .insert({
           sender_id: profile?.id,
           receiver_id: coachInfo.id,
-          message_text: newMessage.trim()
+          message: newMessage.trim(),
+          conversation_id: `${profile?.id}_${coachInfo.id}`
         })
 
       if (error) {
