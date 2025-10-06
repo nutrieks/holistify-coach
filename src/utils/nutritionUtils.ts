@@ -63,6 +63,17 @@ export const mealTypeLabels: Record<string, string> = {
   'post_workout': 'Nakon Treninga'
 };
 
+export const mealTypeOptions = [
+  { value: 'breakfast', label: 'Doručak', gradientClass: 'gradient-breakfast' },
+  { value: 'morning_snack', label: 'Užina', gradientClass: 'gradient-snack-cyan' },
+  { value: 'lunch', label: 'Ručak', gradientClass: 'gradient-lunch' },
+  { value: 'afternoon_snack', label: 'Međuobrok', gradientClass: 'gradient-snack-rose' },
+  { value: 'dinner', label: 'Večera', gradientClass: 'gradient-dinner' },
+  { value: 'evening_snack', label: 'Kasna Večera', gradientClass: 'gradient-snack-cyan' },
+  { value: 'pre_workout', label: 'Prije Treninga', gradientClass: 'gradient-preworkout' },
+  { value: 'post_workout', label: 'Nakon Treninga', gradientClass: 'gradient-postworkout' }
+];
+
 // Mock function to calculate daily macros based on training type
 export function calculateDailyMacros(
   baseMacros: MacroNutrients,

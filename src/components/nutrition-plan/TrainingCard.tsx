@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Dumbbell, ChevronDown, ChevronUp, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Clock, Dumbbell, ChevronDown, ChevronUp, Zap, Pencil, Trash2 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface TrainingCardProps {
@@ -13,6 +14,9 @@ interface TrainingCardProps {
   duringWorkoutNotes?: string;
   postWorkoutNotes?: string;
   onClick?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  editable?: boolean;
 }
 
 export function TrainingCard({
@@ -23,9 +27,13 @@ export function TrainingCard({
   preWorkoutNotes,
   duringWorkoutNotes,
   postWorkoutNotes,
-  onClick
+  onClick,
+  onEdit,
+  onDelete,
+  editable = false
 }: TrainingCardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const intensityColors = {
     low: 'bg-green-500/20 text-green-300',
@@ -41,9 +49,39 @@ export function TrainingCard({
 
   return (
     <Card 
-      className="gradient-training border-none hover-scale cursor-pointer transition-all duration-200"
+      className="gradient-training border-none hover-scale cursor-pointer transition-all duration-200 relative"
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Edit/Delete Buttons */}
+      {editable && isHovered && (
+        <div className="absolute top-2 right-2 flex gap-1 z-10">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-7 w-7 p-0 bg-white/20 hover:bg-white/30 text-white border-none"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.();
+            }}
+          >
+            <Pencil className="h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-7 w-7 p-0 bg-red-500/30 hover:bg-red-500/50 text-white border-none"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.();
+            }}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
+
       <div className="p-4">
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <div className="flex flex-col gap-3">

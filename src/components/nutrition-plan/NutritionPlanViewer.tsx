@@ -5,6 +5,9 @@ import { WeeklyView } from "./WeeklyView"
 import { DailyView } from "./DailyView"
 import { AddMealToTimelineModal } from "./AddMealToTimelineModal"
 import { AddTrainingSessionModal } from "./AddTrainingSessionModal"
+import { EditMealModal } from "./EditMealModal"
+import { EditTrainingSessionModal } from "./EditTrainingSessionModal"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { Calendar, CalendarDays, CalendarClock } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
@@ -26,7 +29,13 @@ export function NutritionPlanViewer({ planId, clientId, editable = false }: Nutr
   // Modal states
   const [addMealModalOpen, setAddMealModalOpen] = useState(false)
   const [addTrainingModalOpen, setAddTrainingModalOpen] = useState(false)
+  const [editMealModalOpen, setEditMealModalOpen] = useState(false)
+  const [editTrainingModalOpen, setEditTrainingModalOpen] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [selectedDay, setSelectedDay] = useState<number>(1)
+  const [selectedMeal, setSelectedMeal] = useState<any>(null)
+  const [selectedTraining, setSelectedTraining] = useState<any>(null)
+  const [deleteItem, setDeleteItem] = useState<{ type: 'meal' | 'training', id: string } | null>(null)
 
   useEffect(() => {
     fetchPlanData()
@@ -94,6 +103,69 @@ export function NutritionPlanViewer({ planId, clientId, editable = false }: Nutr
 
   const handleTrainingAdded = () => {
     fetchPlanData()
+  }
+
+  const handleEditMeal = (meal: any) => {
+    setSelectedMeal(meal)
+    setEditMealModalOpen(true)
+  }
+
+  const handleEditTraining = (training: any) => {
+    setSelectedTraining(training)
+    setEditTrainingModalOpen(true)
+  }
+
+  const handleDeleteMeal = (mealId: string) => {
+    setDeleteItem({ type: 'meal', id: mealId })
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleDeleteTraining = (trainingId: string) => {
+    setDeleteItem({ type: 'training', id: trainingId })
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteItem) return
+
+    try {
+      if (deleteItem.type === 'meal') {
+        const { error } = await supabase
+          .from('meal_plan_entries')
+          .delete()
+          .eq('id', deleteItem.id)
+
+        if (error) throw error
+
+        toast({
+          title: "Uspjeh",
+          description: "Obrok je uspješno obrisan",
+        })
+      } else {
+        const { error } = await supabase
+          .from('training_sessions')
+          .delete()
+          .eq('id', deleteItem.id)
+
+        if (error) throw error
+
+        toast({
+          title: "Uspjeh",
+          description: "Trening je uspješno obrisan",
+        })
+      }
+
+      fetchPlanData()
+    } catch (error) {
+      console.error('Error deleting:', error)
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške prilikom brisanja",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleteItem(null)
+    }
   }
 
   const handleDayTypeChange = async (dayOfWeek: number, type: 'no_training' | 'light_training' | 'moderate_training' | 'heavy_training') => {
@@ -166,6 +238,8 @@ export function NutritionPlanViewer({ planId, clientId, editable = false }: Nutr
         scheduledTime: e.scheduled_time || '00:00',
         foodName: e.food?.name,
         recipeName: e.recipe?.name,
+        foodId: e.food_id,
+        recipeId: e.recipe_id,
         calories: e.food?.calories || e.recipe?.total_calories || 0,
         protein: e.food?.protein || e.recipe?.total_protein || 0,
         carbs: e.food?.carbs || e.recipe?.total_carbs || 0,
@@ -234,6 +308,10 @@ export function NutritionPlanViewer({ planId, clientId, editable = false }: Nutr
               editable={editable}
               onAddMeal={handleAddMeal}
               onAddTraining={handleAddTraining}
+              onEditMeal={handleEditMeal}
+              onEditTraining={handleEditTraining}
+              onDeleteMeal={handleDeleteMeal}
+              onDeleteTraining={handleDeleteTraining}
               onDayTypeChange={handleDayTypeChange}
             />
         </TabsContent>
@@ -277,6 +355,55 @@ export function NutritionPlanViewer({ planId, clientId, editable = false }: Nutr
             planId={planId}
             dayOfWeek={selectedDay}
             onSessionAdded={handleTrainingAdded}
+          />
+
+          {selectedMeal && (
+            <EditMealModal
+              open={editMealModalOpen}
+              onOpenChange={setEditMealModalOpen}
+              mealEntry={{
+                id: selectedMeal.id,
+                meal_type: selectedMeal.mealType,
+                scheduled_time: selectedMeal.scheduledTime,
+                food_id: selectedMeal.foodId,
+                recipe_id: selectedMeal.recipeId,
+                quantity: selectedMeal.quantity,
+                unit: selectedMeal.unit,
+                notes: selectedMeal.notes,
+                foodName: selectedMeal.foodName,
+                recipeName: selectedMeal.recipeName
+              }}
+              onMealUpdated={fetchPlanData}
+            />
+          )}
+
+          {selectedTraining && (
+            <EditTrainingSessionModal
+              open={editTrainingModalOpen}
+              onOpenChange={setEditTrainingModalOpen}
+              session={{
+                id: selectedTraining.id,
+                training_type: selectedTraining.trainingType,
+                intensity: selectedTraining.intensity,
+                scheduled_time: selectedTraining.scheduledTime,
+                duration_minutes: selectedTraining.duration,
+                pre_workout_notes: selectedTraining.preWorkoutNotes,
+                during_workout_notes: selectedTraining.duringWorkoutNotes,
+                post_workout_notes: selectedTraining.postWorkoutNotes
+              }}
+              onSessionUpdated={fetchPlanData}
+            />
+          )}
+
+          <ConfirmDialog
+            open={deleteConfirmOpen}
+            onOpenChange={setDeleteConfirmOpen}
+            title="Potvrda Brisanja"
+            description={`Jeste li sigurni da želite obrisati ovaj ${deleteItem?.type === 'meal' ? 'obrok' : 'trening'}?`}
+            onConfirm={handleConfirmDelete}
+            confirmText="Obriši"
+            cancelText="Odustani"
+            variant="destructive"
           />
         </>
       )}

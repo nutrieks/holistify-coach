@@ -49,6 +49,10 @@ interface WeeklyViewProps {
   onAddTraining?: (dayOfWeek: number) => void;
   onMealClick?: (meal: MealEntry) => void;
   onTrainingClick?: (training: TrainingSession) => void;
+  onEditMeal?: (meal: MealEntry) => void;
+  onEditTraining?: (training: TrainingSession) => void;
+  onDeleteMeal?: (mealId: string) => void;
+  onDeleteTraining?: (trainingId: string) => void;
   onDayTypeChange?: (dayOfWeek: number, type: 'no_training' | 'light_training' | 'moderate_training' | 'heavy_training') => void;
   editable?: boolean;
 }
@@ -60,6 +64,10 @@ export function WeeklyView({
   onAddTraining,
   onMealClick,
   onTrainingClick,
+  onEditMeal,
+  onEditTraining,
+  onDeleteMeal,
+  onDeleteTraining,
   onDayTypeChange,
   editable = false
 }: WeeklyViewProps) {
@@ -163,6 +171,9 @@ export function WeeklyView({
                               unit={item.unit}
                               notes={item.notes}
                               onClick={() => onMealClick?.(item)}
+                              onEdit={() => onEditMeal?.(item)}
+                              onDelete={() => onDeleteMeal?.(item.id)}
+                              editable={editable}
                             />
                           ) : (
                             <TrainingCard
@@ -174,6 +185,9 @@ export function WeeklyView({
                               duringWorkoutNotes={item.duringWorkoutNotes}
                               postWorkoutNotes={item.postWorkoutNotes}
                               onClick={() => onTrainingClick?.(item)}
+                              onEdit={() => onEditTraining?.(item)}
+                              onDelete={() => onDeleteTraining?.(item.id)}
+                              editable={editable}
                             />
                           )}
                         </div>
