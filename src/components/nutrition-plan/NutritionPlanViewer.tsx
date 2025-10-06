@@ -324,6 +324,13 @@ export function NutritionPlanViewer({ planId, clientId, editable = false }: Nutr
             trainingSessions={currentDay?.trainingSessions || []}
             baseMacros={baseMacros}
             editable={editable}
+            onAddMeal={handleAddMeal}
+            onAddTraining={handleAddTraining}
+            onEditMeal={handleEditMeal}
+            onEditTraining={handleEditTraining}
+            onDeleteMeal={handleDeleteMeal}
+            onDeleteTraining={handleDeleteTraining}
+            onDayTypeChange={(type) => handleDayTypeChange(currentDay?.dayOfWeek || 0, type)}
             onPreviousDay={() => {
               const newDate = new Date(selectedDate);
               newDate.setDate(newDate.getDate() - 1);

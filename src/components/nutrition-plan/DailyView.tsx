@@ -40,10 +40,14 @@ interface DailyViewProps {
   meals: MealEntry[];
   trainingSessions: TrainingSession[];
   baseMacros: { calories: number; protein: number; carbs: number; fats: number };
-  onAddMeal?: () => void;
-  onAddTraining?: () => void;
+  onAddMeal?: (dayOfWeek: number) => void;
+  onAddTraining?: (dayOfWeek: number) => void;
   onMealClick?: (meal: MealEntry) => void;
   onTrainingClick?: (training: TrainingSession) => void;
+  onEditMeal?: (meal: MealEntry) => void;
+  onEditTraining?: (training: TrainingSession) => void;
+  onDeleteMeal?: (mealId: string) => void;
+  onDeleteTraining?: (trainingId: string) => void;
   onDayTypeChange?: (type: 'no_training' | 'light_training' | 'moderate_training' | 'heavy_training') => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
@@ -60,6 +64,10 @@ export function DailyView({
   onAddTraining,
   onMealClick,
   onTrainingClick,
+  onEditMeal,
+  onEditTraining,
+  onDeleteMeal,
+  onDeleteTraining,
   onDayTypeChange,
   onPreviousDay,
   onNextDay,
@@ -135,11 +143,11 @@ export function DailyView({
         {/* Action Buttons */}
         {editable && (
           <div className="flex gap-2 mt-4 justify-center">
-            <Button onClick={onAddMeal} variant="default">
+            <Button onClick={() => onAddMeal?.(dayOfWeek)} variant="default">
               <Plus className="h-4 w-4 mr-2" />
               Dodaj Obrok
             </Button>
-            <Button onClick={onAddTraining} variant="secondary">
+            <Button onClick={() => onAddTraining?.(dayOfWeek)} variant="secondary">
               <Plus className="h-4 w-4 mr-2" />
               Dodaj Trening
             </Button>
@@ -176,6 +184,9 @@ export function DailyView({
                     unit={item.unit}
                     notes={item.notes}
                     onClick={() => onMealClick?.(item)}
+                    onEdit={() => onEditMeal?.(item)}
+                    onDelete={() => onDeleteMeal?.(item.id)}
+                    editable={editable}
                   />
                 ) : (
                   <TrainingCard
@@ -187,6 +198,9 @@ export function DailyView({
                     duringWorkoutNotes={item.duringWorkoutNotes}
                     postWorkoutNotes={item.postWorkoutNotes}
                     onClick={() => onTrainingClick?.(item)}
+                    onEdit={() => onEditTraining?.(item)}
+                    onDelete={() => onDeleteTraining?.(item.id)}
+                    editable={editable}
                   />
                 )}
               </div>
