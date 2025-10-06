@@ -23,23 +23,24 @@ export interface NAQResults {
 }
 
 // NAQ Section definitions based on the PDF document
+// NAQ Section definitions based on the official PDF document with exact thresholds
 export const NAQ_SECTIONS: NAQSection[] = [
-  { name: 'Gornji gastrointestinalni sustav', category: 'upper_gi', questionCount: 19, lowPriority: 6, mediumPriority: 10, highPriority: 15 },
-  { name: 'Jetra i žučni mjehur', category: 'liver_gallbladder', questionCount: 28, lowPriority: 7, mediumPriority: 12, highPriority: 18 },
-  { name: 'Tanko crijevo', category: 'small_intestine', questionCount: 17, lowPriority: 5, mediumPriority: 8, highPriority: 16 },
-  { name: 'Debelo crijevo', category: 'large_intestine', questionCount: 20, lowPriority: 6, mediumPriority: 10, highPriority: 16 },
-  { name: 'Mineralne potrebe', category: 'minerals', questionCount: 29, lowPriority: 8, mediumPriority: 13, highPriority: 20 },
-  { name: 'Esencijalne masne kiseline', category: 'essential_fatty_acids', questionCount: 8, lowPriority: 3, mediumPriority: 5, highPriority: 7 },
-  { name: 'Regulacija šećera', category: 'sugar_regulation', questionCount: 13, lowPriority: 5, mediumPriority: 7, highPriority: 11 },
-  { name: 'Potrebe za vitaminima', category: 'vitamins', questionCount: 27, lowPriority: 8, mediumPriority: 13, highPriority: 20 },
-  { name: 'Nadbubrežne žlijezde', category: 'adrenals', questionCount: 26, lowPriority: 8, mediumPriority: 13, highPriority: 21 },
-  { name: 'Hipofiza', category: 'pituitary', questionCount: 13, lowPriority: 3, mediumPriority: 5, highPriority: 8 },
+  { name: 'Gornji gastrointestinalni sustav', category: 'upper_gi', questionCount: 19, lowPriority: 9, mediumPriority: 14, highPriority: 15 },
+  { name: 'Jetra i žučni mjehur', category: 'liver_gallbladder', questionCount: 28, lowPriority: 11, mediumPriority: 17, highPriority: 18 },
+  { name: 'Tanko crijevo', category: 'small_intestine', questionCount: 17, lowPriority: 7, mediumPriority: 15, highPriority: 16 },
+  { name: 'Debelo crijevo', category: 'large_intestine', questionCount: 20, lowPriority: 9, mediumPriority: 15, highPriority: 16 },
+  { name: 'Potrebe za mineralima', category: 'minerals', questionCount: 29, lowPriority: 12, mediumPriority: 19, highPriority: 20 },
+  { name: 'Esencijalne masne kiseline', category: 'essential_fatty_acids', questionCount: 8, lowPriority: 4, mediumPriority: 6, highPriority: 7 },
+  { name: 'Regulacija šećera', category: 'sugar_regulation', questionCount: 13, lowPriority: 6, mediumPriority: 10, highPriority: 11 },
+  { name: 'Potrebe za vitaminima', category: 'vitamins', questionCount: 27, lowPriority: 12, mediumPriority: 19, highPriority: 20 },
+  { name: 'Nadbubrežne žlijezde', category: 'adrenals', questionCount: 26, lowPriority: 12, mediumPriority: 20, highPriority: 21 },
+  { name: 'Hipofiza', category: 'pituitary', questionCount: 13, lowPriority: 4, mediumPriority: 7, highPriority: 8 },
   { name: 'Štitnjača', category: 'thyroid', questionCount: 16, lowPriority: 5, mediumPriority: 8, highPriority: 12 },
-  { name: 'Samo za muškarce', category: 'male_health', questionCount: 9, lowPriority: 4, mediumPriority: 6, highPriority: 7 },
-  { name: 'Samo za žene', category: 'female_health', questionCount: 20, lowPriority: 6, mediumPriority: 10, highPriority: 15 },
-  { name: 'Kardiovaskularni sustav', category: 'cardiovascular', questionCount: 10, lowPriority: 3, mediumPriority: 5, highPriority: 8 },
+  { name: 'Samo za muškarce', category: 'male_health', questionCount: 9, lowPriority: 5, mediumPriority: 6, highPriority: 7 },
+  { name: 'Samo za žene', category: 'female_health', questionCount: 20, lowPriority: 9, mediumPriority: 14, highPriority: 15 },
+  { name: 'Kardiovaskularni sustav', category: 'cardiovascular', questionCount: 10, lowPriority: 4, mediumPriority: 7, highPriority: 8 },
   { name: 'Bubrezi i mjehur', category: 'kidneys_bladder', questionCount: 5, lowPriority: 3, mediumPriority: 4, highPriority: 4 },
-  { name: 'Imunološki sustav', category: 'immune', questionCount: 10, lowPriority: 3, mediumPriority: 5, highPriority: 8 }
+  { name: 'Imunološki sustav', category: 'immune', questionCount: 10, lowPriority: 4, mediumPriority: 7, highPriority: 8 }
 ];
 
 // Health Foundation Hierarchy - defines treatment priority order
