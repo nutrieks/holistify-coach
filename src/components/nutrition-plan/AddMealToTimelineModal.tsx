@@ -163,7 +163,7 @@ export function AddMealToTimelineModal({
           {/* Meal Type & Time */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Tip Obroka</Label>
+              <Label>Tip Obroka *</Label>
               <Select value={mealType} onValueChange={setMealType}>
                 <SelectTrigger>
                   <SelectValue />
@@ -179,18 +179,19 @@ export function AddMealToTimelineModal({
             </div>
 
             <div>
-              <Label>Vrijeme</Label>
+              <Label>Vrijeme *</Label>
               <Input
                 type="time"
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
+                required
               />
             </div>
           </div>
 
           {/* Food/Recipe Selection */}
           <div>
-            <Label>Odaberi Namirnicu ili Recept</Label>
+            <Label>Odaberi Namirnicu ili Recept *</Label>
             <div className="relative mb-2">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -276,17 +277,20 @@ export function AddMealToTimelineModal({
           {/* Quantity */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Količina</Label>
+              <Label>Količina *</Label>
               <Input
                 type="number"
                 placeholder="200"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
+                min="0.01"
+                step="0.01"
+                required
               />
             </div>
 
             <div>
-              <Label>Jedinica</Label>
+              <Label>Jedinica *</Label>
               <Select value={unit} onValueChange={setUnit}>
                 <SelectTrigger>
                   <SelectValue />

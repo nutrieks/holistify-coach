@@ -121,7 +121,7 @@ export function AddTrainingSessionModal({
           {/* Training Type & Intensity */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Tip Treninga</Label>
+              <Label>Tip Treninga *</Label>
               <Select value={trainingType} onValueChange={setTrainingType}>
                 <SelectTrigger>
                   <SelectValue />
@@ -137,7 +137,7 @@ export function AddTrainingSessionModal({
             </div>
 
             <div>
-              <Label>Intenzitet</Label>
+              <Label>Intenzitet *</Label>
               <Select value={intensity} onValueChange={setIntensity}>
                 <SelectTrigger>
                   <SelectValue />
@@ -156,21 +156,25 @@ export function AddTrainingSessionModal({
           {/* Time & Duration */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Vrijeme</Label>
+              <Label>Vrijeme *</Label>
               <Input
                 type="time"
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
+                required
               />
             </div>
 
             <div>
-              <Label>Trajanje (minute)</Label>
+              <Label>Trajanje (minute) *</Label>
               <Input
                 type="number"
                 placeholder="60"
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
+                min="1"
+                step="1"
+                required
               />
             </div>
           </div>
