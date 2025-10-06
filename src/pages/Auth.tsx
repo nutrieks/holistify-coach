@@ -13,7 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signUp, signIn } = useAuth();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const { signUp, signIn, resetPassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -77,6 +78,29 @@ const Auth = () => {
     setIsLoading(false);
   };
 
+  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+
+    const { error } = await resetPassword(email);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      toast({
+        title: "Email poslan",
+        description: "Provjerite email za link za resetiranje lozinke."
+      });
+      setShowForgotPassword(false);
+    }
+
+    setIsLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -92,38 +116,81 @@ const Auth = () => {
             </TabsList>
             
             <TabsContent value="signin" className="space-y-4">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    name="email"
-                    type="email"
-                    placeholder="vaš@email.com"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Lozinka</Label>
-                  <Input
-                    id="signin-password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
-                
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Prijavljujem...' : 'Prijaviť se'}
-                </Button>
-              </form>
+              {!showForgotPassword ? (
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <Input
+                      id="signin-email"
+                      name="email"
+                      type="email"
+                      placeholder="vaš@email.com"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Lozinka</Label>
+                    <Input
+                      id="signin-password"
+                      name="password"
+                      type="password"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? 'Prijavljujem...' : 'Prijaviť se'}
+                  </Button>
+                  
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="w-full" 
+                    onClick={() => setShowForgotPassword(true)}
+                  >
+                    Zaboravili ste lozinku?
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email</Label>
+                    <Input
+                      id="reset-email"
+                      name="email"
+                      type="email"
+                      placeholder="vaš@email.com"
+                      required
+                    />
+                  </div>
+                  
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? 'Šaljem...' : 'Pošalji link za resetiranje'}
+                  </Button>
+                  
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="w-full" 
+                    onClick={() => setShowForgotPassword(false)}
+                  >
+                    Natrag na prijavu
+                  </Button>
+                </form>
+              )}
             </TabsContent>
             
             <TabsContent value="signup" className="space-y-4">
