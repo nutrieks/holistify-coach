@@ -8,15 +8,16 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/integrations/supabase/client"
-import { ArrowLeft, Calendar, Mail, Phone, User, Activity, TrendingUp, Clock, Plus } from "lucide-react"
+import { ArrowLeft, Calendar, Mail, Phone, User, Activity, TrendingUp, Clock, Plus, Apple } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { EnhancedAssignTrainingPlanModal } from "@/components/EnhancedAssignTrainingPlanModal"
 import { EnhancedAssignNutritionPlanModal } from "@/components/EnhancedAssignNutritionPlanModal"
 import { TrainingPlanView } from "@/components/TrainingPlanView"
-import { EnhancedNutritionPlanView } from "@/components/EnhancedNutritionPlanView"
+import { NutritionPlanViewer } from "@/components/nutrition-plan/NutritionPlanViewer"
 import { ProgressTab } from "@/components/progress/ProgressTab"
 import { ContractStatusCard } from "@/components/ContractStatusCard"
 import { FormsTab } from "@/components/FormsTab"
+import { LoadingSpinner } from "@/components/LoadingSpinner"
 
 interface ClientProfile {
   id: string
@@ -44,6 +45,8 @@ export default function ClientDetail() {
   const [newNote, setNewNote] = useState("")
   const [showAssignTrainingModal, setShowAssignTrainingModal] = useState(false)
   const [showAssignNutritionModal, setShowAssignNutritionModal] = useState(false)
+  const [nutritionPlanId, setNutritionPlanId] = useState<string | null>(null)
+  const [loadingPlan, setLoadingPlan] = useState(true)
   const { toast } = useToast()
 
   const fetchClient = async () => {
@@ -58,6 +61,15 @@ export default function ClientDetail() {
 
       if (error) throw error
       setClient(data)
+      
+      // Fetch nutrition plan
+      const { data: planData } = await supabase
+        .from('meal_plans')
+        .select('id')
+        .eq('client_id', id)
+        .maybeSingle()
+      
+      setNutritionPlanId(planData?.id || null)
     } catch (error: any) {
       toast({
         title: "Greška",
@@ -67,6 +79,7 @@ export default function ClientDetail() {
       navigate('/admin/clients')
     } finally {
       setLoading(false)
+      setLoadingPlan(false)
     }
   }
 
@@ -383,13 +396,27 @@ export default function ClientDetail() {
                 </div>
               </CardHeader>
               <CardContent>
-                <EnhancedNutritionPlanView 
-                  clientId={id!} 
-                  onPlanRemoved={() => {
-                    // Refresh plan view
-                    window.location.reload()
-                  }} 
-                />
+                {loadingPlan ? (
+                  <LoadingSpinner />
+                ) : nutritionPlanId ? (
+                  <NutritionPlanViewer 
+                    planId={nutritionPlanId}
+                    clientId={id!} 
+                    editable={true}
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <Apple className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h3 className="text-lg font-semibold mb-2">Nema Plana Prehrane</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Ovaj klijent nema dodijeljeni plan prehrane.
+                    </p>
+                    <Button onClick={() => setShowAssignNutritionModal(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Dodijeli Plan
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

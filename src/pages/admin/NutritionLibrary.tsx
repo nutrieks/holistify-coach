@@ -2,8 +2,7 @@ import { useState } from "react"
 import { AdminLayout } from "@/components/AdminLayout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus } from "lucide-react"
+import { Plus, BookOpen } from "lucide-react"
 import { Link } from "react-router-dom"
 import { FoodDatabase } from "@/components/nutrition/FoodDatabase"
 import { RecipeDatabase } from "@/components/nutrition/RecipeDatabase"
@@ -16,15 +15,23 @@ export default function NutritionLibrary() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Nutrition Library</h2>
             <p className="text-muted-foreground">
-              Upravljanje bazom namirnica i recepata
+              Upravljanje bazom namirnica, recepata i planova prehrane
             </p>
           </div>
-          <Button asChild>
-            <Link to="/admin/plans/nutrition/create">
-              <Plus className="mr-2 h-4 w-4" />
-              Kreiraj Plan Prehrane
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/admin/plans/nutrition">
+                <BookOpen className="mr-2 h-4 w-4" />
+                Svi Planovi
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/admin/plans/nutrition/create">
+                <Plus className="mr-2 h-4 w-4" />
+                Kreiraj Plan
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="food" className="space-y-4">
