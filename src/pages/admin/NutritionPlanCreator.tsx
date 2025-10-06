@@ -84,19 +84,16 @@ export default function NutritionPlanCreator() {
         const { data: habitsData } = await supabase
           .from('habits')
           .select('*')
-          .eq('coach_id', user.id)
 
         // Fetch recipes
         const { data: recipesData } = await supabase
           .from('recipes')
           .select('*')
-          .eq('coach_id', user.id)
 
         // Fetch food categories
         const { data: categoriesData } = await supabase
           .from('food_categories')
           .select('*')
-          .eq('coach_id', user.id)
 
         setHabits(habitsData || [])
         setRecipes(recipesData || [])
@@ -237,20 +234,11 @@ export default function NutritionPlanCreator() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Create meal plan with new fields
+      // Create meal plan
       const planData: any = {
-        plan_name: planName,
-        coach_id: user.id,
+        name: planName,
         client_id: null,
-        date: new Date().toISOString().split('T')[0],
-        plan_level: planLevel
-      }
-
-      // Add level-specific data
-      if (planLevel === 1) {
-        planData.weekly_focus = weeklyFocus
-        planData.weekly_habit_ids = selectedHabits
-        planData.weekly_recipe_ids = selectedRecipes
+        start_date: new Date().toISOString().split('T')[0]
       }
 
       const { data: plan, error: planError } = await supabase

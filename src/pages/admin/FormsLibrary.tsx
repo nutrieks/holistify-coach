@@ -33,7 +33,7 @@ interface Question {
   id: string
   question_text: string
   question_type: string
-  question_order: number | null
+  order_index: number | null
   options?: string | null
   created_at?: string
   questionnaire_id?: string
@@ -76,7 +76,6 @@ export default function FormsLibrary() {
           questionnaire_questions(count),
           client_submissions(count)
         `)
-        .eq('coach_id', profile?.id)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -100,7 +99,7 @@ export default function FormsLibrary() {
         .from('questionnaire_questions')
         .select('*')
         .eq('questionnaire_id', selectedQuestionnaire.id)
-        .order('question_order', { ascending: true })
+        .order('order_index', { ascending: true })
 
       if (error) throw error
       return data
@@ -178,7 +177,7 @@ export default function FormsLibrary() {
         question_text: data.question_text,
         question_type: data.question_type,
         questionnaire_id: selectedQuestionnaire?.id,
-        question_order: questions.length + 1,
+        order_index: questions.length + 1,
         options: (data.question_type === 'multiple_choice' || data.question_type === 'checkbox') 
           ? JSON.stringify(data.options) 
           : null
@@ -254,13 +253,13 @@ export default function FormsLibrary() {
     mutationFn: async (reorderedQuestions: Question[]) => {
       const updates = reorderedQuestions.map((question, index) => ({
         id: question.id,
-        question_order: index + 1
+        order_index: index + 1
       }))
 
       for (const update of updates) {
         const { error } = await supabase
           .from('questionnaire_questions')
-          .update({ question_order: update.question_order })
+          .update({ order_index: update.order_index })
           .eq('id', update.id)
         
         if (error) throw error

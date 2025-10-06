@@ -16,17 +16,13 @@ import { useToast } from "@/hooks/use-toast"
 interface FoodCategory {
   id: string
   category_name: string
-  parent_category_id: string | null
   avg_calories: number | null
   avg_protein: number | null
   avg_carbs: number | null
-  avg_fat: number | null
+  avg_fats: number | null
   standard_portion_size: string | null
-  coach_id: string
   created_at: string
-  parent_category?: {
-    category_name: string
-  } | null
+  updated_at: string
 }
 
 export default function FoodCategories() {
@@ -36,27 +32,19 @@ export default function FoodCategories() {
   const [editingCategory, setEditingCategory] = useState<FoodCategory | null>(null)
   const [formData, setFormData] = useState({
     category_name: "",
-    parent_category_id: "",
     avg_calories: "",
     avg_protein: "",
     avg_carbs: "",
-    avg_fat: "",
+    avg_fats: "",
     standard_portion_size: ""
   })
   const { toast } = useToast()
 
   const fetchCategories = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
       const { data, error } = await supabase
         .from('food_categories')
-        .select(`
-          *,
-          parent_category:food_categories!parent_category_id(category_name)
-        `)
-        .eq('coach_id', user.id)
+        .select('*')
         .order('category_name')
 
       if (error) throw error
@@ -79,11 +67,10 @@ export default function FoodCategories() {
   const resetForm = () => {
     setFormData({
       category_name: "",
-      parent_category_id: "",
       avg_calories: "",
       avg_protein: "",
       avg_carbs: "",
-      avg_fat: "",
+      avg_fats: "",
       standard_portion_size: ""
     })
     setEditingCategory(null)
@@ -94,11 +81,10 @@ export default function FoodCategories() {
       setEditingCategory(category)
       setFormData({
         category_name: category.category_name,
-        parent_category_id: category.parent_category_id || "",
         avg_calories: category.avg_calories?.toString() || "",
         avg_protein: category.avg_protein?.toString() || "",
         avg_carbs: category.avg_carbs?.toString() || "",
-        avg_fat: category.avg_fat?.toString() || "",
+        avg_fats: category.avg_fats?.toString() || "",
         standard_portion_size: category.standard_portion_size || ""
       })
     } else {
@@ -120,18 +106,13 @@ export default function FoodCategories() {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
       const categoryData = {
         category_name: formData.category_name,
-        parent_category_id: formData.parent_category_id || null,
         avg_calories: formData.avg_calories ? parseFloat(formData.avg_calories) : null,
         avg_protein: formData.avg_protein ? parseFloat(formData.avg_protein) : null,
         avg_carbs: formData.avg_carbs ? parseFloat(formData.avg_carbs) : null,
-        avg_fat: formData.avg_fat ? parseFloat(formData.avg_fat) : null,
-        standard_portion_size: formData.standard_portion_size || null,
-        coach_id: user.id
+        avg_fats: formData.avg_fats ? parseFloat(formData.avg_fats) : null,
+        standard_portion_size: formData.standard_portion_size || null
       }
 
       if (editingCategory) {
@@ -197,8 +178,6 @@ export default function FoodCategories() {
     }
   }
 
-  const parentCategories = categories.filter(cat => !cat.parent_category_id)
-
   return (
     <AdminLayout title="Kategorije Namirnica">
       <div className="space-y-6">
@@ -234,29 +213,9 @@ export default function FoodCategories() {
                       id="category_name"
                       value={formData.category_name}
                       onChange={(e) => setFormData(prev => ({ ...prev, category_name: e.target.value }))}
-                      placeholder="npr. Proteini, Ugljikohidrati..."
+                    placeholder="npr. Proteini, Ugljikohidrati..."
                       required
                     />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="parent_category">Nadkategorija</Label>
-                    <Select
-                      value={formData.parent_category_id}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, parent_category_id: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Odaberite nadkategoriju (opcionalno)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Nema nadkategorije</SelectItem>
-                        {parentCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.category_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
 
@@ -308,13 +267,13 @@ export default function FoodCategories() {
                   </div>
                   
                   <div>
-                    <Label htmlFor="avg_fat">Prosječne Masti</Label>
+                    <Label htmlFor="avg_fats">Prosječne Masti</Label>
                     <Input
-                      id="avg_fat"
+                      id="avg_fats"
                       type="number"
                       step="0.1"
-                      value={formData.avg_fat}
-                      onChange={(e) => setFormData(prev => ({ ...prev, avg_fat: e.target.value }))}
+                      value={formData.avg_fats}
+                      onChange={(e) => setFormData(prev => ({ ...prev, avg_fats: e.target.value }))}
                       placeholder="g"
                     />
                   </div>
@@ -353,7 +312,6 @@ export default function FoodCategories() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Kategorija</TableHead>
-                    <TableHead>Nadkategorija</TableHead>
                     <TableHead>Standardna Porcija</TableHead>
                     <TableHead>Prosječne Vrijednosti</TableHead>
                     <TableHead className="w-[100px]">Akcije</TableHead>
@@ -364,15 +322,6 @@ export default function FoodCategories() {
                     <TableRow key={category.id}>
                       <TableCell className="font-medium">
                         {category.category_name}
-                      </TableCell>
-                      <TableCell>
-                        {category.parent_category ? (
-                          <Badge variant="secondary">
-                            {category.parent_category.category_name}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
                       </TableCell>
                       <TableCell>
                         {category.standard_portion_size || (
@@ -386,7 +335,7 @@ export default function FoodCategories() {
                             <div className="text-muted-foreground">
                               P: {category.avg_protein || 0}g, 
                               C: {category.avg_carbs || 0}g, 
-                              F: {category.avg_fat || 0}g
+                              F: {category.avg_fats || 0}g
                             </div>
                           </div>
                         ) : (

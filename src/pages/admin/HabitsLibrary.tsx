@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth"
 
 interface Habit {
   id: string
-  habit_name: string
+  name: string
   description: string | null
   created_at: string
 }
@@ -27,8 +27,8 @@ export default function HabitsLibrary() {
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
-  const [newHabit, setNewHabit] = useState({ habit_name: "", description: "" })
-  const [editHabit, setEditHabit] = useState({ habit_name: "", description: "" })
+  const [newHabit, setNewHabit] = useState({ name: "", description: "" })
+  const [editHabit, setEditHabit] = useState({ name: "", description: "" })
 
   // Fetch habits
   const { data: habits = [], isLoading } = useQuery({
@@ -37,7 +37,6 @@ export default function HabitsLibrary() {
       const { data, error } = await supabase
         .from('habits')
         .select('*')
-        .eq('coach_id', profile?.id)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -48,20 +47,17 @@ export default function HabitsLibrary() {
 
   // Create habit
   const createHabit = useMutation({
-    mutationFn: async (data: { habit_name: string; description: string }) => {
+    mutationFn: async (data: { name: string; description: string }) => {
       const { error } = await supabase
         .from('habits')
-        .insert({
-          ...data,
-          coach_id: profile?.id
-        })
+        .insert(data)
 
       if (error) throw error
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] })
       setIsCreateOpen(false)
-      setNewHabit({ habit_name: "", description: "" })
+      setNewHabit({ name: "", description: "" })
       toast({ title: "Navika kreirana uspješno" })
     },
     onError: () => {
@@ -71,7 +67,7 @@ export default function HabitsLibrary() {
 
   // Update habit
   const updateHabit = useMutation({
-    mutationFn: async (data: { id: string; habit_name: string; description: string }) => {
+    mutationFn: async (data: { id: string; name: string; description: string }) => {
       const { id, ...updateData } = data
       const { error } = await supabase
         .from('habits')
@@ -111,12 +107,12 @@ export default function HabitsLibrary() {
   })
 
   const handleCreateHabit = () => {
-    if (!newHabit.habit_name.trim()) return
+    if (!newHabit.name.trim()) return
     createHabit.mutate(newHabit)
   }
 
   const handleEditHabit = () => {
-    if (!selectedHabit || !editHabit.habit_name.trim()) return
+    if (!selectedHabit || !editHabit.name.trim()) return
     updateHabit.mutate({
       id: selectedHabit.id,
       ...editHabit
@@ -126,7 +122,7 @@ export default function HabitsLibrary() {
   const openEditDialog = (habit: Habit) => {
     setSelectedHabit(habit)
     setEditHabit({
-      habit_name: habit.habit_name,
+      name: habit.name,
       description: habit.description || ""
     })
     setIsEditOpen(true)
@@ -168,11 +164,11 @@ export default function HabitsLibrary() {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="habit_name">Naziv Navike</Label>
+                  <Label htmlFor="name">Naziv Navike</Label>
                   <Input
-                    id="habit_name"
-                    value={newHabit.habit_name}
-                    onChange={(e) => setNewHabit(prev => ({ ...prev, habit_name: e.target.value }))}
+                    id="name"
+                    value={newHabit.name}
+                    onChange={(e) => setNewHabit(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="npr. Pijte 2L vode dnevno"
                   />
                 </div>
@@ -229,7 +225,7 @@ export default function HabitsLibrary() {
                 <TableBody>
                   {habits.map((habit) => (
                     <TableRow key={habit.id}>
-                      <TableCell className="font-medium">{habit.habit_name}</TableCell>
+                      <TableCell className="font-medium">{habit.name}</TableCell>
                       <TableCell>
                         {habit.description ? (
                           <span className="text-sm text-muted-foreground">
@@ -282,11 +278,11 @@ export default function HabitsLibrary() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit_habit_name">Naziv Navike</Label>
+                <Label htmlFor="edit_name">Naziv Navike</Label>
                 <Input
-                  id="edit_habit_name"
-                  value={editHabit.habit_name}
-                  onChange={(e) => setEditHabit(prev => ({ ...prev, habit_name: e.target.value }))}
+                  id="edit_name"
+                  value={editHabit.name}
+                  onChange={(e) => setEditHabit(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="npr. Pijte 2L vode dnevno"
                 />
               </div>

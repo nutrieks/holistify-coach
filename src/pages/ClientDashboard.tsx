@@ -45,7 +45,6 @@ const ClientDashboard = () => {
       const { data: defaultNAQ, error: naqError } = await supabase
         .from('questionnaires')
         .select('id, title, description')
-        .eq('is_default_questionnaire', true)
         .ilike('title', '%NAQ%')
         .order('created_at', { ascending: false })
         .limit(1)

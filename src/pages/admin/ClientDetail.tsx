@@ -20,15 +20,20 @@ import { FormsTab } from "@/components/FormsTab"
 
 interface ClientProfile {
   id: string
-  client_id: string
-  coach_id: string
-  status: string
-  start_date: string | null
+  user_id: string
+  full_name: string
+  email: string
+  phone: string | null
+  notes: string | null
+  date_of_birth: string | null
+  gender: string | null
+  starting_weight: number | null
+  height: number | null
+  contract_start_date: string | null
+  contract_end_date: string | null
+  sessions_remaining: number | null
   created_at: string
-  client_profile: {
-    full_name: string | null
-    profile_image_url: string | null
-  } | null
+  updated_at: string
 }
 
 export default function ClientDetail() {
@@ -45,16 +50,10 @@ export default function ClientDetail() {
     if (!id) return
     
     try {
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('clients')
-        .select(`
-          *,
-          client_profile:profiles!clients_client_id_fkey (
-            full_name,
-            profile_image_url
-          )
-        `)
-        .eq('client_id', id)
+        .select('*')
+        .eq('user_id', id)
         .single()
 
       if (error) throw error
@@ -75,22 +74,10 @@ export default function ClientDetail() {
     fetchClient()
   }, [id])
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      'active': 'default',
-      'pending': 'secondary',
-      'inactive': 'outline'
-    } as const
-    
-    const labels = {
-      'active': 'Aktivan',
-      'pending': 'Čeka',
-      'inactive': 'Neaktivan'
-    }
-    
+  const getStatusBadge = () => {
     return (
-      <Badge variant={variants[status as keyof typeof variants] || 'outline'}>
-        {labels[status as keyof typeof labels] || status}
+      <Badge variant="default">
+        Aktivan
       </Badge>
     )
   }
@@ -142,10 +129,10 @@ export default function ClientDetail() {
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">
-                  {client.client_profile?.full_name || 'Nepoznato ime'}
+                  {client.full_name || 'Nepoznato ime'}
                 </h1>
                 <div className="flex items-center gap-4 mt-1">
-                  {getStatusBadge(client.status)}
+                  {getStatusBadge()}
                   <span className="text-sm text-muted-foreground">
                     Dodano: {new Date(client.created_at).toLocaleDateString('hr-HR')}
                   </span>
@@ -189,25 +176,25 @@ export default function ClientDetail() {
                   <div className="flex items-center gap-3">
                     <Avatar className="w-12 h-12">
                       <AvatarFallback className="bg-primary/10 text-primary font-medium text-lg">
-                        {client.client_profile?.full_name?.charAt(0)?.toUpperCase() || 'K'}
+                        {client.full_name?.charAt(0)?.toUpperCase() || 'K'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold">{client.client_profile?.full_name || 'Nepoznato ime'}</h3>
-                      <p className="text-sm text-muted-foreground">Client ID: {client.client_id.slice(0, 8)}</p>
+                      <h3 className="font-semibold">{client.full_name || 'Nepoznato ime'}</h3>
+                      <p className="text-sm text-muted-foreground">Client ID: {client.user_id.slice(0, 8)}</p>
                     </div>
                   </div>
                   
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Status:</span>
-                      {getStatusBadge(client.status)}
+                      {getStatusBadge()}
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Start Date:</span>
+                      <span className="text-sm text-muted-foreground">Contract Start:</span>
                       <span className="text-sm">
-                        {client.start_date ? 
-                          new Date(client.start_date).toLocaleDateString('hr-HR') : 
+                        {client.contract_start_date ? 
+                          new Date(client.contract_start_date).toLocaleDateString('hr-HR') : 
                           'Not set'
                         }
                       </span>
@@ -221,8 +208,8 @@ export default function ClientDetail() {
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Duration:</span>
                       <span className="text-sm">
-                        {client.start_date ? 
-                          Math.floor((new Date().getTime() - new Date(client.start_date).getTime()) / (1000 * 60 * 60 * 24)) + ' days'
+                        {client.contract_start_date ? 
+                          Math.floor((new Date().getTime() - new Date(client.contract_start_date).getTime()) / (1000 * 60 * 60 * 24)) + ' days'
                           : '-'
                         }
                       </span>
@@ -232,7 +219,7 @@ export default function ClientDetail() {
               </Card>
 
               {/* Contract Status */}
-              <ContractStatusCard clientId={client.client_id} />
+              <ContractStatusCard clientId={client.user_id} />
 
               {/* Metrics Avg */}
               <Card>
@@ -409,7 +396,7 @@ export default function ClientDetail() {
 
 
           <TabsContent value="forms">
-            <FormsTab clientId={id!} clientName={client.client_profile?.full_name || 'Klijent'} />
+            <FormsTab clientId={id!} clientName={client.full_name || 'Klijent'} />
           </TabsContent>
 
           <TabsContent value="notes">

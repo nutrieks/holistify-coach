@@ -132,15 +132,15 @@ export default function QuestionnaireForm() {
   useEffect(() => {
     if (questionnaire?.questions && questionnaire.questions.length > 0) {
       const currentQuestion = questionnaire.questions[currentQuestionIndex]
-      if (currentQuestion?.section_name) {
-        setCurrentSection(currentQuestion.section_name)
+      if (currentQuestion?.section) {
+        setCurrentSection(currentQuestion.section)
       }
 
       // Calculate progress for each section
       const sections: Record<string, { total: number; answered: number }> = {}
       
       questionnaire.questions.forEach((q) => {
-        const sectionName = q.section_name || 'Općenito'
+        const sectionName = q.section || 'Općenito'
         if (!sections[sectionName]) {
           sections[sectionName] = { total: 0, answered: 0 }
         }

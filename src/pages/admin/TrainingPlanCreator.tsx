@@ -182,8 +182,7 @@ export default function TrainingPlanCreator() {
       const { data: plan, error: planError } = await supabase
         .from('training_plans')
         .insert({
-          plan_name: planName,
-          coach_id: (await supabase.auth.getUser()).data.user?.id,
+          name: planName,
           client_id: null, // Will be assigned when coach assigns plan to specific client
           start_date: new Date().toISOString().split('T')[0]
         })
@@ -196,31 +195,26 @@ export default function TrainingPlanCreator() {
       for (const [day, dayPlan] of Object.entries(weekPlan)) {
         for (const session of dayPlan.sessions) {
           if (session.exercises.length > 0 && session.name.trim()) {
-            const { data: sessionData, error: sessionError } = await supabase
+            // Convert exercises to JSONB format
+            const exercisesJson = session.exercises.map(exercise => ({
+              exercise_id: exercise.exerciseId,
+              exercise_name: exercise.exerciseName,
+              muscle_group: exercise.muscleGroup,
+              sets: exercise.sets,
+              reps: exercise.reps,
+              rest: exercise.rest
+            }))
+
+            const { error: sessionError } = await supabase
               .from('workout_sessions')
               .insert({
                 training_plan_id: plan.id,
                 session_name: session.name,
-                day_of_week: parseInt(day)
+                day_of_week: parseInt(day),
+                exercises: exercisesJson
               })
-              .select()
-              .single()
 
             if (sessionError) throw sessionError
-
-            const exerciseData = session.exercises.map(exercise => ({
-              workout_session_id: sessionData.id,
-              exercise_id: exercise.exerciseId,
-              sets: exercise.sets,
-              reps: exercise.reps,
-              rest_period_seconds: exercise.rest
-            }))
-
-            const { error: exercisesError } = await supabase
-              .from('workout_exercises')
-              .insert(exerciseData)
-
-            if (exercisesError) throw exercisesError
           }
         }
       }

@@ -16,10 +16,7 @@ export default function CheckInsLibrary() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('progress_tracking')
-        .select(`
-          *,
-          profiles!client_id(full_name)
-        `)
+        .select('*')
         .order('date', { ascending: false })
 
       if (error) throw error
@@ -119,7 +116,7 @@ export default function CheckInsLibrary() {
                   {checkIns.slice(0, 20).map((checkIn) => (
                     <TableRow key={checkIn.id}>
                       <TableCell className="font-medium">
-                        {checkIn.profiles?.full_name || 'Nepoznat'}
+                        Klijent {checkIn.client_id.slice(0, 8)}
                       </TableCell>
                       <TableCell>
                         {new Date(checkIn.date).toLocaleDateString('hr-HR')}

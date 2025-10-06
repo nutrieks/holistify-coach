@@ -16,14 +16,10 @@ interface ChatMessage {
   id: string
   sender_id: string
   receiver_id: string
-  message_text: string
-  timestamp: string
-  sender_profile?: {
-    full_name: string | null
-  }
-  receiver_profile?: {
-    full_name: string | null
-  }
+  message: string
+  created_at: string
+  is_read: boolean
+  conversation_id: string
 }
 
 interface Conversation {
@@ -49,23 +45,17 @@ export default function Messages() {
 
   const fetchConversations = async () => {
     try {
-      // Dohvaćamo sve klijente koji imaju poruke s trenerom
+      // Dohvaćamo sve klijente
       const { data: clientsList, error: clientsError } = await supabase
         .from('clients')
-        .select(`
-          client_id,
-          client_profile:profiles!clients_client_id_fkey (
-            full_name
-          )
-        `)
-        .eq('coach_id', user?.id)
+        .select('user_id, full_name')
 
       if (clientsError) throw clientsError
 
       // Za sada ćemo samo pokazati listu klijenata bez stvarnih poruka
       const mockConversations: Conversation[] = (clientsList || []).map(client => ({
-        client_id: client.client_id,
-        client_name: (client as any).client_profile?.full_name || 'Nepoznato ime',
+        client_id: client.user_id,
+        client_name: client.full_name || 'Nepoznato ime',
         last_message: 'Početak razgovora',
         last_message_time: new Date().toISOString(),
         unread_count: 0
@@ -87,13 +77,9 @@ export default function Messages() {
     try {
       const { data, error } = await supabase
         .from('chat_messages')
-        .select(`
-          *,
-          sender_profile:profiles!chat_messages_sender_id_fkey (full_name),
-          receiver_profile:profiles!chat_messages_receiver_id_fkey (full_name)
-        `)
+        .select('*')
         .or(`and(sender_id.eq.${user?.id},receiver_id.eq.${clientId}),and(sender_id.eq.${clientId},receiver_id.eq.${user?.id})`)
-        .order('timestamp', { ascending: true })
+        .order('created_at', { ascending: true })
 
       if (error) throw error
       setMessages(data || [])
@@ -115,7 +101,8 @@ export default function Messages() {
         .insert({
           sender_id: user?.id,
           receiver_id: selectedClient,
-          message_text: newMessage.trim()
+          message: newMessage.trim(),
+          conversation_id: `${user?.id}_${selectedClient}`
         })
 
       if (error) throw error
@@ -162,7 +149,7 @@ export default function Messages() {
                 (newMessage.sender_id === user.id && newMessage.receiver_id === conv.client_id)) {
               return {
                 ...conv,
-                last_message: newMessage.message_text,
+                last_message: newMessage.message,
                 unread_count: newMessage.sender_id !== user.id ? conv.unread_count + 1 : conv.unread_count
               }
             }
@@ -297,9 +284,9 @@ export default function Messages() {
                               : 'bg-muted'
                           }`}
                         >
-                          <p className="text-sm">{message.message_text}</p>
+                          <p className="text-sm">{message.message}</p>
                           <p className="text-xs opacity-70 mt-1">
-                            {new Date(message.timestamp).toLocaleTimeString('hr-HR', {
+                            {new Date(message.created_at).toLocaleTimeString('hr-HR', {
                               hour: '2-digit',
                               minute: '2-digit'
                             })}
