@@ -22,11 +22,10 @@ interface Question {
   id: string
   question_text: string
   question_type: string
-  question_order: number | null
+  order_index: number | null
   options?: string | null
-  section_name?: string | null
-  scoring_category?: string | null
-  scoring_weight?: number | null
+  section?: string | null
+  category?: string | null
 }
 
 interface QuestionnaireData {
@@ -117,7 +116,7 @@ export default function QuestionnaireForm() {
         .from('questionnaire_questions')
         .select('*')
         .eq('questionnaire_id', id)
-        .order('question_order', { ascending: true })
+        .order('order_index', { ascending: true })
 
       if (questionsError) throw questionsError
 
