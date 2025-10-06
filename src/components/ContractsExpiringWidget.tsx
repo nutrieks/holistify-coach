@@ -38,14 +38,14 @@ export function ContractsExpiringWidget() {
           <div className="space-y-3">
             {expiringContracts.slice(0, 5).map((contract) => (
               <div 
-                key={contract.client_id}
+                key={contract.user_id}
                 className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <div>
                       <p className="font-medium">
-                        {contract.client_profile?.full_name || 'Nepoznato ime'}
+                        {contract.full_name || 'Nepoznato ime'}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <Clock className="h-3 w-3 text-muted-foreground" />
@@ -70,7 +70,7 @@ export function ContractsExpiringWidget() {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => navigate(`/admin/clients/${contract.client_id}`)}
+                    onClick={() => navigate(`/admin/clients/${contract.user_id}`)}
                   >
                     <ExternalLink className="h-3 w-3" />
                   </Button>

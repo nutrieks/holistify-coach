@@ -29,8 +29,8 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
         .from('client_submissions')
         .select(`
           id,
-          submission_date,
           created_at,
+          submitted_at,
           questionnaires (
             id,
             title,

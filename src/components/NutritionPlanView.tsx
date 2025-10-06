@@ -9,13 +9,18 @@ import { Apple, ChevronDown, ChevronUp, Calendar, Trash2, RotateCcw } from "luci
 
 interface NutritionPlan {
   id: string
-  plan_name: string
-  plan_level: number
-  weekly_focus: string | null
-  weekly_habit_ids: string[] | null
-  weekly_recipe_ids: string[] | null
-  date: string
+  name: string
+  client_id: string
+  start_date: string | null
+  end_date: string | null
+  notes: string | null
+  is_active: boolean
   created_at: string
+  updated_at: string
+  daily_calories_target: number | null
+  daily_protein_target: number | null
+  daily_carbs_target: number | null
+  daily_fats_target: number | null
 }
 
 interface MealPlanEntry {
@@ -29,12 +34,6 @@ interface MealPlanEntry {
   } | null
   recipe: {
     name: string
-  } | null
-  category: {
-    id: string
-    category_name: string
-    avg_calories: number | null
-    standard_portion_size: string | null
   } | null
 }
 
@@ -78,9 +77,8 @@ export function NutritionPlanView({ clientId, onPlanRemoved, readOnly = false }:
 
       setPlan(planData)
 
-      // Only fetch entries for Level 2 and 3 plans
-      if (planData.plan_level > 1) {
-        const { data: entriesData, error: entriesError } = await supabase
+      // Fetch meal plan entries
+      const { data: entriesData, error: entriesError } = await supabase
           .from('meal_plan_entries')
           .select(`
             *,
@@ -90,23 +88,14 @@ export function NutritionPlanView({ clientId, onPlanRemoved, readOnly = false }:
             ),
             recipe:recipes (
               name
-            ),
-            category:food_categories (
-              id,
-              category_name,
-              avg_calories,
-              standard_portion_size
             )
           `)
           .eq('meal_plan_id', planData.id)
           .order('day_of_week')
           .order('meal_type')
 
-        if (entriesError) throw entriesError
-        setEntries(entriesData || [])
-      } else {
-        setEntries([])
-      }
+      if (entriesError) throw entriesError
+      setEntries(entriesData as any || [])
     } catch (error: any) {
       toast({
         title: "Greška",
@@ -199,23 +188,21 @@ export function NutritionPlanView({ clientId, onPlanRemoved, readOnly = false }:
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Apple className="h-5 w-5" />
-                {plan.plan_name}
+                {plan.name}
               </CardTitle>
               <div className="flex items-center gap-4 mt-2">
                 <Badge variant="default">Aktivan</Badge>
-                <Badge variant="outline">
-                  {plan.plan_level === 1 ? 'Navike & Fokus' : 
-                   plan.plan_level === 2 ? 'Fleksibilni' : 'Specifični'}
-                </Badge>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  Dodijeljen {new Date(plan.date).toLocaleDateString('hr-HR')}
-                </div>
+                {plan.start_date && (
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    Dodijeljen {new Date(plan.start_date).toLocaleDateString('hr-HR')}
+                  </div>
+                )}
               </div>
-              {plan.weekly_focus && (
+              {plan.notes && (
                 <div className="mt-3 p-3 bg-muted rounded-md">
-                  <h4 className="font-medium text-sm mb-1">Fokus Tjedna:</h4>
-                  <p className="text-sm">{plan.weekly_focus}</p>
+                  <h4 className="font-medium text-sm mb-1">Bilješke:</h4>
+                  <p className="text-sm">{plan.notes}</p>
                 </div>
               )}
             </div>
@@ -243,23 +230,8 @@ export function NutritionPlanView({ clientId, onPlanRemoved, readOnly = false }:
         </CardHeader>
       </Card>
 
-      {/* Level 1: Habits and Recipes Display */}
-      {plan.plan_level === 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Plan sadrži smjernice za navike i fokus</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center text-muted-foreground py-8">
-              <p>Ovaj plan se fokusira na izgradnju zdravih navika i prehranbenoj edukaciji.</p>
-              <p className="text-sm mt-2">Specifični obroci nisu definirani - slijedi preporučene navike i fokus tjedna.</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Level 2 & 3: Daily Meal Plans */}
-      {plan.plan_level > 1 && (
+      {/* Daily Meal Plans */}
+      {entries.length > 0 ? (
         <div className="space-y-4">
           {[1, 2, 3, 4, 5, 6, 0].map((dayOfWeek) => {
             const dayEntries = groupedEntries[dayOfWeek]
@@ -301,25 +273,16 @@ export function NutritionPlanView({ clientId, onPlanRemoved, readOnly = false }:
                                 <div key={entry.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                                   <div>
                                     <h5 className="font-medium">
-                                      {entry.food?.name || entry.recipe?.name || entry.category?.category_name || 'Nepoznato'}
+                                      {entry.food?.name || entry.recipe?.name || 'Nepoznato'}
                                     </h5>
                                     {entry.food?.calories && (
                                       <p className="text-sm text-muted-foreground">
                                         {entry.food.calories} kcal po 100g
                                       </p>
                                     )}
-                                    {entry.category?.avg_calories && (
-                                      <p className="text-sm text-muted-foreground">
-                                        ~{entry.category.avg_calories} kcal {entry.category.standard_portion_size && `po ${entry.category.standard_portion_size}`}
-                                      </p>
-                                    )}
                                   </div>
                                   <div className="text-sm">
-                                    {entry.quantity ? (
-                                      <span>{entry.quantity}g</span>
-                                    ) : entry.category?.standard_portion_size ? (
-                                      <span>{entry.category.standard_portion_size}</span>
-                                    ) : null}
+                                    {entry.quantity && <span>{entry.quantity}g</span>}
                                   </div>
                                 </div>
                               ))}
@@ -334,6 +297,12 @@ export function NutritionPlanView({ clientId, onPlanRemoved, readOnly = false }:
             )
           })}
         </div>
+      ) : (
+        <Card>
+          <CardContent className="text-center py-8 text-muted-foreground">
+            <p>Nema dodanih obroka u ovom planu prehrane</p>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

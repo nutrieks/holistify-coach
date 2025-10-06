@@ -37,13 +37,13 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
       const { data, error } = await supabase
         .from('questionnaires')
         .select('id, title, description')
-        .eq('coach_id', profile?.id)
+        .eq('is_active', true)
         .order('created_at', { ascending: false })
 
       if (error) throw error
       return data
     },
-    enabled: !!profile?.id && open
+    enabled: open
   })
 
   const handleSubmit = async () => {

@@ -9,26 +9,30 @@ import { Dumbbell, ChevronDown, ChevronUp, Calendar, Trash2, Clock, RotateCcw } 
 
 interface TrainingPlan {
   id: string
-  plan_name: string
+  name: string
+  client_id: string
   start_date: string | null
   end_date: string | null
+  notes: string | null
+  is_active: boolean
   created_at: string
+  updated_at: string
+}
+
+interface Exercise {
+  exercise_id: string
+  sets: number
+  reps: string
+  rest_seconds: number
+  notes?: string
 }
 
 interface WorkoutSession {
   id: string
   session_name: string
   day_of_week: number
-  workout_exercises: Array<{
-    id: string
-    sets: number | null
-    reps: number | null
-    rest_period_seconds: number | null
-    exercise: {
-      name: string
-      muscle_group: string | null
-    }
-  }>
+  exercises: Exercise[]
+  notes: string | null
 }
 
 interface TrainingPlanViewProps {
@@ -66,21 +70,45 @@ export function TrainingPlanView({ clientId, onPlanRemoved, readOnly = false }: 
 
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('workout_sessions')
-        .select(`
-          *,
-          workout_exercises (
-            *,
-            exercise:exercise_database (
-              name,
-              muscle_group
-            )
-          )
-        `)
+        .select('*')
         .eq('training_plan_id', planData.id)
         .order('day_of_week')
 
       if (sessionsError) throw sessionsError
-      setSessions(sessionsData || [])
+      
+      // Parse exercises from JSONB and fetch exercise details
+      const sessionsWithExercises = await Promise.all((sessionsData || []).map(async (session) => {
+        const exercises = session.exercises as any
+        const exerciseIds = Array.isArray(exercises) 
+          ? exercises.map((ex: any) => ex.exercise_id).filter(Boolean)
+          : []
+        
+        if (exerciseIds.length === 0) {
+          return { ...session, exercises: [] }
+        }
+        
+        const { data: exerciseDetails } = await supabase
+          .from('exercise_database')
+          .select('id, name, muscle_group')
+          .in('id', exerciseIds)
+        
+        const exercisesWithDetails = Array.isArray(exercises)
+          ? exercises.map((ex: any) => {
+              const detail = exerciseDetails?.find((d: any) => d.id === ex.exercise_id)
+              return {
+                ...ex,
+                exercise: detail || { name: 'Nepoznato', muscle_group: null }
+              }
+            })
+          : []
+        
+        return {
+          ...session,
+          exercises: exercisesWithDetails
+        }
+      }))
+      
+      setSessions(sessionsWithExercises as any)
     } catch (error: any) {
       toast({
         title: "Greška",
@@ -162,7 +190,7 @@ export function TrainingPlanView({ clientId, onPlanRemoved, readOnly = false }: 
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Dumbbell className="h-5 w-5" />
-                {plan.plan_name}
+                {plan.name}
               </CardTitle>
               <div className="flex items-center gap-4 mt-2">
                 <Badge variant="default">Aktivan</Badge>
@@ -211,7 +239,7 @@ export function TrainingPlanView({ clientId, onPlanRemoved, readOnly = false }: 
                       <div className="flex items-center gap-4 mt-1">
                         <Badge variant="outline">{dayNames[session.day_of_week]}</Badge>
                         <span className="text-sm text-muted-foreground">
-                          {session.workout_exercises.length} vježbi
+                          {session.exercises.length} vježbi
                         </span>
                       </div>
                     </div>
@@ -229,12 +257,15 @@ export function TrainingPlanView({ clientId, onPlanRemoved, readOnly = false }: 
               <CollapsibleContent>
                 <CardContent className="pt-0">
                   <div className="space-y-3">
-                    {session.workout_exercises.map((exercise) => (
-                      <div key={exercise.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    {session.exercises.map((exercise: any, idx: number) => (
+                      <div key={`${exercise.exercise_id}-${idx}`} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                         <div>
-                          <h4 className="font-medium">{exercise.exercise.name}</h4>
-                          {exercise.exercise.muscle_group && (
+                          <h4 className="font-medium">{exercise.exercise?.name || 'Nepoznato'}</h4>
+                          {exercise.exercise?.muscle_group && (
                             <p className="text-sm text-muted-foreground">{exercise.exercise.muscle_group}</p>
+                          )}
+                          {exercise.notes && (
+                            <p className="text-xs text-muted-foreground mt-1">{exercise.notes}</p>
                           )}
                         </div>
                         <div className="flex items-center gap-4 text-sm">
@@ -244,10 +275,10 @@ export function TrainingPlanView({ clientId, onPlanRemoved, readOnly = false }: 
                           {exercise.reps && (
                             <span>{exercise.reps} ponavljanja</span>
                           )}
-                          {exercise.rest_period_seconds && (
+                          {exercise.rest_seconds && (
                             <div className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {Math.floor(exercise.rest_period_seconds / 60)}min
+                              {Math.floor(exercise.rest_seconds / 60)}min
                             </div>
                           )}
                         </div>
