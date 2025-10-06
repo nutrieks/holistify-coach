@@ -14,6 +14,425 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
+      client_habits: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          habit_id: string
+          id: string
+          is_active: boolean | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          habit_id: string
+          id?: string
+          is_active?: boolean | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          habit_id?: string
+          id?: string
+          is_active?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_habits_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "client_habits_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_submissions: {
+        Row: {
+          answers: Json
+          client_id: string
+          created_at: string | null
+          id: string
+          questionnaire_id: string
+          submitted_at: string | null
+        }
+        Insert: {
+          answers: Json
+          client_id: string
+          created_at?: string | null
+          id?: string
+          questionnaire_id: string
+          submitted_at?: string | null
+        }
+        Update: {
+          answers?: Json
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          questionnaire_id?: string
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_submissions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "client_submissions_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          contract_end_date: string | null
+          contract_start_date: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          email: string
+          full_name: string
+          gender: string | null
+          height: number | null
+          id: string
+          notes: string | null
+          phone: string | null
+          sessions_remaining: number | null
+          starting_weight: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email: string
+          full_name: string
+          gender?: string | null
+          height?: number | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          sessions_remaining?: number | null
+          starting_weight?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string
+          full_name?: string
+          gender?: string | null
+          height?: number | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          sessions_remaining?: number | null
+          starting_weight?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exercise_database: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          muscle_group: string
+          name: string
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          muscle_group: string
+          name: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          muscle_group?: string
+          name?: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      food_categories: {
+        Row: {
+          avg_calories: number | null
+          avg_carbs: number | null
+          avg_fats: number | null
+          avg_protein: number | null
+          category_name: string
+          created_at: string | null
+          id: string
+          standard_portion_size: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avg_calories?: number | null
+          avg_carbs?: number | null
+          avg_fats?: number | null
+          avg_protein?: number | null
+          category_name: string
+          created_at?: string | null
+          id?: string
+          standard_portion_size?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avg_calories?: number | null
+          avg_carbs?: number | null
+          avg_fats?: number | null
+          avg_protein?: number | null
+          category_name?: string
+          created_at?: string | null
+          id?: string
+          standard_portion_size?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      food_database: {
+        Row: {
+          calories: number
+          carbs: number
+          category_id: string | null
+          created_at: string | null
+          fats: number
+          id: string
+          name: string
+          portion_size: string | null
+          protein: number
+          updated_at: string | null
+        }
+        Insert: {
+          calories: number
+          carbs: number
+          category_id?: string | null
+          created_at?: string | null
+          fats: number
+          id?: string
+          name: string
+          portion_size?: string | null
+          protein: number
+          updated_at?: string | null
+        }
+        Update: {
+          calories?: number
+          carbs?: number
+          category_id?: string | null
+          created_at?: string | null
+          fats?: number
+          id?: string
+          name?: string
+          portion_size?: string | null
+          protein?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_database_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "food_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      meal_plan_entries: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          food_id: string | null
+          id: string
+          meal_plan_id: string
+          meal_type: string
+          notes: string | null
+          quantity: number
+          recipe_id: string | null
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          food_id?: string | null
+          id?: string
+          meal_plan_id: string
+          meal_type: string
+          notes?: string | null
+          quantity: number
+          recipe_id?: string | null
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          food_id?: string | null
+          id?: string
+          meal_plan_id?: string
+          meal_type?: string
+          notes?: string | null
+          quantity?: number
+          recipe_id?: string | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_entries_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "food_database"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plan_entries_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plan_entries_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_plans: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          daily_calories_target: number | null
+          daily_carbs_target: number | null
+          daily_fats_target: number | null
+          daily_protein_target: number | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          daily_calories_target?: number | null
+          daily_carbs_target?: number | null
+          daily_fats_target?: number | null
+          daily_protein_target?: number | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          daily_calories_target?: number | null
+          daily_carbs_target?: number | null
+          daily_fats_target?: number | null
+          daily_protein_target?: number | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plans_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -38,6 +457,362 @@ export type Database = {
         }
         Relationships: []
       }
+      progress_tracking: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          date: string
+          id: string
+          metric_type: string
+          notes: string | null
+          value: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          date: string
+          id?: string
+          metric_type: string
+          notes?: string | null
+          value: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          metric_type?: string
+          notes?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_tracking_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      questionnaire_drafts: {
+        Row: {
+          answers: Json
+          client_id: string
+          created_at: string | null
+          current_question_index: number | null
+          id: string
+          questionnaire_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          answers: Json
+          client_id: string
+          created_at?: string | null
+          current_question_index?: number | null
+          id?: string
+          questionnaire_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          answers?: Json
+          client_id?: string
+          created_at?: string | null
+          current_question_index?: number | null
+          id?: string
+          questionnaire_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questionnaire_drafts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "questionnaire_drafts_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questionnaire_questions: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          is_required: boolean | null
+          options: Json | null
+          order_index: number | null
+          question_text: string
+          question_type: string | null
+          questionnaire_id: string
+          section: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_required?: boolean | null
+          options?: Json | null
+          order_index?: number | null
+          question_text: string
+          question_type?: string | null
+          questionnaire_id: string
+          section?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_required?: boolean | null
+          options?: Json | null
+          order_index?: number | null
+          question_text?: string
+          question_type?: string | null
+          questionnaire_id?: string
+          section?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questionnaire_questions_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questionnaire_scores: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          max_score: number
+          percentage: number | null
+          score: number
+          severity_level: string | null
+          submission_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          max_score: number
+          percentage?: number | null
+          score: number
+          severity_level?: string | null
+          submission_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          max_score?: number
+          percentage?: number | null
+          score?: number
+          severity_level?: string | null
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questionnaire_scores_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "client_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questionnaires: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          questionnaire_type: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          questionnaire_type?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          questionnaire_type?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      recipe_ingredients: {
+        Row: {
+          created_at: string | null
+          food_id: string
+          id: string
+          quantity: number
+          recipe_id: string
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          food_id: string
+          id?: string
+          quantity: number
+          recipe_id: string
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          food_id?: string
+          id?: string
+          quantity?: number
+          recipe_id?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "food_database"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          cook_time: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          instructions: string | null
+          name: string
+          prep_time: number | null
+          servings: number | null
+          total_calories: number | null
+          total_carbs: number | null
+          total_fats: number | null
+          total_protein: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          cook_time?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          instructions?: string | null
+          name: string
+          prep_time?: number | null
+          servings?: number | null
+          total_calories?: number | null
+          total_carbs?: number | null
+          total_fats?: number | null
+          total_protein?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          cook_time?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          instructions?: string | null
+          name?: string
+          prep_time?: number | null
+          servings?: number | null
+          total_calories?: number | null
+          total_carbs?: number | null
+          total_fats?: number | null
+          total_protein?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      training_plans: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_plans_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_presence: {
+        Row: {
+          last_seen: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          last_seen?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          last_seen?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -58,6 +833,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      workout_sessions: {
+        Row: {
+          created_at: string | null
+          day_of_week: number | null
+          exercises: Json
+          id: string
+          notes: string | null
+          session_name: string
+          training_plan_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week?: number | null
+          exercises: Json
+          id?: string
+          notes?: string | null
+          session_name: string
+          training_plan_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number | null
+          exercises?: Json
+          id?: string
+          notes?: string | null
+          session_name?: string
+          training_plan_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_sessions_training_plan_id_fkey"
+            columns: ["training_plan_id"]
+            isOneToOne: false
+            referencedRelation: "training_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
