@@ -8,89 +8,70 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
+    /* Dark theme as default */
+    --background: 220 15% 8%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 220 15% 12%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 220 15% 10%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 220 15% 18%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 217 91% 60%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 220 15% 20%;
+    --input: 220 15% 18%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 220 15% 10%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 220 15% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 217 91% 60%;
+
+    /* Meal gradient colors */
+    --gradient-breakfast-start: 151 55% 42%;
+    --gradient-breakfast-end: 189 94% 43%;
+    
+    --gradient-lunch-start: 25 95% 53%;
+    --gradient-lunch-end: 33 100% 50%;
+    
+    --gradient-dinner-start: 199 89% 48%;
+    --gradient-dinner-end: 217 91% 60%;
+    
+    --gradient-snack-rose-start: 330 81% 60%;
+    --gradient-snack-rose-end: 346 77% 50%;
+    
+    --gradient-snack-cyan-start: 189 94% 43%;
+    --gradient-snack-cyan-end: 199 89% 48%;
+    
+    --gradient-preworkout-start: 25 95% 53%;
+    --gradient-preworkout-end: 33 100% 50%;
+    
+    --gradient-postworkout-start: 189 94% 43%;
+    --gradient-postworkout-end: 180 100% 80%;
+    
+    --gradient-training-start: 220 15% 25%;
+    --gradient-training-end: 220 15% 35%;
   }
 }
 
@@ -101,5 +82,45 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Meal Gradient Classes */
+  .gradient-breakfast {
+    background: linear-gradient(135deg, hsl(var(--gradient-breakfast-start)) 0%, hsl(var(--gradient-breakfast-end)) 100%);
+  }
+  
+  .gradient-lunch {
+    background: linear-gradient(135deg, hsl(var(--gradient-lunch-start)) 0%, hsl(var(--gradient-lunch-end)) 100%);
+  }
+  
+  .gradient-dinner {
+    background: linear-gradient(135deg, hsl(var(--gradient-dinner-start)) 0%, hsl(var(--gradient-dinner-end)) 100%);
+  }
+  
+  .gradient-snack-rose {
+    background: linear-gradient(135deg, hsl(var(--gradient-snack-rose-start)) 0%, hsl(var(--gradient-snack-rose-end)) 100%);
+  }
+  
+  .gradient-snack-cyan {
+    background: linear-gradient(135deg, hsl(var(--gradient-snack-cyan-start)) 0%, hsl(var(--gradient-snack-cyan-end)) 100%);
+  }
+  
+  .gradient-preworkout {
+    background: linear-gradient(135deg, hsl(var(--gradient-preworkout-start)) 0%, hsl(var(--gradient-preworkout-end)) 100%);
+  }
+  
+  .gradient-postworkout {
+    background: linear-gradient(135deg, hsl(var(--gradient-postworkout-start)) 0%, hsl(var(--gradient-postworkout-end)) 100%);
+  }
+  
+  .gradient-training {
+    background: linear-gradient(135deg, hsl(var(--gradient-training-start)) 0%, hsl(var(--gradient-training-end)) 100%);
+  }
+
+  /* Hover scale animation */
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-[1.02];
   }
 }

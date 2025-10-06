@@ -179,6 +179,44 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_training_types: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          id: string
+          macro_adjustment: Json | null
+          meal_plan_id: string
+          training_day_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          id?: string
+          macro_adjustment?: Json | null
+          meal_plan_id: string
+          training_day_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          id?: string
+          macro_adjustment?: Json | null
+          meal_plan_id?: string
+          training_day_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_training_types_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercise_database: {
         Row: {
           created_at: string | null
@@ -322,11 +360,13 @@ export type Database = {
           day_of_week: number
           food_id: string | null
           id: string
+          meal_gradient_color: string | null
           meal_plan_id: string
           meal_type: string
           notes: string | null
           quantity: number
           recipe_id: string | null
+          scheduled_time: string | null
           unit: string | null
         }
         Insert: {
@@ -334,11 +374,13 @@ export type Database = {
           day_of_week: number
           food_id?: string | null
           id?: string
+          meal_gradient_color?: string | null
           meal_plan_id: string
           meal_type: string
           notes?: string | null
           quantity: number
           recipe_id?: string | null
+          scheduled_time?: string | null
           unit?: string | null
         }
         Update: {
@@ -346,11 +388,13 @@ export type Database = {
           day_of_week?: number
           food_id?: string | null
           id?: string
+          meal_gradient_color?: string | null
           meal_plan_id?: string
           meal_type?: string
           notes?: string | null
           quantity?: number
           recipe_id?: string | null
+          scheduled_time?: string | null
           unit?: string | null
         }
         Relationships: [
@@ -391,7 +435,9 @@ export type Database = {
           name: string
           notes: string | null
           start_date: string | null
+          training_integration: boolean | null
           updated_at: string | null
+          view_mode: string | null
         }
         Insert: {
           client_id: string
@@ -406,7 +452,9 @@ export type Database = {
           name: string
           notes?: string | null
           start_date?: string | null
+          training_integration?: boolean | null
           updated_at?: string | null
+          view_mode?: string | null
         }
         Update: {
           client_id?: string
@@ -421,7 +469,9 @@ export type Database = {
           name?: string
           notes?: string | null
           start_date?: string | null
+          training_integration?: boolean | null
           updated_at?: string | null
+          view_mode?: string | null
         }
         Relationships: [
           {
@@ -789,6 +839,62 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      training_sessions: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          duration_minutes: number
+          during_workout_notes: string | null
+          gradient_color: string | null
+          id: string
+          intensity: string
+          meal_plan_id: string
+          post_workout_notes: string | null
+          pre_workout_notes: string | null
+          scheduled_time: string
+          training_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          duration_minutes: number
+          during_workout_notes?: string | null
+          gradient_color?: string | null
+          id?: string
+          intensity: string
+          meal_plan_id: string
+          post_workout_notes?: string | null
+          pre_workout_notes?: string | null
+          scheduled_time: string
+          training_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          duration_minutes?: number
+          during_workout_notes?: string | null
+          gradient_color?: string | null
+          id?: string
+          intensity?: string
+          meal_plan_id?: string
+          post_workout_notes?: string | null
+          pre_workout_notes?: string | null
+          scheduled_time?: string
+          training_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_sessions_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
           },
         ]
       }
