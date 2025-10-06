@@ -154,3 +154,55 @@ export const getBodyFatCategory = (bodyFat: number, gender: 'male' | 'female'): 
     return 'Pretilost';
   }
 };
+
+/**
+ * Calculate Ideal Body Weight (IBW)
+ * For men: IBW = (Height in cm − 152.4) × 1.0714 + 45.36
+ * For women: IBW = (Height in cm − 152.4) × 0.8928 + 45.36
+ */
+export const calculateIdealBodyWeight = (height: number, gender: 'male' | 'female'): number | null => {
+  if (!height || height <= 0) {
+    return null;
+  }
+
+  const ibw = gender === 'male' 
+    ? (height - 152.4) * 1.0714 + 45.36
+    : (height - 152.4) * 0.8928 + 45.36;
+
+  return Math.round(ibw * 10) / 10; // Round to 1 decimal
+};
+
+/**
+ * Calculate Adjusted Weight
+ * Adjusted Weight = (Weight − Ideal Body Weight) / 4 + Ideal Body Weight
+ */
+export const calculateAdjustedWeight = (weight: number, height: number, gender: 'male' | 'female'): number | null => {
+  if (!weight || !height || weight <= 0 || height <= 0) {
+    return null;
+  }
+
+  const ibw = calculateIdealBodyWeight(height, gender);
+  if (!ibw) return null;
+
+  const adjustedWeight = (weight - ibw) / 4 + ibw;
+  return Math.round(adjustedWeight * 10) / 10; // Round to 1 decimal
+};
+
+/**
+ * Calculate Resting Energy Expenditure (REE)
+ * REE = 3832.955 + (Adjusted Weight × 48.037) − (Height × 30.642) + (gender × 141.268) − (age × 4.525)
+ * Where gender = 1 for male, 0 for female
+ */
+export const calculateREE = (weight: number, height: number, age: number, gender: 'male' | 'female'): number | null => {
+  if (!weight || !height || !age || weight <= 0 || height <= 0 || age <= 0) {
+    return null;
+  }
+
+  const adjustedWeight = calculateAdjustedWeight(weight, height, gender);
+  if (!adjustedWeight) return null;
+
+  const genderValue = gender === 'male' ? 1 : 0;
+  const ree = 3832.955 + (adjustedWeight * 48.037) - (height * 30.642) + (genderValue * 141.268) - (age * 4.525);
+
+  return Math.round(ree * 10) / 10; // Round to 1 decimal
+};

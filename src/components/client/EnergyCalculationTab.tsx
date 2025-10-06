@@ -4,8 +4,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, Flame, TrendingUp, TrendingDown, Activity } from "lucide-react";
+import { Calculator, Flame, TrendingUp, TrendingDown, Activity, Info } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { calculateIdealBodyWeight, calculateAdjustedWeight, calculateREE } from "@/utils/anthropometricCalculations";
 
 interface EnergyCalculationTabProps {
   clientGender: string | null;
@@ -73,6 +74,17 @@ export default function EnergyCalculationTab({
     return 370 + (21.6 * l);
   };
 
+  // REE Formula (uses Adjusted Weight)
+  const calculateREEFormula = (): number | null => {
+    if (!weight || !height || !age || !clientGender) return null;
+    
+    const w = parseFloat(weight);
+    const h = parseFloat(height);
+    const a = parseFloat(age);
+    
+    return calculateREE(w, h, a, clientGender as 'male' | 'female');
+  };
+
   const activityMultipliers: Record<string, { value: number; label: string }> = {
     sedentary: { value: 1.2, label: "Sjedilački (malo ili bez vježbanja)" },
     light: { value: 1.375, label: "Lagana aktivnost (vježbanje 1-3 dana/tjedan)" },
@@ -90,21 +102,32 @@ export default function EnergyCalculationTab({
   const bmr1 = calculateHarrisBenedict();
   const bmr2 = calculateMifflinStJeor();
   const bmr3 = calculateKatchMcArdle();
+  const bmr4 = calculateREEFormula();
   
   const tdee1 = bmr1 ? bmr1 * activityMultipliers[activityLevel].value : null;
   const tdee2 = bmr2 ? bmr2 * activityMultipliers[activityLevel].value : null;
   const tdee3 = bmr3 ? bmr3 * activityMultipliers[activityLevel].value : null;
+  const tdee4 = bmr4 ? bmr4 * activityMultipliers[activityLevel].value : null;
 
   const target1 = tdee1 ? tdee1 + goalAdjustments[goal].value : null;
   const target2 = tdee2 ? tdee2 + goalAdjustments[goal].value : null;
   const target3 = tdee3 ? tdee3 + goalAdjustments[goal].value : null;
+  const target4 = tdee4 ? tdee4 + goalAdjustments[goal].value : null;
 
-  const averageTDEE = [tdee1, tdee2, tdee3].filter(v => v !== null).length > 0
-    ? [tdee1, tdee2, tdee3].filter(v => v !== null).reduce((a, b) => a! + b!, 0)! / 
-      [tdee1, tdee2, tdee3].filter(v => v !== null).length
+  const averageTDEE = [tdee1, tdee2, tdee3, tdee4].filter(v => v !== null).length > 0
+    ? [tdee1, tdee2, tdee3, tdee4].filter(v => v !== null).reduce((a, b) => a! + b!, 0)! / 
+      [tdee1, tdee2, tdee3, tdee4].filter(v => v !== null).length
     : null;
 
   const averageTarget = averageTDEE ? averageTDEE + goalAdjustments[goal].value : null;
+
+  // Calculate IBW and Adjusted Weight for display
+  const ibw = weight && height && clientGender 
+    ? calculateIdealBodyWeight(parseFloat(height), clientGender as 'male' | 'female')
+    : null;
+  const adjustedWeight = weight && height && clientGender
+    ? calculateAdjustedWeight(parseFloat(weight), parseFloat(height), clientGender as 'male' | 'female')
+    : null;
 
   return (
     <div className="space-y-6">
@@ -234,7 +257,9 @@ export default function EnergyCalculationTab({
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <p className="text-sm text-muted-foreground">TDEE (Održavanje)</p>
                       <p className="text-2xl font-bold">{Math.round(averageTDEE)} kcal</p>
-                      <p className="text-xs text-muted-foreground mt-1">Prosječno iz 3 formule</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Prosječno iz {[tdee1, tdee2, tdee3, tdee4].filter(v => v !== null).length} formule
+                      </p>
                     </div>
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <p className="text-sm text-muted-foreground">Ciljna Kalorija</p>
@@ -373,6 +398,58 @@ export default function EnergyCalculationTab({
                 <div className="text-center py-8 text-muted-foreground">
                   <p className="text-sm">Unesite LBM (nemasnu tjelesnu masu) za ovu formulu.</p>
                   <p className="text-xs mt-2">LBM možete dobiti iz antropometrijskih podataka.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* REE Formula */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                REE Formula (Adjusted Weight)
+                <Badge variant="secondary" className="ml-auto">
+                  <Info className="h-3 w-3 mr-1" />
+                  Preporučeno
+                </Badge>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Napredna formula koja koristi prilagođenu težinu - idealna za osobe izvan idealne težine
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {bmr4 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="text-center p-3 bg-blue-500/10 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Idealna Težina (IBW)</p>
+                      <p className="text-lg font-bold text-blue-600">{ibw ? Math.round(ibw) : '-'} kg</p>
+                    </div>
+                    <div className="text-center p-3 bg-purple-500/10 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Prilagođena Težina</p>
+                      <p className="text-lg font-bold text-purple-600">
+                        {adjustedWeight ? Math.round(adjustedWeight) : '-'} kg
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">REE</p>
+                      <p className="text-2xl font-bold">{Math.round(bmr4)} kcal</p>
+                    </div>
+                    <div className="text-center p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">TDEE</p>
+                      <p className="text-2xl font-bold">{tdee4 ? Math.round(tdee4) : '-'} kcal</p>
+                    </div>
+                    <div className="text-center p-4 bg-primary/10 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Cilj</p>
+                      <p className="text-2xl font-bold text-primary">{target4 ? Math.round(target4) : '-'} kcal</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">Svi osnovni podaci su potrebni za REE izračun.</p>
                 </div>
               )}
             </CardContent>
