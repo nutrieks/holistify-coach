@@ -82,58 +82,28 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
       // Generate temporary password for client
       const tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!'
 
-      // Create user account using standard signup
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: clientEmail,
-        password: tempPassword,
-        options: {
-          data: {
-            full_name: clientName,
-            role: 'client'
-          }
+      // Call edge function to create client account (admin operation)
+      const { data: clientData, error: clientError } = await supabase.functions.invoke('create-client-account', {
+        body: {
+          clientName,
+          clientEmail,
+          tempPassword,
+          contractStartDate: setStartDate ? new Date().toISOString().split('T')[0] : null,
+          contractEndDate: setEndDate ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null,
+          questionnaireId: selectedQuestionnaire === "none" ? null : (selectedQuestionnaire === "auto-naq" ? null : selectedQuestionnaire),
+          createNAQ: selectedQuestionnaire === "auto-naq",
+          coachId: profile?.id
         }
       })
 
-      if (authError) {
-        if (authError.message.includes('already registered')) {
-          throw new Error('Email je već registriran u sustavu')
-        }
-        throw authError
+      if (clientError) {
+        console.error('Edge function error:', clientError)
+        throw new Error(clientError.message || 'Neuspješno kreiranje klijenta')
       }
 
-      if (!authData.user) {
-        throw new Error('Neuspješno kreiranje korisničkog računa')
+      if (!clientData?.success) {
+        throw new Error(clientData?.error || 'Neuspješno kreiranje klijenta')
       }
-
-      let finalQuestionnaireId = selectedQuestionnaire === "none" ? null : selectedQuestionnaire
-
-      // If auto-NAQ is selected, create NAQ questionnaire
-      if (selectedQuestionnaire === "auto-naq") {
-        try {
-          const { data: naqData, error: naqError } = await supabase.functions.invoke('create-naq-questionnaire', {
-            body: { coachId: profile?.id }
-          })
-
-          if (naqError) throw naqError
-          finalQuestionnaireId = naqData.questionnaireId
-        } catch (naqError) {
-          console.warn('Failed to create NAQ questionnaire:', naqError)
-          finalQuestionnaireId = null
-        }
-      }
-
-      // Create client record
-      const { error: clientError } = await supabase
-        .from('clients')
-        .insert({
-          user_id: authData.user.id,
-          full_name: clientName,
-          email: clientEmail,
-          contract_start_date: setStartDate ? new Date().toISOString().split('T')[0] : null,
-          contract_end_date: setEndDate ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null
-        })
-
-      if (clientError) throw clientError
 
       toast({
         title: "Uspješno",

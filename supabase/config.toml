@@ -1,1 +1,13 @@
 project_id = "yoeisnlqclkdhxutfguq"
+
+[functions.create-naq-questionnaire]
+verify_jwt = true
+
+[functions.create-complete-naq]
+verify_jwt = true
+
+[functions.seed-naq-questions]
+verify_jwt = true
+
+[functions.create-client-account]
+verify_jwt = true
