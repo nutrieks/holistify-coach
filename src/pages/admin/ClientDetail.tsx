@@ -20,6 +20,7 @@ import { FormsTab } from "@/components/FormsTab"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import AnthropometryTab from "@/components/client/AnthropometryTab"
 import EnergyCalculationTabSimplified from "@/components/client/EnergyCalculationTabSimplified"
+import { EditableClientInfo } from "@/components/client/EditableClientInfo"
 import ChatInterface from "@/components/chat/ChatInterface"
 import { ClientNAQDashboard } from "@/components/naq/ClientNAQDashboard"
 import { NutritionalDiagnosticsTab } from "@/components/NutritionalDiagnosticsTab"
@@ -241,7 +242,7 @@ export default function ClientDetail() {
                 <CardTitle>Opći Podaci</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-12 h-12">
                       <AvatarFallback className="bg-primary/10 text-primary font-medium text-lg">
@@ -260,16 +261,6 @@ export default function ClientDetail() {
                   </div>
                   
                   <div>
-                    <p className="text-sm text-muted-foreground">Telefon</p>
-                    <p className="font-medium">{client.phone || '-'}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-muted-foreground">Spol</p>
-                    <p className="font-medium">{client.gender === 'male' ? 'Muško' : client.gender === 'female' ? 'Žensko' : '-'}</p>
-                  </div>
-                  
-                  <div>
                     <p className="text-sm text-muted-foreground">Dob</p>
                     <p className="font-medium">
                       {calculateAge(client.date_of_birth) !== null ? 
@@ -284,6 +275,15 @@ export default function ClientDetail() {
                     <div className="mt-1">{getStatusBadge()}</div>
                   </div>
                 </div>
+                
+                <EditableClientInfo
+                  clientId={client.user_id}
+                  initialGender={client.gender}
+                  initialPhone={client.phone}
+                  initialContractStartDate={client.contract_start_date}
+                  initialContractEndDate={client.contract_end_date}
+                  onUpdate={fetchClient}
+                />
               </CardContent>
             </Card>
 
