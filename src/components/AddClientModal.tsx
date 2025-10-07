@@ -6,11 +6,15 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@/hooks/useAuth"
-import { X } from "lucide-react"
+import { X, CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
 
 interface AddClientModalProps {
   open: boolean
@@ -23,8 +27,8 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
   const [clientEmail, setClientEmail] = useState("")
   const [clientTag, setClientTag] = useState("")
   const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<string>("auto-naq")
-  const [setStartDate, setSetStartDate] = useState(false)
-  const [setEndDate, setSetEndDate] = useState(false)
+  const [startDate, setStartDate] = useState<Date>()
+  const [endDate, setEndDate] = useState<Date>()
   const [sendInstructions, setSendInstructions] = useState(true)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
@@ -51,6 +55,24 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
       toast({
         title: "Greška",
         description: "Molimo unesite ime i email klijenta",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!startDate || !endDate) {
+      toast({
+        title: "Greška",
+        description: "Molimo odaberite datum početka i kraja suradnje",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (endDate <= startDate) {
+      toast({
+        title: "Greška",
+        description: "Datum kraja mora biti poslije datuma početka",
         variant: "destructive"
       })
       return
@@ -88,8 +110,8 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
           clientName,
           clientEmail,
           tempPassword,
-          contractStartDate: setStartDate ? new Date().toISOString().split('T')[0] : null,
-          contractEndDate: setEndDate ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null,
+          contractStartDate: startDate.toISOString().split('T')[0],
+          contractEndDate: endDate.toISOString().split('T')[0],
           questionnaireId: selectedQuestionnaire === "none" ? null : (selectedQuestionnaire === "auto-naq" ? null : selectedQuestionnaire),
           createNAQ: selectedQuestionnaire === "auto-naq",
           coachId: profile?.id
@@ -115,8 +137,8 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
       setClientEmail("")
       setClientTag("")
       setSelectedQuestionnaire("auto-naq")
-      setSetStartDate(false)
-      setSetEndDate(false)
+      setStartDate(undefined)
+      setEndDate(undefined)
       setSendInstructions(true)
       
       onClientAdded()
@@ -198,28 +220,66 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
             </div>
           </div>
 
-          {/* Date Options */}
+          {/* Trajanje suradnje */}
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="startDate" 
-                checked={setStartDate}
-                onCheckedChange={(checked) => setSetStartDate(!!checked)}
-              />
-              <Label htmlFor="startDate" className="text-sm">
-                Označiti početni datum (danas)
-              </Label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="endDate" 
-                checked={setEndDate}
-                onCheckedChange={(checked) => setSetEndDate(!!checked)}
-              />
-              <Label htmlFor="endDate" className="text-sm">
-                Označiti završni datum (30 dana)
-              </Label>
+            <Label>Trajanje suradnje *</Label>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Start Date */}
+              <div className="space-y-2">
+                <Label htmlFor="startDate" className="text-sm">Datum početka</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "dd.MM.yyyy") : "Odaberi datum"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={setStartDate}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* End Date */}
+              <div className="space-y-2">
+                <Label htmlFor="endDate" className="text-sm">Datum kraja</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "dd.MM.yyyy") : "Odaberi datum"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={endDate}
+                      onSelect={setEndDate}
+                      initialFocus
+                      disabled={(date) => startDate ? date <= startDate : false}
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </div>
 

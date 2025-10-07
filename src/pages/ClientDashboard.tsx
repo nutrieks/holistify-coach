@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { LoadingCard } from '@/components/LoadingCard';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { ClientNAQDashboard } from '@/components/naq/ClientNAQDashboard';
+import { ContractProgressBar } from '@/components/ContractProgressBar';
 import { useToast } from '@/hooks/use-toast';
 
 const ClientDashboard = () => {
@@ -194,6 +195,18 @@ const ClientDashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Contract Progress Bar */}
+        {profile?.id && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Trajanje suradnje</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ContractProgressBar clientId={profile.id} showLabel={true} />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Pending Questionnaire Alert */}
         {pendingQuestionnaire && (
           <Alert className="border-orange-200 bg-orange-50">

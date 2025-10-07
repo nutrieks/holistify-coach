@@ -15,13 +15,13 @@ import { EnhancedAssignNutritionPlanModal } from "@/components/EnhancedAssignNut
 import { TrainingPlanView } from "@/components/TrainingPlanView"
 import { NutritionPlanViewer } from "@/components/nutrition-plan/NutritionPlanViewer"
 import { ProgressTab } from "@/components/progress/ProgressTab"
-import { ContractStatusCard } from "@/components/ContractStatusCard"
+import { ContractProgressBar } from "@/components/ContractProgressBar"
 import { FormsTab } from "@/components/FormsTab"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
-import AnthropometricDataCard from "@/components/client/AnthropometricDataCard"
 import AnthropometryTab from "@/components/client/AnthropometryTab"
 import EnergyCalculationTab from "@/components/client/EnergyCalculationTab"
 import { ClientNAQDashboard } from "@/components/naq/ClientNAQDashboard"
+import { NutritionalDiagnosticsTab } from "@/components/NutritionalDiagnosticsTab"
 
 interface ClientProfile {
   id: string
@@ -204,12 +204,13 @@ export default function ClientDetail() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-11 overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-12 overflow-x-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="anthropometry">Antropometrija</TabsTrigger>
             <TabsTrigger value="energy">Energija</TabsTrigger>
-            <TabsTrigger value="progress">Napredak</TabsTrigger>
             <TabsTrigger value="diagnostics">NAQ</TabsTrigger>
+            <TabsTrigger value="nutritional">Nutritivna dijagnostika</TabsTrigger>
+            <TabsTrigger value="progress">Napredak</TabsTrigger>
             <TabsTrigger value="training">Trening</TabsTrigger>
             <TabsTrigger value="nutrition">Prehrana</TabsTrigger>
             <TabsTrigger value="checkins">Check Ins</TabsTrigger>
@@ -254,10 +255,10 @@ export default function ClientDetail() {
                   </div>
                   
                   <div>
-                    <p className="text-sm text-muted-foreground">Datum Rođenja</p>
+                    <p className="text-sm text-muted-foreground">Dob</p>
                     <p className="font-medium">
-                      {client.date_of_birth ? 
-                        new Date(client.date_of_birth).toLocaleDateString('hr-HR') : 
+                      {calculateAge(client.date_of_birth) !== null ? 
+                        `${calculateAge(client.date_of_birth)} godina` : 
                         '-'
                       }
                     </p>
@@ -267,40 +268,19 @@ export default function ClientDetail() {
                     <p className="text-sm text-muted-foreground">Status</p>
                     <div className="mt-1">{getStatusBadge()}</div>
                   </div>
-                  
-                  <div>
-                    <p className="text-sm text-muted-foreground">Početak Ugovora</p>
-                    <p className="font-medium">
-                      {client.contract_start_date ? 
-                        new Date(client.contract_start_date).toLocaleDateString('hr-HR') : 
-                        '-'
-                      }
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-muted-foreground">Trajanje Suradnje</p>
-                    <p className="font-medium">
-                      {client.contract_start_date ? 
-                        Math.floor((new Date().getTime() - new Date(client.contract_start_date).getTime()) / (1000 * 60 * 60 * 24)) + ' dana'
-                        : '-'
-                      }
-                    </p>
-                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Antropometrijski Podaci */}
-            <AnthropometricDataCard
-              clientId={id!}
-              clientGender={client.gender}
-              data={anthropometricData}
-              onDataAdded={fetchAnthropometricData}
-            />
-
-            {/* Contract Status */}
-            <ContractStatusCard clientId={client.user_id} />
+            {/* Contract Progress */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Trajanje suradnje</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ContractProgressBar clientId={client.user_id} showLabel={true} />
+              </CardContent>
+            </Card>
 
             {/* Activity Log */}
             <Card>
@@ -389,6 +369,17 @@ export default function ClientDetail() {
               </CardHeader>
               <CardContent>
                 <ClientNAQDashboard clientId={id!} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="nutritional">
+            <Card>
+              <CardHeader>
+                <CardTitle>Nutritivna dijagnostika</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <NutritionalDiagnosticsTab clientId={id!} />
               </CardContent>
             </Card>
           </TabsContent>

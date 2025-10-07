@@ -9,7 +9,8 @@ import { NAQScoringResults } from "@/components/naq/NAQScoringResults"
 import { NAQAnalytics } from "@/components/naq/NAQAnalytics"
 import { useNAQResults, useClientNAQHistory } from "@/hooks/useNAQScoring"
 import { useSeedNAQQuestions } from "@/hooks/useSeedNAQQuestions"
-import { FileText, TrendingUp, Calendar, AlertTriangle, Plus } from "lucide-react"
+import { AssignQuestionnaireModal } from "@/components/AssignQuestionnaireModal"
+import { FileText, TrendingUp, Calendar, AlertTriangle, Plus, Send, Eye, CheckCircle } from "lucide-react"
 import { format } from "date-fns"
 
 interface FormsTabProps {
@@ -19,7 +20,34 @@ interface FormsTabProps {
 
 export function FormsTab({ clientId, clientName }: FormsTabProps) {
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null)
+  const [showAssignModal, setShowAssignModal] = useState(false)
   const seedNAQMutation = useSeedNAQQuestions()
+
+  // Get assigned questionnaires
+  const { data: assignedQuestionnaires, refetch: refetchAssigned } = useQuery({
+    queryKey: ['assigned-questionnaires', clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('assigned_questionnaires')
+        .select(`
+          id,
+          status,
+          assigned_at,
+          completed_at,
+          questionnaires (
+            id,
+            title,
+            description
+          )
+        `)
+        .eq('client_id', clientId)
+        .order('assigned_at', { ascending: false })
+
+      if (error) throw error
+      return data
+    },
+    enabled: !!clientId
+  })
 
   // Get client's submission history
   const { data: submissions, isLoading: submissionsLoading } = useQuery({
@@ -68,6 +96,19 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'sent':
+        return <Badge variant="outline" className="flex items-center gap-1"><Send className="h-3 w-3" />Poslano</Badge>
+      case 'viewed':
+        return <Badge variant="secondary" className="flex items-center gap-1"><Eye className="h-3 w-3" />Pregledano</Badge>
+      case 'completed':
+        return <Badge variant="default" className="flex items-center gap-1"><CheckCircle className="h-3 w-3" />Ispunjeno</Badge>
+      default:
+        return <Badge variant="outline">{status}</Badge>
+    }
+  }
+
   if (submissionsLoading) {
     return (
       <Card>
@@ -82,19 +123,77 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Forms & Questionnaires
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Forms & Questionnaires
+            </CardTitle>
+            <Button onClick={() => setShowAssignModal(true)} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Dodijeli upitnik
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="naq" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs defaultValue="assigned" className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="assigned">Dodijeljeni upitnici</TabsTrigger>
               <TabsTrigger value="naq">NAQ Rezultati</TabsTrigger>
               <TabsTrigger value="analytics">NAQ Analitika</TabsTrigger>
               <TabsTrigger value="history">História NAQ</TabsTrigger>
               <TabsTrigger value="other">Ostale forme</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="assigned" className="space-y-4">
+              {assignedQuestionnaires && assignedQuestionnaires.length > 0 ? (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold mb-4">Dodijeljeni upitnici</h3>
+                  {assignedQuestionnaires.map((assigned) => (
+                    <Card key={assigned.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            {getStatusBadge(assigned.status)}
+                            <h4 className="font-medium">{assigned.questionnaires?.title || 'Untitled'}</h4>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {assigned.questionnaires?.description}
+                          </p>
+                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                            <span>
+                              <Calendar className="h-3 w-3 inline mr-1" />
+                              Dodijeljeno: {format(new Date(assigned.assigned_at), 'dd.MM.yyyy')}
+                            </span>
+                            {assigned.completed_at && (
+                              <span>
+                                <CheckCircle className="h-3 w-3 inline mr-1" />
+                                Završeno: {format(new Date(assigned.completed_at), 'dd.MM.yyyy')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {assigned.status === 'completed' && (
+                            <Button size="sm" variant="outline">
+                              Pregled rezultata
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline">
+                            Postavi dodatno pitanje
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nema dodijeljenih upitnika</p>
+                  <p className="text-sm">Kliknite "Dodijeli upitnik" da biste dodijelili novi upitnik</p>
+                </div>
+              )}
+            </TabsContent>
 
             <TabsContent value="naq" className="space-y-4">
               {latestNAQSubmission ? (
@@ -241,6 +340,16 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
           </Tabs>
         </CardContent>
       </Card>
+
+      <AssignQuestionnaireModal
+        open={showAssignModal}
+        onOpenChange={setShowAssignModal}
+        clientId={clientId}
+        onQuestionnaireAssigned={() => {
+          refetchAssigned()
+          setShowAssignModal(false)
+        }}
+      />
     </div>
   )
 }

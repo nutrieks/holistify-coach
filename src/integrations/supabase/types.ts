@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      assigned_questionnaires: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          client_id: string
+          completed_at: string | null
+          created_at: string | null
+          follow_up_questions: Json | null
+          id: string
+          questionnaire_id: string
+          status: Database["public"]["Enums"]["questionnaire_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          client_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          follow_up_questions?: Json | null
+          id?: string
+          questionnaire_id: string
+          status?: Database["public"]["Enums"]["questionnaire_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          follow_up_questions?: Json | null
+          id?: string
+          questionnaire_id?: string
+          status?: Database["public"]["Enums"]["questionnaire_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assigned_questionnaires_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           conversation_id: string
@@ -1068,6 +1115,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "client"
+      questionnaire_status: "sent" | "viewed" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1196,6 +1244,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "client"],
+      questionnaire_status: ["sent", "viewed", "completed"],
     },
   },
 } as const
