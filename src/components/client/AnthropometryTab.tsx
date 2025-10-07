@@ -2,8 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { hr } from "date-fns/locale";
-import { TrendingUp, TrendingDown, Weight, Activity, Ruler } from "lucide-react";
+import { TrendingUp, TrendingDown, Weight, Activity, Ruler, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import AddAnthropometricDataModal from "./AddAnthropometricDataModal";
 
 interface AnthropometricData {
   id: string;
@@ -23,19 +26,39 @@ interface AnthropometricData {
 
 interface AnthropometryTabProps {
   data: AnthropometricData[];
+  clientId: string;
+  clientGender: string | null;
+  onDataAdded: () => void;
 }
 
-export default function AnthropometryTab({ data }: AnthropometryTabProps) {
+export default function AnthropometryTab({ data, clientId, clientGender, onDataAdded }: AnthropometryTabProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   if (!data || data.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12">
-          <div className="text-center text-muted-foreground">
-            <Activity className="h-16 w-16 mx-auto mb-4 opacity-50" />
-            <p>Nema dostupnih mjerenja za prikaz trendova.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <>
+        <div className="flex justify-end mb-4">
+          <Button onClick={() => setIsModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Dodaj Mjerenje
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center text-muted-foreground">
+              <Activity className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <p>Nema dostupnih mjerenja za prikaz trendova.</p>
+            </div>
+          </CardContent>
+        </Card>
+        <AddAnthropometricDataModal
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          clientId={clientId}
+          clientGender={clientGender}
+          onDataAdded={onDataAdded}
+        />
+      </>
     );
   }
 
@@ -73,8 +96,16 @@ export default function AnthropometryTab({ data }: AnthropometryTabProps) {
   const bodyFatTrend = calculateTrend('bodyFat');
 
   return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
+    <>
+      <div className="flex justify-end mb-4">
+        <Button onClick={() => setIsModalOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Dodaj Mjerenje
+        </Button>
+      </div>
+      
+      <div className="space-y-6">
+        {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -284,6 +315,15 @@ export default function AnthropometryTab({ data }: AnthropometryTabProps) {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+      
+      <AddAnthropometricDataModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        clientId={clientId}
+        clientGender={clientGender}
+        onDataAdded={onDataAdded}
+      />
+    </>
   );
 }

@@ -206,3 +206,35 @@ export const calculateREE = (weight: number, height: number, age: number, gender
 
   return Math.round(ree * 10) / 10; // Round to 1 decimal
 };
+
+/**
+ * Calculate Body Roundness Index (BRI)
+ * BRI = 364.2 - 365.5 × √(1 - ((waist / (2π))² / (0.5 × height)²))
+ */
+export const calculateBRI = (waist: number, height: number): number | null => {
+  if (!waist || !height || waist <= 0 || height <= 0) {
+    return null;
+  }
+
+  const waistInMeters = waist / 100;
+  const heightInMeters = height / 100;
+
+  const bri = 364.2 - 365.5 * Math.sqrt(
+    1 - (Math.pow(waistInMeters / (2 * Math.PI), 2) / Math.pow(0.5 * heightInMeters, 2))
+  );
+
+  if (isNaN(bri) || bri < 0) return null;
+
+  return Math.round(bri * 10) / 10;
+};
+
+/**
+ * Get BRI category based on value
+ */
+export const getBRICategory = (bri: number): string => {
+  if (bri < 1) return 'Vrlo vitak';
+  if (bri < 3) return 'Vitak';
+  if (bri < 5) return 'Prosječan';
+  if (bri < 7) return 'Zaobljen';
+  return 'Vrlo zaobljen';
+};

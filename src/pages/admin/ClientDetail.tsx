@@ -19,9 +19,24 @@ import { ContractProgressBar } from "@/components/ContractProgressBar"
 import { FormsTab } from "@/components/FormsTab"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import AnthropometryTab from "@/components/client/AnthropometryTab"
-import EnergyCalculationTab from "@/components/client/EnergyCalculationTab"
+import EnergyCalculationTabSimplified from "@/components/client/EnergyCalculationTabSimplified"
+import ChatInterface from "@/components/chat/ChatInterface"
 import { ClientNAQDashboard } from "@/components/naq/ClientNAQDashboard"
 import { NutritionalDiagnosticsTab } from "@/components/NutritionalDiagnosticsTab"
+
+function ChatInterfaceWrapper({ clientUserId, clientName }: { clientUserId: string; clientName: string }) {
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setCurrentUserId(user.id);
+    });
+  }, []);
+
+  if (!currentUserId) return <LoadingSpinner />;
+
+  return <ChatInterface currentUserId={currentUserId} otherUserId={clientUserId} otherUserName={clientName} />;
+}
 
 interface ClientProfile {
   id: string
@@ -338,11 +353,19 @@ export default function ClientDetail() {
           </TabsContent>
 
           <TabsContent value="anthropometry">
-            <AnthropometryTab data={anthropometricData} />
+            <AnthropometryTab 
+              data={anthropometricData}
+              clientId={id!}
+              clientGender={client.gender}
+              onDataAdded={() => {
+                fetchAnthropometricData();
+                fetchClient();
+              }}
+            />
           </TabsContent>
 
-          <TabsContent value="energy">
-            <EnergyCalculationTab
+                  <TabsContent value="energy">
+                    <EnergyCalculationTabSimplified
               clientGender={client.gender}
               latestWeight={anthropometricData[0]?.weight || null}
               latestHeight={anthropometricData[0]?.height || null}
@@ -482,16 +505,7 @@ export default function ClientDetail() {
           </TabsContent>
 
           <TabsContent value="chat">
-            <Card>
-              <CardHeader>
-                <CardTitle>Chat</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Chat functionality will be implemented soon</p>
-                </div>
-              </CardContent>
-            </Card>
+            <ChatInterfaceWrapper clientUserId={client.user_id} clientName={client.full_name} />
           </TabsContent>
         </Tabs>
       </div>
