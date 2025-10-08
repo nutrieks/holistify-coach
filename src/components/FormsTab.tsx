@@ -23,7 +23,7 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
   const [showAssignModal, setShowAssignModal] = useState(false)
   const seedNAQMutation = useSeedNAQQuestions()
 
-  // Get assigned questionnaires
+  // Get assigned questionnaires (excluding NAQ)
   const { data: assignedQuestionnaires, refetch: refetchAssigned } = useQuery({
     queryKey: ['assigned-questionnaires', clientId],
     queryFn: async () => {
@@ -37,14 +37,19 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
           questionnaires (
             id,
             title,
-            description
+            description,
+            questionnaire_type
           )
         `)
         .eq('client_id', clientId)
-        .order('assigned_at', { ascending: false })
+        .order('assigned_at', { ascending: false });
 
-      if (error) throw error
-      return data
+      if (error) throw error;
+      
+      // Filter out NAQ questionnaires
+      return data?.filter(
+        (item: any) => item.questionnaires?.questionnaire_type !== 'naq'
+      ) || [];
     },
     enabled: !!clientId
   })

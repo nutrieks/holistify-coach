@@ -354,10 +354,18 @@ export default function ClientDetail() {
 
           <TabsContent value="anthropometry">
             <AnthropometryTab 
-              data={anthropometricData}
               clientId={id!}
-              clientGender={client.gender}
-              onDataAdded={() => {
+              initialData={{
+                gender: client.gender,
+                height: anthropometricData[0]?.height || null,
+                weight: anthropometricData[0]?.weight || null,
+                waist_circumference: anthropometricData[0]?.waist_circumference || null,
+                hip_circumference: anthropometricData[0]?.hip_circumference || null,
+                neck_circumference: anthropometricData[0]?.neck_circumference || null,
+                wrist_circumference: anthropometricData[0]?.wrist_circumference || null,
+                digit_ratio_2d4d: anthropometricData[0]?.digit_ratio_2d4d || null
+              }}
+              onDataUpdated={() => {
                 fetchAnthropometricData();
                 fetchClient();
               }}
@@ -366,11 +374,7 @@ export default function ClientDetail() {
 
                   <TabsContent value="energy">
                     <EnergyCalculationTabSimplified
-              clientGender={client.gender}
-              latestWeight={anthropometricData[0]?.weight || null}
-              latestHeight={anthropometricData[0]?.height || null}
-              latestLBM={anthropometricData[0]?.lean_body_mass || null}
-              clientAge={calculateAge(client.date_of_birth)}
+              clientId={id!}
             />
           </TabsContent>
 

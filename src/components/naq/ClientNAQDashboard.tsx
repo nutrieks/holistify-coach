@@ -4,7 +4,7 @@ import { useNAQResults, useClientNAQHistory } from "@/hooks/useNAQScoring";
 import { useNAQProgress } from "@/hooks/useNAQProgress";
 import { NAQClientResults } from "./NAQClientResults";
 import { NAQProgressChart } from "./NAQProgressChart";
-import { AssignQuestionnaireModal } from "@/components/AssignQuestionnaireModal";
+import { AssignNAQModal } from "./AssignNAQModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,11 +117,13 @@ export function ClientNAQDashboard({ clientId }: ClientNAQDashboardProps) {
         )}
       </div>
 
-      <AssignQuestionnaireModal
+      <AssignNAQModal
         open={isAssignModalOpen}
         onOpenChange={setIsAssignModalOpen}
         clientId={clientId}
-        onQuestionnaireAssigned={() => setIsAssignModalOpen(false)}
+        onNAQAssigned={() => {
+          setIsAssignModalOpen(false);
+        }}
       />
     </>
   );

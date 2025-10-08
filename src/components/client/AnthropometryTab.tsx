@@ -1,329 +1,373 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { format } from "date-fns";
-import { hr } from "date-fns/locale";
-import { TrendingUp, TrendingDown, Weight, Activity, Ruler, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import AddAnthropometricDataModal from "./AddAnthropometricDataModal";
-
-interface AnthropometricData {
-  id: string;
-  measurement_date: string;
-  height: number | null;
-  weight: number | null;
-  body_fat_manual: number | null;
-  body_fat_navy: number | null;
-  lean_body_mass: number | null;
-  fat_mass: number | null;
-  waist_circumference: number | null;
-  hip_circumference: number | null;
-  neck_circumference: number | null;
-  wrist_circumference: number | null;
-  digit_ratio_2d4d: number | null;
-}
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  calculateBMI, 
+  calculateBRI, 
+  calculateBodyFatNavy, 
+  calculateWaistToHipRatio,
+  calculateLeanBodyMass,
+  calculateFatMass
+} from "@/utils/anthropometricCalculations";
+import { CheckCircle, XCircle } from "lucide-react";
 
 interface AnthropometryTabProps {
-  data: AnthropometricData[];
   clientId: string;
-  clientGender: string | null;
-  onDataAdded: () => void;
+  initialData?: {
+    gender?: string | null;
+    height?: number | null;
+    weight?: number | null;
+    waist_circumference?: number | null;
+    hip_circumference?: number | null;
+    neck_circumference?: number | null;
+    wrist_circumference?: number | null;
+    digit_ratio_2d4d?: number | null;
+  };
+  onDataUpdated: () => void;
 }
 
-export default function AnthropometryTab({ data, clientId, clientGender, onDataAdded }: AnthropometryTabProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+export default function AnthropometryTab({ clientId, initialData, onDataUpdated }: AnthropometryTabProps) {
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
   
-  if (!data || data.length === 0) {
-    return (
-      <>
-        <div className="flex justify-end mb-4">
-          <Button onClick={() => setIsModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Dodaj Mjerenje
-          </Button>
-        </div>
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center text-muted-foreground">
-              <Activity className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p>Nema dostupnih mjerenja za prikaz trendova.</p>
-            </div>
-          </CardContent>
-        </Card>
-        <AddAnthropometricDataModal
-          open={isModalOpen}
-          onOpenChange={setIsModalOpen}
-          clientId={clientId}
-          clientGender={clientGender}
-          onDataAdded={onDataAdded}
-        />
-      </>
-    );
-  }
+  // Form state
+  const [gender, setGender] = useState(initialData?.gender || "");
+  const [height, setHeight] = useState(initialData?.height?.toString() || "");
+  const [weight, setWeight] = useState(initialData?.weight?.toString() || "");
+  const [waist, setWaist] = useState(initialData?.waist_circumference?.toString() || "");
+  const [hip, setHip] = useState(initialData?.hip_circumference?.toString() || "");
+  const [neck, setNeck] = useState(initialData?.neck_circumference?.toString() || "");
+  const [wrist, setWrist] = useState(initialData?.wrist_circumference?.toString() || "");
+  const [digitRatio, setDigitRatio] = useState(initialData?.digit_ratio_2d4d?.toString() || "");
 
-  // Prepare data for charts (reverse to show chronological order)
-  const chartData = [...data].reverse().map(d => ({
-    date: format(new Date(d.measurement_date), 'dd.MM', { locale: hr }),
-    fullDate: format(new Date(d.measurement_date), 'dd.MM.yyyy', { locale: hr }),
-    weight: d.weight,
-    bodyFat: d.body_fat_navy || d.body_fat_manual,
-    lbm: d.lean_body_mass,
-    fm: d.fat_mass,
-    waist: d.waist_circumference,
-    hip: d.hip_circumference,
-    neck: d.neck_circumference,
-  }));
+  // Check if all required fields are filled
+  const isComplete = !!(gender && height && weight && waist && hip && neck);
 
-  // Calculate trends
-  const calculateTrend = (key: keyof typeof chartData[0]) => {
-    const validData = chartData.filter(d => d[key] != null);
-    if (validData.length < 2) return null;
-    
-    const first = validData[0][key] as number;
-    const last = validData[validData.length - 1][key] as number;
-    const change = last - first;
-    const percentChange = ((change / first) * 100).toFixed(1);
-    
-    return {
-      change: change.toFixed(1),
-      percentChange,
-      isPositive: change > 0,
-    };
+  // Calculate metrics
+  const heightNum = parseFloat(height) || 0;
+  const weightNum = parseFloat(weight) || 0;
+  const waistNum = parseFloat(waist) || 0;
+  const hipNum = parseFloat(hip) || 0;
+  const neckNum = parseFloat(neck) || 0;
+
+  const bmi = heightNum && weightNum ? calculateBMI(weightNum, heightNum) : null;
+  const bri = heightNum && waistNum ? calculateBRI(waistNum, heightNum) : null;
+  const bodyFat = gender && heightNum && waistNum && neckNum
+    ? calculateBodyFatNavy({
+        gender: gender as 'male' | 'female',
+        waist: waistNum,
+        neck: neckNum,
+        hip: hipNum,
+        height: heightNum
+      })
+    : null;
+  const whr = waistNum && hipNum ? calculateWaistToHipRatio(waistNum, hipNum) : null;
+  const lbm = weightNum && bodyFat ? calculateLeanBodyMass(weightNum, bodyFat) : null;
+  const fm = weightNum && bodyFat ? calculateFatMass(weightNum, bodyFat) : null;
+
+  const handleSave = async () => {
+    if (!isComplete) {
+      toast({
+        title: "Greška",
+        description: "Molimo ispunite sve obavezne podatke",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Update client with gender
+      const { error: clientError } = await supabase
+        .from('clients')
+        .update({ gender })
+        .eq('id', clientId);
+
+      if (clientError) throw clientError;
+
+      // Check if anthropometric data exists
+      const { data: existingData } = await supabase
+        .from('client_anthropometric_data')
+        .select('id')
+        .eq('client_id', clientId)
+        .order('measurement_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const anthropometricData = {
+        client_id: clientId,
+        measurement_date: new Date().toISOString().split('T')[0],
+        height: heightNum,
+        weight: weightNum,
+        waist_circumference: waistNum,
+        hip_circumference: hipNum,
+        neck_circumference: neckNum,
+        wrist_circumference: parseFloat(wrist) || null,
+        digit_ratio_2d4d: parseFloat(digitRatio) || null,
+        body_fat_navy: bodyFat,
+        lean_body_mass: lbm,
+        fat_mass: fm
+      };
+
+      if (existingData) {
+        // Update existing
+        const { error } = await supabase
+          .from('client_anthropometric_data')
+          .update(anthropometricData)
+          .eq('id', existingData.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from('client_anthropometric_data')
+          .insert(anthropometricData);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Uspješno",
+        description: "Antropometrijski podaci su spremljeni"
+      });
+
+      onDataUpdated();
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast({
+        title: "Greška",
+        description: error.message || "Greška pri spremanju podataka",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const weightTrend = calculateTrend('weight');
-  const bodyFatTrend = calculateTrend('bodyFat');
-
   return (
-    <>
-      <div className="flex justify-end mb-4">
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Dodaj Mjerenje
-        </Button>
-      </div>
-      
-      <div className="space-y-6">
-        {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ukupna Promjena Težine</CardTitle>
-            <Weight className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {weightTrend ? (
-              <div>
-                <div className="text-2xl font-bold">
-                  {weightTrend.isPositive ? '+' : ''}{weightTrend.change} kg
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                  {weightTrend.isPositive ? (
-                    <TrendingUp className="h-3 w-3 text-red-500" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3 text-green-500" />
-                  )}
-                  <span>{weightTrend.percentChange}% od prvog mjerenja</span>
-                </div>
-              </div>
+    <div className="space-y-6">
+      {/* Status Badge */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Status Antropometrijskih Podataka</CardTitle>
+            {isComplete ? (
+              <Badge variant="default" className="bg-green-500 flex items-center gap-1">
+                <CheckCircle className="h-4 w-4" />
+                Ispunjeno
+              </Badge>
             ) : (
-              <p className="text-sm text-muted-foreground">Potrebno više mjerenja</p>
+              <Badge variant="destructive" className="flex items-center gap-1">
+                <XCircle className="h-4 w-4" />
+                Nepotpuno
+              </Badge>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </CardHeader>
+      </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Promjena Body Fat %</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {bodyFatTrend ? (
-              <div>
-                <div className="text-2xl font-bold">
-                  {bodyFatTrend.isPositive ? '+' : ''}{bodyFatTrend.change}%
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                  {bodyFatTrend.isPositive ? (
-                    <TrendingUp className="h-3 w-3 text-red-500" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3 text-green-500" />
-                  )}
-                  <span>{bodyFatTrend.percentChange}% od prvog mjerenja</span>
-                </div>
+      {/* Input Fields */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Početni Antropometrijski Podaci</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Gender */}
+            <div className="space-y-2">
+              <Label htmlFor="gender">Spol *</Label>
+              <Select value={gender} onValueChange={setGender}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Odaberite spol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Muško</SelectItem>
+                  <SelectItem value="female">Žensko</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Height */}
+            <div className="space-y-2">
+              <Label htmlFor="height">Visina (cm) *</Label>
+              <Input
+                id="height"
+                type="number"
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+                placeholder="npr. 175"
+              />
+            </div>
+
+            {/* Weight */}
+            <div className="space-y-2">
+              <Label htmlFor="weight">Težina (kg) *</Label>
+              <Input
+                id="weight"
+                type="number"
+                step="0.1"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder="npr. 75.5"
+              />
+            </div>
+
+            {/* Waist */}
+            <div className="space-y-2">
+              <Label htmlFor="waist">Opseg Struka (cm) *</Label>
+              <Input
+                id="waist"
+                type="number"
+                step="0.1"
+                value={waist}
+                onChange={(e) => setWaist(e.target.value)}
+                placeholder="npr. 85"
+              />
+            </div>
+
+            {/* Hip */}
+            <div className="space-y-2">
+              <Label htmlFor="hip">Opseg Bokova (cm) *</Label>
+              <Input
+                id="hip"
+                type="number"
+                step="0.1"
+                value={hip}
+                onChange={(e) => setHip(e.target.value)}
+                placeholder="npr. 95"
+              />
+            </div>
+
+            {/* Neck */}
+            <div className="space-y-2">
+              <Label htmlFor="neck">Opseg Vrata (cm) *</Label>
+              <Input
+                id="neck"
+                type="number"
+                step="0.1"
+                value={neck}
+                onChange={(e) => setNeck(e.target.value)}
+                placeholder="npr. 38"
+              />
+            </div>
+
+            {/* Wrist */}
+            <div className="space-y-2">
+              <Label htmlFor="wrist">Opseg Zapešća (cm)</Label>
+              <Input
+                id="wrist"
+                type="number"
+                step="0.1"
+                value={wrist}
+                onChange={(e) => setWrist(e.target.value)}
+                placeholder="npr. 17"
+              />
+            </div>
+
+            {/* Digit Ratio */}
+            <div className="space-y-2">
+              <Label htmlFor="digitRatio">2D:4D Ratio</Label>
+              <Input
+                id="digitRatio"
+                type="number"
+                step="0.01"
+                value={digitRatio}
+                onChange={(e) => setDigitRatio(e.target.value)}
+                placeholder="npr. 0.95"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? "Spremanje..." : "Spremi Podatke"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Calculated Metrics */}
+      {isComplete && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">BMI</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {bmi?.toFixed(1) || "N/A"}
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Potrebno više mjerenja</p>
-            )}
-          </CardContent>
-        </Card>
+              <p className="text-xs text-muted-foreground mt-1">Body Mass Index</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Broj Mjerenja</CardTitle>
-            <Ruler className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Posljednje: {format(new Date(data[0].measurement_date), 'dd. MMM yyyy', { locale: hr })}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">BRI</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {bri?.toFixed(2) || "N/A"}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Body Roundness Index</p>
+            </CardContent>
+          </Card>
 
-      {/* Weight Trend Chart */}
-      {chartData.some(d => d.weight) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Trend Težine</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip 
-                  labelFormatter={(label) => {
-                    const item = chartData.find(d => d.date === label);
-                    return item?.fullDate || label;
-                  }}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="weight" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  name="Težina (kg)"
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Body Fat %</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {bodyFat?.toFixed(1) || "N/A"}%
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Navy metoda</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">WHR</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {whr?.toFixed(2) || "N/A"}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Waist-to-Hip Ratio</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">LBM</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {lbm?.toFixed(1) || "N/A"} kg
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Lean Body Mass</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">FM</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {fm?.toFixed(1) || "N/A"} kg
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Fat Mass</p>
+            </CardContent>
+          </Card>
+        </div>
       )}
-
-      {/* Body Composition Chart */}
-      {chartData.some(d => d.bodyFat || d.lbm || d.fm) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Sastav Tijela</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip 
-                  labelFormatter={(label) => {
-                    const item = chartData.find(d => d.date === label);
-                    return item?.fullDate || label;
-                  }}
-                />
-                <Legend />
-                {chartData.some(d => d.bodyFat) && (
-                  <Line 
-                    type="monotone" 
-                    dataKey="bodyFat" 
-                    stroke="#ef4444" 
-                    strokeWidth={2}
-                    name="Body Fat %"
-                    dot={{ r: 4 }}
-                  />
-                )}
-                {chartData.some(d => d.lbm) && (
-                  <Line 
-                    type="monotone" 
-                    dataKey="lbm" 
-                    stroke="#10b981" 
-                    strokeWidth={2}
-                    name="LBM (kg)"
-                    dot={{ r: 4 }}
-                  />
-                )}
-                {chartData.some(d => d.fm) && (
-                  <Line 
-                    type="monotone" 
-                    dataKey="fm" 
-                    stroke="#f59e0b" 
-                    strokeWidth={2}
-                    name="FM (kg)"
-                    dot={{ r: 4 }}
-                  />
-                )}
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Circumferences Chart */}
-      {chartData.some(d => d.waist || d.hip || d.neck) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Opsezi (cm)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip 
-                  labelFormatter={(label) => {
-                    const item = chartData.find(d => d.date === label);
-                    return item?.fullDate || label;
-                  }}
-                />
-                <Legend />
-                {chartData.some(d => d.waist) && (
-                  <Line 
-                    type="monotone" 
-                    dataKey="waist" 
-                    stroke="#8b5cf6" 
-                    strokeWidth={2}
-                    name="Struk (cm)"
-                    dot={{ r: 4 }}
-                  />
-                )}
-                {chartData.some(d => d.hip) && (
-                  <Line 
-                    type="monotone" 
-                    dataKey="hip" 
-                    stroke="#ec4899" 
-                    strokeWidth={2}
-                    name="Bokovi (cm)"
-                    dot={{ r: 4 }}
-                  />
-                )}
-                {chartData.some(d => d.neck) && (
-                  <Line 
-                    type="monotone" 
-                    dataKey="neck" 
-                    stroke="#06b6d4" 
-                    strokeWidth={2}
-                    name="Vrat (cm)"
-                    dot={{ r: 4 }}
-                  />
-                )}
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-      </div>
-      
-      <AddAnthropometricDataModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        clientId={clientId}
-        clientGender={clientGender}
-        onDataAdded={onDataAdded}
-      />
-    </>
+    </div>
   );
 }
