@@ -12,11 +12,13 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Edit, Trash2, Eye, FileText, ChevronUp, ChevronDown, Copy } from "lucide-react"
+import { Plus, Edit, Trash2, Eye, FileText, ChevronUp, ChevronDown, Copy, AlertCircle } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
+import { CreateCompleteNAQButton } from "@/components/CreateCompleteNAQButton"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface Questionnaire {
   id: string
@@ -64,6 +66,25 @@ export default function FormsLibrary() {
     options: [] as string[]
   })
   const [currentOption, setCurrentOption] = useState("")
+
+  // Check if NAQ exists
+  const { data: naqExists, isLoading: isLoadingNAQ } = useQuery({
+    queryKey: ['naq-exists'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('questionnaires')
+        .select('id, title, questionnaire_questions(count)')
+        .eq('questionnaire_type', 'naq')
+        .maybeSingle();
+      
+      return data ? {
+        exists: true,
+        questionCount: data.questionnaire_questions?.length || 0,
+        title: data.title
+      } : { exists: false, questionCount: 0, title: null };
+    },
+    enabled: !!profile?.id
+  });
 
   // Fetch questionnaires
   const { data: questionnaires = [], isLoading } = useQuery({
@@ -368,11 +389,48 @@ export default function FormsLibrary() {
   return (
     <AdminLayout title="Biblioteka Upitnika">
       <div className="space-y-6">
+        {/* NAQ Section */}
+        {!isLoadingNAQ && !naqExists?.exists && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-primary" />
+                NAQ Upitnik
+              </CardTitle>
+              <CardDescription>
+                Nutritional Assessment Questionnaire (NAQ) još nije kreiran u sustavu.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Alert className="mb-4">
+                <AlertDescription>
+                  NAQ je centralni upitnik za procjenu nutritivnog statusa klijenta s 321 pitanjem organiziranim u kategorije.
+                  Potrebno ga je kreirati prije nego što možete zatražiti NAQ od klijenata.
+                </AlertDescription>
+              </Alert>
+              <CreateCompleteNAQButton />
+            </CardContent>
+          </Card>
+        )}
+
+        {naqExists?.exists && (
+          <Card className="border-green-500/20 bg-green-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                ✓ NAQ Upitnik
+              </CardTitle>
+              <CardDescription>
+                {naqExists.title} je aktivan u sustavu ({naqExists.questionCount} pitanja)
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Upravljanje Upitnicima</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Ostali Upitnici</h2>
             <p className="text-muted-foreground">
-              Kreirajte i upravljajte upitnicima za vaše klijente
+              Kreirajte i upravljajte dodatnim upitnicima za vaše klijente
             </p>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

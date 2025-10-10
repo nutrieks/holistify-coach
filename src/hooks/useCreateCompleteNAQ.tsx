@@ -1,9 +1,10 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 export const useCreateCompleteNAQ = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
@@ -18,6 +19,11 @@ export const useCreateCompleteNAQ = () => {
       return data;
     },
     onSuccess: (data) => {
+      // Invalidate queries to refresh NAQ status
+      queryClient.invalidateQueries({ queryKey: ['naq-exists'] });
+      queryClient.invalidateQueries({ queryKey: ['naq-questionnaire'] });
+      queryClient.invalidateQueries({ queryKey: ['questionnaires'] });
+      
       toast({
         title: "NAQ uspješno kreiran",
         description: `Kreiran je kompletan NAQ upitnik s ${data.questionCount} pitanja.`,

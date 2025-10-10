@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { AlertTriangle, ExternalLink } from "lucide-react";
 
 interface AssignNAQModalProps {
   open: boolean;
@@ -114,11 +116,27 @@ export function AssignNAQModal({
               </p>
             </div>
           ) : (
-            <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
-              <p className="text-sm text-destructive">
-                NAQ upitnik nije pronađen u sustavu. Molimo kontaktirajte podršku.
-              </p>
-            </div>
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>NAQ nije dostupan</AlertTitle>
+              <AlertDescription className="space-y-3">
+                <p>
+                  NAQ upitnik još nije kreiran u sustavu. Potrebno je prvo kreirati NAQ u Biblioteci Obrazaca.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => {
+                    onOpenChange(false);
+                    window.location.href = '/admin/forms';
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Idi na Biblioteku Obrazaca
+                </Button>
+              </AlertDescription>
+            </Alert>
           )}
 
           {/* Notes */}
