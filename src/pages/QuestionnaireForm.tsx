@@ -342,6 +342,81 @@ export default function QuestionnaireForm() {
     const currentAnswer = answers[question.id]
 
     switch (question.question_type) {
+      case 'frequency_0_3':
+      case 'symptom_0_3':
+      case 'scale_0_3':
+        const colors = ['hsl(var(--success))', 'hsl(var(--warning))', 'hsl(142 71% 45%)', 'hsl(var(--destructive))']
+        const defaultOptions = question.question_type === 'frequency_0_3' 
+          ? ["Ne konzumiram", "2-3 puta mjesečno", "Tjedno", "Dnevno"]
+          : ["Ne, simptom se ne javlja", "Da, manji ili blagi simptom (mjesečno)", "Umjeren simptom (tjedno)", "Ozbiljan simptom (dnevno)"]
+        
+        let options: string[] = defaultOptions
+        if (question.options) {
+          if (typeof question.options === 'string') {
+            try {
+              options = JSON.parse(question.options)
+            } catch {
+              options = defaultOptions
+            }
+          } else if (Array.isArray(question.options)) {
+            options = question.options
+          }
+        }
+        
+        return (
+          <div className="space-y-3">
+            {options.map((option: string, index: number) => (
+              <div 
+                key={index} 
+                className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${
+                  currentAnswer === String(index) ? 'border-primary bg-primary/5 shadow-sm' : 'border-muted hover:border-primary/30'
+                }`}
+                onClick={() => handleAnswerChange(question.id, String(index))}
+              >
+                <div 
+                  className="w-5 h-5 rounded-full flex-shrink-0 shadow-sm" 
+                  style={{ backgroundColor: colors[index] }}
+                />
+                <input
+                  type="radio"
+                  name={`question-${question.id}`}
+                  value={String(index)}
+                  checked={currentAnswer === String(index)}
+                  onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                  className="w-4 h-4 text-primary"
+                />
+                <Label className="text-sm font-normal cursor-pointer flex-1">
+                  {option}
+                </Label>
+              </div>
+            ))}
+          </div>
+        )
+
+      case 'yes_no':
+        return (
+          <div className="flex gap-3">
+            <Button 
+              type="button"
+              size="lg"
+              variant={currentAnswer === "0" ? "default" : "outline"}
+              onClick={() => handleAnswerChange(question.id, "0")}
+              className="flex-1"
+            >
+              Ne
+            </Button>
+            <Button 
+              type="button"
+              size="lg"
+              variant={currentAnswer === "1" ? "default" : "outline"}
+              onClick={() => handleAnswerChange(question.id, "1")}
+              className="flex-1"
+            >
+              Da
+            </Button>
+          </div>
+        )
+
       case 'short_text':
         return (
           <Input
@@ -366,20 +441,20 @@ export default function QuestionnaireForm() {
         if (!question.options) return null
         
         // Handle both string and array formats for options
-        let options: string[] = []
+        let multipleChoiceOptions: string[] = []
         if (typeof question.options === 'string') {
           try {
-            options = JSON.parse(question.options)
+            multipleChoiceOptions = JSON.parse(question.options)
           } catch {
-            options = [question.options]
+            multipleChoiceOptions = [question.options]
           }
         } else if (Array.isArray(question.options)) {
-          options = question.options
+          multipleChoiceOptions = question.options
         }
         
         return (
           <div className="space-y-3">
-            {options.map((option: string, index: number) => (
+            {multipleChoiceOptions.map((option: string, index: number) => (
               <div key={index} className="flex items-center space-x-3">
                 <input
                   type="radio"
@@ -400,22 +475,22 @@ export default function QuestionnaireForm() {
       case 'checkbox':
         if (!question.options) return null
         
-        // Handle both string and array formats for options
-        let checkboxOptions: string[] = []
+        // Handle both string and array formats for checkbox options
+        let checkboxOpts: string[] = []
         if (typeof question.options === 'string') {
           try {
-            checkboxOptions = JSON.parse(question.options)
+            checkboxOpts = JSON.parse(question.options)
           } catch {
-            checkboxOptions = [question.options]
+            checkboxOpts = [question.options]
           }
         } else if (Array.isArray(question.options)) {
-          checkboxOptions = question.options
+          checkboxOpts = question.options
         }
         
         const selectedOptions = currentAnswer || []
         return (
           <div className="space-y-3">
-            {checkboxOptions.map((option: string, index: number) => (
+            {checkboxOpts.map((option: string, index: number) => (
               <div key={index} className="flex items-center space-x-3">
                 <Checkbox
                   checked={selectedOptions.includes(option)}

@@ -22,9 +22,11 @@ export interface NAQResults {
   hierarchyRecommendations: string[];
 }
 
-// NAQ Section definitions based on the PDF document
 // NAQ Section definitions based on the official PDF document with exact thresholds
 export const NAQ_SECTIONS: NAQSection[] = [
+  { name: 'Analiza prehrane', category: 'nutrition', questionCount: 20, lowPriority: 15, mediumPriority: 30, highPriority: 45 },
+  { name: 'Životni stil', category: 'lifestyle', questionCount: 4, lowPriority: 3, mediumPriority: 6, highPriority: 9 },
+  { name: 'Lijekovi', category: 'medications', questionCount: 27, lowPriority: 9, mediumPriority: 13, highPriority: 18 },
   { name: 'Gornji gastrointestinalni sustav', category: 'upper_gi', questionCount: 19, lowPriority: 9, mediumPriority: 14, highPriority: 15 },
   { name: 'Jetra i žučni mjehur', category: 'liver_gallbladder', questionCount: 28, lowPriority: 11, mediumPriority: 17, highPriority: 18 },
   { name: 'Tanko crijevo', category: 'small_intestine', questionCount: 17, lowPriority: 7, mediumPriority: 15, highPriority: 16 },
@@ -45,6 +47,9 @@ export const NAQ_SECTIONS: NAQSection[] = [
 
 // Health Foundation Hierarchy - defines treatment priority order
 export const HEALTH_FOUNDATION_HIERARCHY = [
+  'nutrition',
+  'lifestyle',
+  'medications',
   'upper_gi',
   'liver_gallbladder', 
   'small_intestine',
