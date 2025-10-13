@@ -63,33 +63,62 @@ export type Database = {
       }
       chat_messages: {
         Row: {
+          attachment_name: string | null
+          attachment_size: number | null
+          attachment_type: string | null
+          attachment_url: string | null
           conversation_id: string
           created_at: string | null
+          deleted_at: string | null
+          edited_at: string | null
           id: string
           is_read: boolean | null
           message: string
           receiver_id: string
+          reply_to_id: string | null
           sender_id: string
         }
         Insert: {
+          attachment_name?: string | null
+          attachment_size?: number | null
+          attachment_type?: string | null
+          attachment_url?: string | null
           conversation_id: string
           created_at?: string | null
+          deleted_at?: string | null
+          edited_at?: string | null
           id?: string
           is_read?: boolean | null
           message: string
           receiver_id: string
+          reply_to_id?: string | null
           sender_id: string
         }
         Update: {
+          attachment_name?: string | null
+          attachment_size?: number | null
+          attachment_type?: string | null
+          attachment_url?: string | null
           conversation_id?: string
           created_at?: string | null
+          deleted_at?: string | null
+          edited_at?: string | null
           id?: string
           is_read?: boolean | null
           message?: string
           receiver_id?: string
+          reply_to_id?: string | null
           sender_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_anthropometric_data: {
         Row: {
@@ -1101,6 +1130,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_conversation_id: {
+        Args: { user1_id: string; user2_id: string }
+        Returns: string
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1111,6 +1144,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      mark_messages_as_read: {
+        Args: { p_receiver_id: string; p_sender_id: string }
+        Returns: undefined
       }
     }
     Enums: {
