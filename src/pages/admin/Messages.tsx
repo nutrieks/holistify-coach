@@ -71,24 +71,24 @@ export default function Messages() {
 
   return (
     <AdminLayout title="Poruke">
-      <div className="h-[calc(100vh-8rem)] flex gap-6">
+      <div className="h-[calc(100vh-8rem)] flex gap-4">
         {/* Conversations List */}
-        <Card className="w-80 flex flex-col">
-          <CardHeader>
+        <Card className="w-80 flex flex-col border-r">
+          <CardHeader className="border-b">
             <CardTitle>Razgovori</CardTitle>
-            <div className="relative">
+            <div className="relative mt-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Pretraži razgovore..."
+                placeholder="Pretraži..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
           </CardHeader>
-          <CardContent className="flex-1 p-0">
+          <CardContent className="flex-1 p-0 overflow-hidden">
             <ScrollArea className="h-full">
-              <div className="p-4 space-y-2">
+              <div className="p-2 space-y-1">
                 {conversations
                   .filter(conv => 
                     conv.client_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -96,10 +96,10 @@ export default function Messages() {
                   .map((conversation) => (
                   <div
                     key={conversation.client_id}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                    className={`p-3 rounded-lg cursor-pointer transition-all hover:bg-muted/50 ${
                       selectedClient === conversation.client_id
-                        ? 'bg-primary/10 border border-primary/20'
-                        : 'hover:bg-muted/50'
+                        ? 'bg-primary/10 border-2 border-primary/30'
+                        : 'border-2 border-transparent'
                     }`}
                     onClick={() => {
                       setSelectedClient(conversation.client_id);
@@ -108,12 +108,12 @@ export default function Messages() {
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-primary/20 text-primary">
                           {conversation.client_name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">
+                        <p className="font-semibold text-sm truncate">
                           {conversation.client_name}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
@@ -121,8 +121,8 @@ export default function Messages() {
                         </p>
                       </div>
                       {conversation.unread_count > 0 && (
-                        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                          <span className="text-xs text-primary-foreground">
+                        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-sm">
+                          <span className="text-xs text-primary-foreground font-semibold">
                             {conversation.unread_count}
                           </span>
                         </div>
@@ -132,8 +132,8 @@ export default function Messages() {
                 ))}
                 
                 {conversations.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Nemate aktivnih razgovora</p>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p className="text-sm">Nemate aktivnih razgovora</p>
                   </div>
                 )}
               </div>
@@ -143,16 +143,18 @@ export default function Messages() {
 
         {/* Messages Area */}
         {selectedClient && user?.id ? (
-          <ChatInterface
-            currentUserId={user.id}
-            otherUserId={selectedClient}
-            otherUserName={selectedClientName}
-          />
+          <div className="flex-1 flex">
+            <ChatInterface
+              currentUserId={user.id}
+              otherUserId={selectedClient}
+              otherUserName={selectedClientName}
+            />
+          </div>
         ) : (
           <Card className="flex-1 flex flex-col">
             <CardContent className="flex-1 flex items-center justify-center">
               <div className="text-center text-muted-foreground">
-                <p>Odaberite razgovor za početak chata</p>
+                <p className="text-lg">Odaberite razgovor za početak chata</p>
               </div>
             </CardContent>
           </Card>
