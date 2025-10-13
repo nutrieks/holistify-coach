@@ -1,15 +1,20 @@
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, ChangeEvent, KeyboardEvent, useEffect } from "react";
+import { Paperclip, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Paperclip, Send, X } from "lucide-react";
 import { FilePreview } from "./FilePreview";
-import { cn } from "@/lib/utils";
+import { EmojiPickerComponent } from "./EmojiPicker";
 
 interface ChatInputProps {
   onSend: (message: string, file?: File) => void;
   onTyping?: () => void;
   disabled?: boolean;
   placeholder?: string;
+  replyingTo?: { id: string; message: string } | null;
+  onCancelReply?: () => void;
+  editingMessage?: { id: string; message: string } | null;
+  onCancelEdit?: () => void;
+  onEditSave?: (messageId: string, newText: string) => void;
 }
 
 export const ChatInput = ({
@@ -17,23 +22,56 @@ export const ChatInput = ({
   onTyping,
   disabled = false,
   placeholder = "Napišite poruku...",
+  replyingTo,
+  onCancelReply,
+  editingMessage,
+  onCancelEdit,
+  onEditSave,
 }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Auto-populate message when editing
+  useEffect(() => {
+    if (editingMessage) {
+      setMessage(editingMessage.message);
+      textareaRef.current?.focus();
+    }
+  }, [editingMessage]);
+
   const handleSend = () => {
-    if (!message.trim() && !selectedFile) return;
+    if ((!message.trim() && !selectedFile) || disabled) return;
+
+    if (editingMessage && onEditSave) {
+      onEditSave(editingMessage.id, message);
+      setMessage("");
+      onCancelEdit?.();
+      return;
+    }
 
     onSend(message, selectedFile || undefined);
     setMessage("");
     setSelectedFile(null);
+    onCancelReply?.();
+  };
 
-    // Reset textarea height
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
+  const handleEmojiSelect = (emoji: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newMessage = message.slice(0, start) + emoji + message.slice(end);
+    
+    setMessage(newMessage);
+    
+    // Set cursor position after emoji
+    setTimeout(() => {
+      textarea.selectionStart = textarea.selectionEnd = start + emoji.length;
+      textarea.focus();
+    }, 0);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -47,7 +85,7 @@ export const ChatInput = ({
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
@@ -62,64 +100,80 @@ export const ChatInput = ({
   };
 
   return (
-    <div className="border-t bg-background p-4">
+    <div className="border-t bg-background">
+      {(replyingTo || editingMessage) && (
+        <div className="p-2 bg-muted/50 border-b flex items-center justify-between">
+          <div className="flex-1 truncate">
+            <span className="text-xs font-medium text-muted-foreground">
+              {editingMessage ? "Uređivanje poruke:" : "Odgovor na:"}
+            </span>
+            <p className="text-sm truncate">
+              {editingMessage?.message || replyingTo?.message}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={editingMessage ? onCancelEdit : onCancelReply}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
+
       {selectedFile && (
-        <div className="mb-2">
+        <div className="p-2 border-b">
           <FilePreview file={selectedFile} onRemove={handleRemoveFile} />
         </div>
       )}
 
-      <div className="flex items-end gap-2">
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          onChange={handleFileSelect}
-          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-        />
+      <div className="p-4">
+        <div className="flex gap-2 items-end">
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={handleFileSelect}
+            accept="image/*,.pdf,.doc,.docx"
+          />
 
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="mb-1"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={disabled}
-        >
-          <Paperclip className="w-5 h-5" />
-        </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled}
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
 
-        <Textarea
-          ref={textareaRef}
-          value={message}
-          onChange={(e) => {
-            setMessage(e.target.value);
-            if (onTyping) onTyping();
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          className={cn(
-            "min-h-[44px] max-h-32 resize-none",
-            "focus-visible:ring-1 focus-visible:ring-primary"
-          )}
-          rows={1}
-        />
+          <EmojiPickerComponent onEmojiSelect={handleEmojiSelect} />
 
-        <Button
-          type="button"
-          size="icon"
-          className="mb-1"
-          onClick={handleSend}
-          disabled={disabled || (!message.trim() && !selectedFile)}
-        >
-          <Send className="w-5 h-5" />
-        </Button>
+          <Textarea
+            ref={textareaRef}
+            value={message}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              onTyping?.();
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={disabled}
+            className="min-h-[44px] max-h-32 resize-none"
+            rows={1}
+          />
+
+          <Button
+            type="button"
+            size="icon"
+            onClick={handleSend}
+            disabled={disabled || (!message.trim() && !selectedFile)}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-
-      <p className="text-xs text-muted-foreground mt-2">
-        Enter za slanje, Shift+Enter za novi red
-      </p>
     </div>
   );
 };
