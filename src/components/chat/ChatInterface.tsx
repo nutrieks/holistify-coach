@@ -98,13 +98,9 @@ export default function ChatInterface({ currentUserId, otherUserId, otherUserNam
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async ({ message, file }: { message: string; file?: File }) => {
-      // Generate conversation_id using database function
-      const { data: convId, error: convIdError } = await supabase.rpc(
-        'generate_conversation_id',
-        { user1_id: currentUserId, user2_id: otherUserId }
-      );
-
-      if (convIdError) throw convIdError;
+      // Generate conversation_id locally (sorted to ensure consistency)
+      const sortedIds = [currentUserId, otherUserId].sort();
+      const conversationId = `chat_${sortedIds[0]}_${sortedIds[1]}`;
 
       let attachmentData = {};
       
@@ -126,7 +122,7 @@ export default function ChatInterface({ currentUserId, otherUserId, otherUserNam
       const { error } = await supabase
         .from('chat_messages')
         .insert([{
-          conversation_id: convId,
+          conversation_id: conversationId,
           sender_id: currentUserId,
           receiver_id: otherUserId,
           message: message.trim() || null,
