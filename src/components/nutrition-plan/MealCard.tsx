@@ -48,7 +48,7 @@ export function MealCard({
   return (
     <Card 
       className={cn(
-        "p-4 hover-scale cursor-pointer transition-all duration-200 border-none relative",
+        "p-3 hover-scale cursor-pointer transition-all duration-200 border-none relative",
         gradientClass
       )}
       onClick={onClick}
@@ -83,65 +83,43 @@ export function MealCard({
         </div>
       )}
 
-      <div className="flex flex-col gap-3">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-black/20 text-white border-none">
-              {mealTypeLabels[mealType] || mealType}
-            </Badge>
-            <div className="flex items-center gap-1 text-white/90 text-sm">
-              <Clock className="h-3 w-3" />
-              <span>{time}</span>
-            </div>
+      <div className="flex flex-col gap-2">
+        {/* Calories - Prominent Display */}
+        <div className="text-white">
+          <div className="text-2xl font-bold">{calories} Kcal</div>
+          <div className="text-xs text-white/80 mt-0.5">
+            {mealTypeLabels[mealType] || mealType}
           </div>
         </div>
 
         {/* Food/Recipe Name */}
-        <div className="text-white font-semibold text-lg">
+        <div className="text-white/90 text-sm font-medium">
           {displayName}
           {quantity && unit && (
-            <span className="text-sm font-normal text-white/80 ml-2">
+            <span className="text-xs text-white/70 ml-1">
               ({quantity} {unit})
             </span>
           )}
         </div>
 
-        {/* Macros */}
-        <div className="grid grid-cols-4 gap-2">
-          <div className="flex items-center gap-1 text-white/90">
-            <Flame className="h-4 w-4" />
-            <div className="flex flex-col">
-              <span className="text-xs opacity-70">kcal</span>
-              <span className="font-semibold text-sm">{calories}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 text-white/90">
-            <Beef className="h-4 w-4" />
-            <div className="flex flex-col">
-              <span className="text-xs opacity-70">P</span>
-              <span className="font-semibold text-sm">{protein}g</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 text-white/90">
-            <Wheat className="h-4 w-4" />
-            <div className="flex flex-col">
-              <span className="text-xs opacity-70">C</span>
-              <span className="font-semibold text-sm">{carbs}g</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 text-white/90">
-            <Droplet className="h-4 w-4" />
-            <div className="flex flex-col">
-              <span className="text-xs opacity-70">F</span>
-              <span className="font-semibold text-sm">{fats}g</span>
-            </div>
-          </div>
+        {/* Time */}
+        <div className="flex items-center gap-1 text-white/80 text-xs">
+          <Clock className="h-3 w-3" />
+          <span>{time}</span>
+        </div>
+
+        {/* Macros - Single Line */}
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <span>{carbs}g C</span>
+          <span>•</span>
+          <span>{protein}g P</span>
+          <span>•</span>
+          <span>{fats}g F</span>
         </div>
 
         {/* Notes */}
         {notes && (
-          <p className="text-xs text-white/70 italic">{notes}</p>
+          <p className="text-xs text-white/60 italic mt-1">{notes}</p>
         )}
       </div>
     </Card>

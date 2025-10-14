@@ -115,20 +115,18 @@ export function WeeklyView({
                 onMouseLeave={() => setHoveredDay(null)}
               >
                 {/* Day Header */}
-                <div className="p-4 border-b border-border space-y-3">
+                <div className="p-3 border-b border-border space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-lg text-foreground">{day.label}</h3>
+                    <h3 className="font-bold text-base text-foreground">{day.label}</h3>
                     {editable && hoveredDay === day.value && (
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => onAddMeal?.(day.value)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onAddMeal?.(day.value)}
+                        className="h-7 w-7 p-0"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
                     )}
                   </div>
 
@@ -143,13 +141,12 @@ export function WeeklyView({
                   <MacroDisplay
                     current={currentMacros}
                     target={dailyMacros}
-                    showProgress={true}
                   />
                 </div>
 
                 {/* Timeline */}
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-3">
+                <ScrollArea className="flex-1 p-3">
+                  <div className="space-y-2">
                     {timeline.length === 0 ? (
                       <div className="text-center text-muted-foreground text-sm py-8">
                         Nema planiranih obroka ili treninga
