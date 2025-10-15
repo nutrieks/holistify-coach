@@ -97,10 +97,10 @@ export function DailyView({
   });
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
+    <div className="space-y-3 max-w-5xl mx-auto">
       {/* Header */}
-      <Card className="p-6 bg-card border-border">
-        <div className="flex items-center justify-between mb-6">
+      <Card className="p-4 bg-card border-border">
+        <div className="flex items-center justify-between mb-4">
           <Button
             variant="ghost"
             size="sm"
@@ -110,7 +110,7 @@ export function DailyView({
             <ChevronLeft className="h-4 w-4" />
           </Button>
           
-          <h2 className="text-3xl font-bold text-foreground">{day.label}</h2>
+          <h2 className="text-2xl font-bold text-foreground">{day.label}</h2>
           
           <Button
             variant="ghost"
@@ -122,7 +122,7 @@ export function DailyView({
           </Button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Day Type Selector */}
           <div className="flex justify-center">
             <DayTypeSelector
@@ -136,18 +136,17 @@ export function DailyView({
           <MacroDisplay
             current={currentMacros}
             target={dailyMacros}
-            showProgress={true}
           />
         </div>
 
         {/* Action Buttons */}
         {editable && (
-          <div className="flex gap-2 mt-4 justify-center">
-            <Button onClick={() => onAddMeal?.(dayOfWeek)} variant="default">
+          <div className="flex gap-2 mt-3 justify-center">
+            <Button onClick={() => onAddMeal?.(dayOfWeek)} variant="default" size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Dodaj Obrok
             </Button>
-            <Button onClick={() => onAddTraining?.(dayOfWeek)} variant="secondary">
+            <Button onClick={() => onAddTraining?.(dayOfWeek)} variant="secondary" size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Dodaj Trening
             </Button>
@@ -156,12 +155,12 @@ export function DailyView({
       </Card>
 
       {/* Timeline */}
-      <ScrollArea className="h-[600px]">
-        <div className="space-y-4">
+      <ScrollArea className="h-[calc(100vh-300px)] min-h-[500px]">
+        <div className="space-y-3 pr-4">
           {timeline.length === 0 ? (
-            <Card className="p-12 bg-card border-border">
+            <Card className="p-8 bg-card border-border">
               <div className="text-center text-muted-foreground">
-                <p className="text-lg">Nema planiranih obroka ili treninga</p>
+                <p className="text-base">Nema planiranih obroka ili treninga</p>
                 {editable && (
                   <p className="text-sm mt-2">Kliknite na gumbe iznad za dodavanje</p>
                 )}
