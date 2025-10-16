@@ -6,6 +6,7 @@ import { Users, MessageSquare, Calendar, TrendingUp, PlusCircle, Activity, FileT
 import { AddClientModal } from '@/components/AddClientModal';
 import { ContractsExpiringWidget } from '@/components/ContractsExpiringWidget';
 import { useCreateNAQQuestionnaire } from '@/hooks/useCreateNAQQuestionnaire';
+import { SeedTestDataButton } from '@/components/SeedTestDataButton';
 
 const AdminDashboard = () => {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -116,8 +117,13 @@ const AdminDashboard = () => {
           {/* Quick Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Brze akcije</CardTitle>
-              <CardDescription>Često korištene funkcije</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Brze akcije</CardTitle>
+                  <CardDescription>Često korištene funkcije</CardDescription>
+                </div>
+                <SeedTestDataButton />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
