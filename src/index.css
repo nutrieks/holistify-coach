@@ -86,37 +86,109 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
-  /* Meal Gradient Classes */
+  /* Meal Gradient Classes with Neon Glow Effects */
   .gradient-breakfast {
     background: linear-gradient(135deg, hsl(var(--gradient-breakfast-start)) 0%, hsl(var(--gradient-breakfast-end)) 100%);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25), 0 0 15px rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .gradient-breakfast:hover {
+    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4), 0 0 25px rgba(16, 185, 129, 0.25);
+    border-color: rgba(16, 185, 129, 0.5);
+    transform: translateY(-2px);
   }
   
   .gradient-lunch {
     background: linear-gradient(135deg, hsl(var(--gradient-lunch-start)) 0%, hsl(var(--gradient-lunch-end)) 100%);
+    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.25), 0 0 15px rgba(249, 115, 22, 0.15);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .gradient-lunch:hover {
+    box-shadow: 0 8px 30px rgba(249, 115, 22, 0.4), 0 0 25px rgba(249, 115, 22, 0.25);
+    border-color: rgba(249, 115, 22, 0.5);
+    transform: translateY(-2px);
   }
   
   .gradient-dinner {
     background: linear-gradient(135deg, hsl(var(--gradient-dinner-start)) 0%, hsl(var(--gradient-dinner-end)) 100%);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25), 0 0 15px rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .gradient-dinner:hover {
+    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4), 0 0 25px rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.5);
+    transform: translateY(-2px);
   }
   
   .gradient-snack-rose {
     background: linear-gradient(135deg, hsl(var(--gradient-snack-rose-start)) 0%, hsl(var(--gradient-snack-rose-end)) 100%);
+    box-shadow: 0 4px 20px rgba(236, 72, 153, 0.25), 0 0 15px rgba(236, 72, 153, 0.15);
+    border: 1px solid rgba(236, 72, 153, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .gradient-snack-rose:hover {
+    box-shadow: 0 8px 30px rgba(236, 72, 153, 0.4), 0 0 25px rgba(236, 72, 153, 0.25);
+    border-color: rgba(236, 72, 153, 0.5);
+    transform: translateY(-2px);
   }
   
   .gradient-snack-cyan {
     background: linear-gradient(135deg, hsl(var(--gradient-snack-cyan-start)) 0%, hsl(var(--gradient-snack-cyan-end)) 100%);
+    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.25), 0 0 15px rgba(6, 182, 212, 0.15);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .gradient-snack-cyan:hover {
+    box-shadow: 0 8px 30px rgba(6, 182, 212, 0.4), 0 0 25px rgba(6, 182, 212, 0.25);
+    border-color: rgba(6, 182, 212, 0.5);
+    transform: translateY(-2px);
   }
   
   .gradient-preworkout {
     background: linear-gradient(135deg, hsl(var(--gradient-preworkout-start)) 0%, hsl(var(--gradient-preworkout-end)) 100%);
+    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.25), 0 0 15px rgba(249, 115, 22, 0.15);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .gradient-preworkout:hover {
+    box-shadow: 0 8px 30px rgba(249, 115, 22, 0.4), 0 0 25px rgba(249, 115, 22, 0.25);
+    border-color: rgba(249, 115, 22, 0.5);
+    transform: translateY(-2px);
   }
   
   .gradient-postworkout {
     background: linear-gradient(135deg, hsl(var(--gradient-postworkout-start)) 0%, hsl(var(--gradient-postworkout-end)) 100%);
+    box-shadow: 0 4px 20px rgba(168, 85, 247, 0.25), 0 0 15px rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .gradient-postworkout:hover {
+    box-shadow: 0 8px 30px rgba(168, 85, 247, 0.4), 0 0 25px rgba(168, 85, 247, 0.25);
+    border-color: rgba(168, 85, 247, 0.5);
+    transform: translateY(-2px);
   }
   
   .gradient-training {
     background: linear-gradient(135deg, hsl(var(--gradient-training-start)) 0%, hsl(var(--gradient-training-end)) 100%);
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.25), 0 0 15px rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .gradient-training:hover {
+    box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4), 0 0 25px rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.5);
+    transform: translateY(-2px);
   }
 
   /* Hover scale animation */

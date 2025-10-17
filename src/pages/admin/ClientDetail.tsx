@@ -453,38 +453,18 @@ export default function ClientDetail() {
           <TabsContent value="nutrition">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Nutrition Plans</CardTitle>
-                  <Button 
-                    size="sm" 
-                    onClick={() => setShowAssignNutritionModal(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Dodijeli Plan
-                  </Button>
-                </div>
+                <CardTitle>Plan Prehrane</CardTitle>
               </CardHeader>
               <CardContent>
                 {loadingPlan ? (
                   <LoadingSpinner />
-                ) : nutritionPlanId ? (
+                ) : (
                   <NutritionPlanViewer 
                     planId={nutritionPlanId}
                     clientId={id!} 
                     editable={true}
+                    onPlanCreated={(newPlanId) => setNutritionPlanId(newPlanId)}
                   />
-                ) : (
-                  <div className="text-center py-12">
-                    <Apple className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                    <h3 className="text-lg font-semibold mb-2">Nema Plana Prehrane</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Ovaj klijent nema dodijeljeni plan prehrane.
-                    </p>
-                    <Button onClick={() => setShowAssignNutritionModal(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Dodijeli Plan
-                    </Button>
-                  </div>
                 )}
               </CardContent>
             </Card>

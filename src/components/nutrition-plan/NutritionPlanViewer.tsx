@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { MonthlyCalendarView } from "./MonthlyCalendarView"
 import { WeeklyView } from "./WeeklyView"
 import { DailyView } from "./DailyView"
@@ -8,22 +10,24 @@ import { AddTrainingSessionModal } from "./AddTrainingSessionModal"
 import { EditMealModal } from "./EditMealModal"
 import { EditTrainingSessionModal } from "./EditTrainingSessionModal"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { Calendar, CalendarDays, CalendarClock } from "lucide-react"
+import { Calendar, CalendarDays, CalendarClock, Plus } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { useToast } from "@/hooks/use-toast"
 
 interface NutritionPlanViewerProps {
-  planId: string;
+  planId: string | null;
   clientId: string;
   editable?: boolean;
+  onPlanCreated?: (planId: string) => void;
 }
 
-export function NutritionPlanViewer({ planId, clientId, editable = false }: NutritionPlanViewerProps) {
+export function NutritionPlanViewer({ planId, clientId, editable = false, onPlanCreated }: NutritionPlanViewerProps) {
   const [viewMode, setViewMode] = useState<'monthly' | 'weekly' | 'daily'>('weekly')
   const [loading, setLoading] = useState(true)
   const [planData, setPlanData] = useState<any>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false)
   const { toast } = useToast()
   
   // Modal states
@@ -38,10 +42,17 @@ export function NutritionPlanViewer({ planId, clientId, editable = false }: Nutr
   const [deleteItem, setDeleteItem] = useState<{ type: 'meal' | 'training', id: string } | null>(null)
 
   useEffect(() => {
-    fetchPlanData()
+    if (planId) {
+      fetchPlanData()
+    } else {
+      setLoading(false)
+      setPlanData(null)
+    }
   }, [planId])
 
   const fetchPlanData = async () => {
+    if (!planId) return;
+    
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -207,14 +218,80 @@ export function NutritionPlanViewer({ planId, clientId, editable = false }: Nutr
     }
   }
 
+  const handleCreatePlan = async () => {
+    setIsCreatingPlan(true);
+    try {
+      const { data: newPlan, error } = await supabase
+        .from('meal_plans')
+        .insert({
+          client_id: clientId,
+          name: 'Novi Plan',
+          daily_calories_target: 2000,
+          daily_protein_target: 150,
+          daily_carbs_target: 200,
+          daily_fats_target: 70,
+          training_integration: true,
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Uspjeh",
+        description: "Plan je uspješno kreiran",
+      });
+
+      onPlanCreated?.(newPlan.id);
+    } catch (error) {
+      console.error('Error creating plan:', error);
+      toast({
+        title: "Greška",
+        description: "Nije moguće kreirati plan",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingPlan(false);
+    }
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
 
-  if (!planData) {
+  // If no plan exists, show empty weekly grid with create button
+  if (!planId || !planData) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Nema dostupnih podataka</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <p className="text-muted-foreground">Još nema kreiranog plana prehrane</p>
+          {editable && (
+            <Button onClick={handleCreatePlan} disabled={isCreatingPlan}>
+              <Plus className="h-4 w-4 mr-2" />
+              {isCreatingPlan ? 'Kreiram...' : 'Kreiraj Novi Plan'}
+            </Button>
+          )}
+        </div>
+        
+        {/* Show empty weekly grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+          {Array.from({ length: 7 }, (_, i) => {
+            const dayLabels = ['Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota', 'Nedjelja'];
+            return (
+              <Card key={i} className="bg-card border-border min-h-[400px] flex flex-col">
+                <div className="p-3 border-b border-border">
+                  <h3 className="font-bold text-base text-foreground">{dayLabels[i]}</h3>
+                </div>
+                <div className="flex-1 flex items-center justify-center p-4">
+                  <p className="text-muted-foreground text-sm text-center">
+                    Kreiraj plan za dodavanje obroka
+                  </p>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       </div>
     );
   }
