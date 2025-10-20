@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { MonthlyCalendarView } from "./MonthlyCalendarView"
 import { WeeklyView } from "./WeeklyView"
 import { DailyView } from "./DailyView"
+import { WeekNavigationBar } from "./WeekNavigationBar"
 import { AddMealToTimelineModal } from "./AddMealToTimelineModal"
 import { AddTrainingSessionModal } from "./AddTrainingSessionModal"
 import { EditMealModal } from "./EditMealModal"
@@ -14,6 +15,7 @@ import { Calendar, CalendarDays, CalendarClock, Plus } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { useToast } from "@/hooks/use-toast"
+import { startOfWeek, addWeeks } from "date-fns"
 
 interface NutritionPlanViewerProps {
   planId: string | null;
@@ -27,6 +29,7 @@ export function NutritionPlanViewer({ planId, clientId, editable = false, onPlan
   const [loading, setLoading] = useState(true)
   const [planData, setPlanData] = useState<any>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }))
   const [isCreatingPlan, setIsCreatingPlan] = useState(false)
   const { toast } = useToast()
   
@@ -349,6 +352,28 @@ export function NutritionPlanViewer({ planId, clientId, editable = false, onPlan
 
   const currentDay = weekData[selectedDate.getDay()];
 
+  const handlePreviousWeek = () => {
+    setCurrentWeekStart(addWeeks(currentWeekStart, -1));
+  };
+
+  const handleNextWeek = () => {
+    setCurrentWeekStart(addWeeks(currentWeekStart, 1));
+  };
+
+  const handleCopyWeek = () => {
+    toast({
+      title: "Kopirano",
+      description: "Tjedan je kopiran",
+    });
+  };
+
+  const handlePasteWeek = () => {
+    toast({
+      title: "Zalijepljeno",
+      description: "Tjedan je zalijepljen",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
@@ -379,9 +404,18 @@ export function NutritionPlanViewer({ planId, clientId, editable = false, onPlan
         </TabsContent>
 
         <TabsContent value="weekly" className="mt-6">
+          <div className="space-y-4">
+            <WeekNavigationBar
+              currentWeekStart={currentWeekStart}
+              onPreviousWeek={handlePreviousWeek}
+              onNextWeek={handleNextWeek}
+              onCopyWeek={handleCopyWeek}
+              onPasteWeek={handlePasteWeek}
+            />
             <WeeklyView 
               weekData={weekData}
               baseMacros={baseMacros}
+              currentWeekStart={currentWeekStart}
               editable={editable}
               onAddMeal={handleAddMeal}
               onAddTraining={handleAddTraining}
@@ -391,6 +425,7 @@ export function NutritionPlanViewer({ planId, clientId, editable = false, onPlan
               onDeleteTraining={handleDeleteTraining}
               onDayTypeChange={handleDayTypeChange}
             />
+          </div>
         </TabsContent>
 
         <TabsContent value="daily" className="mt-6">

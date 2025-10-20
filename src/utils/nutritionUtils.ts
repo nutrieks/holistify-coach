@@ -141,3 +141,10 @@ export const daysOfWeek = [
   { value: 5, label: 'Subota', short: 'Sub' },
   { value: 6, label: 'Nedjelja', short: 'Ned' }
 ];
+
+// Helper function to get formatted day date
+export function getFormattedDayDate(weekStart: Date, dayIndex: number): string {
+  const date = new Date(weekStart);
+  date.setDate(date.getDate() + dayIndex);
+  return date.toLocaleDateString('hr-HR', { day: 'numeric', month: 'short' });
+}

@@ -83,6 +83,19 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Progress Bar Variants */
+  .progress-carbs [data-state="complete"] {
+    background: hsl(var(--chart-1));
+  }
+
+  .progress-protein [data-state="complete"] {
+    background: hsl(var(--chart-2));
+  }
+
+  .progress-fats [data-state="complete"] {
+    background: hsl(var(--chart-3));
+  }
 }
 
 @layer utilities {

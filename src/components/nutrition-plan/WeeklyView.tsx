@@ -1,13 +1,15 @@
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import { DayTypeSelector } from "./DayTypeSelector";
 import { MacroDisplay } from "./MacroDisplay";
 import { MealCard } from "./MealCard";
 import { TrainingCard } from "./TrainingCard";
-import { daysOfWeek, calculateDailyMacros } from "@/utils/nutritionUtils";
+import { daysOfWeek, calculateDailyMacros, getFormattedDayDate } from "@/utils/nutritionUtils";
+import { format, addDays } from "date-fns";
+import { hr } from "date-fns/locale";
 
 interface MealEntry {
   id: string;
@@ -45,6 +47,7 @@ interface DayData {
 interface WeeklyViewProps {
   weekData: DayData[];
   baseMacros: { calories: number; protein: number; carbs: number; fats: number };
+  currentWeekStart?: Date;
   onAddMeal?: (dayOfWeek: number) => void;
   onAddTraining?: (dayOfWeek: number) => void;
   onMealClick?: (meal: MealEntry) => void;
@@ -60,6 +63,7 @@ interface WeeklyViewProps {
 export function WeeklyView({
   weekData,
   baseMacros,
+  currentWeekStart = new Date(),
   onAddMeal,
   onAddTraining,
   onMealClick,
@@ -71,13 +75,13 @@ export function WeeklyView({
   onDayTypeChange,
   editable = false
 }: WeeklyViewProps) {
-  const [hoveredDay, setHoveredDay] = useState<number | null>(null);
 
   return (
     <div className="space-y-4">
       <ScrollArea className="w-full">
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 pb-4">
-          {daysOfWeek.map((day) => {
+          {daysOfWeek.map((day, index) => {
+            const currentDate = addDays(currentWeekStart, index);
             const dayData = weekData.find(d => d.dayOfWeek === day.value) || {
               dayOfWeek: day.value,
               trainingDayType: 'no_training' as const,
@@ -111,33 +115,36 @@ export function WeeklyView({
               <Card
                 key={day.value}
                 className="bg-card border-border min-h-[600px] flex flex-col"
-                onMouseEnter={() => setHoveredDay(day.value)}
-                onMouseLeave={() => setHoveredDay(null)}
               >
                 {/* Day Header */}
-                <div className="p-3 border-b border-border space-y-2">
+                <div className="p-4 border-b border-border space-y-3">
+                  {/* Datum i Naziv Dana */}
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-base text-foreground">{day.label}</h3>
-                    {editable && hoveredDay === day.value && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => onAddMeal?.(day.value)}
-                        className="h-7 w-7 p-0"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
+                    <div>
+                      <h3 className="font-bold text-lg">{day.short} {format(currentDate, 'd', { locale: hr })}</h3>
+                      <p className="text-xs text-muted-foreground">{format(currentDate, 'MMMM', { locale: hr })}</p>
+                    </div>
+                    <Badge 
+                      variant={dayData.trainingDayType === 'no_training' ? 'secondary' : 'default'}
+                      className="text-xs"
+                    >
+                      {dayData.trainingDayType === 'heavy_training' && '3+ Treninga'}
+                      {dayData.trainingDayType === 'moderate_training' && '2 Treninga'}
+                      {dayData.trainingDayType === 'light_training' && '1 Trening'}
+                      {dayData.trainingDayType === 'no_training' && 'Bez Treninga'}
+                    </Badge>
                   </div>
 
                   {/* Day Type Selector */}
-                  <DayTypeSelector
-                    value={dayData.trainingDayType}
-                    onChange={(type) => onDayTypeChange?.(day.value, type)}
-                    disabled={!editable}
-                  />
+                  {editable && (
+                    <DayTypeSelector
+                      value={dayData.trainingDayType}
+                      onChange={(type) => onDayTypeChange?.(day.value, type)}
+                      disabled={!editable}
+                    />
+                  )}
 
-                  {/* Macro Display */}
+                  {/* Macro Display sa Progress Barovima */}
                   <MacroDisplay
                     current={currentMacros}
                     target={dailyMacros}
@@ -147,12 +154,7 @@ export function WeeklyView({
                 {/* Timeline */}
                 <ScrollArea className="flex-1 p-3">
                   <div className="space-y-2">
-                    {timeline.length === 0 ? (
-                      <div className="text-center text-muted-foreground text-sm py-8">
-                        Nema planiranih obroka ili treninga
-                      </div>
-                    ) : (
-                      timeline.map((item, index) => (
+                    {timeline.map((item, index) => (
                         <div key={`${item.type}-${item.id || index}`}>
                           {item.type === 'meal' ? (
                             <MealCard
@@ -188,7 +190,28 @@ export function WeeklyView({
                             />
                           )}
                         </div>
-                      ))
+                      ))}
+
+                    {/* ADD BUTTONS - UVIJEK VIDLJIVI */}
+                    {editable && (
+                      <div className="space-y-2 pt-2">
+                        <Button
+                          variant="outline"
+                          className="w-full border-dashed border-2 hover:border-primary hover:bg-primary/5"
+                          onClick={() => onAddMeal?.(day.value)}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Dodaj Obrok
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="w-full border-dashed border-2 hover:border-primary hover:bg-primary/5"
+                          onClick={() => onAddTraining?.(day.value)}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Dodaj Trening
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </ScrollArea>

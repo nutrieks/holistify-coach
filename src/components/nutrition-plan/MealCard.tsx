@@ -1,10 +1,20 @@
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Flame, Beef, Wheat, Droplet, Pencil, Trash2 } from "lucide-react";
+import { Clock, Coffee, Sandwich, UtensilsCrossed, Apple, Moon, Dumbbell, Pencil, Trash2 } from "lucide-react";
 import { mealTypeGradients, mealTypeLabels } from "@/utils/nutritionUtils";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+
+const mealTypeIcons: Record<string, any> = {
+  breakfast: Coffee,
+  morning_snack: Apple,
+  lunch: UtensilsCrossed,
+  afternoon_snack: Apple,
+  dinner: Moon,
+  evening_snack: Apple,
+  pre_workout: Dumbbell,
+  post_workout: Dumbbell,
+};
 
 interface MealCardProps {
   mealType: string;
@@ -44,6 +54,7 @@ export function MealCard({
   const [isHovered, setIsHovered] = useState(false);
   const gradientClass = mealTypeGradients[mealType] || 'gradient-breakfast';
   const displayName = foodName || recipeName || 'Nije dodano';
+  const MealIcon = mealTypeIcons[mealType] || Coffee;
 
   return (
     <Card 
@@ -83,44 +94,48 @@ export function MealCard({
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        {/* Calories - Prominent Display */}
-        <div className="text-white">
-          <div className="text-2xl font-bold">{calories} Kcal</div>
-          <div className="text-xs text-white/80 mt-0.5">
-            {mealTypeLabels[mealType] || mealType}
-          </div>
+      <div className="flex items-start gap-3">
+        {/* Left: Icon */}
+        <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+          <MealIcon className="h-5 w-5 text-white" />
         </div>
 
-        {/* Food/Recipe Name */}
-        <div className="text-white/90 text-sm font-medium">
-          {displayName}
-          {quantity && unit && (
-            <span className="text-xs text-white/70 ml-1">
-              ({quantity} {unit})
-            </span>
+        {/* Middle: Details */}
+        <div className="flex-1 min-w-0">
+          <div className="text-white">
+            <h4 className="font-bold text-sm">{mealTypeLabels[mealType] || mealType}</h4>
+            <p className="text-xs opacity-80 truncate mt-0.5">{displayName}</p>
+            {quantity && unit && (
+              <p className="text-xs opacity-70 mt-0.5">
+                {quantity} {unit}
+              </p>
+            )}
+          </div>
+
+          {/* Macros Breakdown */}
+          <div className="flex items-center gap-2 mt-2 text-xs text-white/90">
+            <span className="font-semibold">{Math.round(carbs)}g C</span>
+            <span>•</span>
+            <span className="font-semibold">{Math.round(protein)}g P</span>
+            <span>•</span>
+            <span className="font-semibold">{Math.round(fats)}g F</span>
+          </div>
+
+          {/* Notes */}
+          {notes && (
+            <p className="text-xs text-white/60 italic mt-2 line-clamp-2">{notes}</p>
           )}
         </div>
 
-        {/* Time */}
-        <div className="flex items-center gap-1 text-white/80 text-xs">
-          <Clock className="h-3 w-3" />
-          <span>{time}</span>
+        {/* Right: Calories + Time */}
+        <div className="flex flex-col items-end gap-1 text-white">
+          <div className="text-xl font-bold">{Math.round(calories)}</div>
+          <div className="text-xs opacity-80">kcal</div>
+          <div className="flex items-center gap-1 text-xs opacity-80 mt-1">
+            <Clock className="h-3 w-3" />
+            <span>{time}</span>
+          </div>
         </div>
-
-        {/* Macros - Single Line */}
-        <div className="flex items-center gap-2 text-white/90 text-xs">
-          <span>{carbs}g C</span>
-          <span>•</span>
-          <span>{protein}g P</span>
-          <span>•</span>
-          <span>{fats}g F</span>
-        </div>
-
-        {/* Notes */}
-        {notes && (
-          <p className="text-xs text-white/60 italic mt-1">{notes}</p>
-        )}
       </div>
     </Card>
   );

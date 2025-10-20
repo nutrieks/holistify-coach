@@ -1,4 +1,4 @@
-import { Flame, Beef, Wheat, Droplet } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface MacroDisplayProps {
   current: {
@@ -13,41 +13,54 @@ interface MacroDisplayProps {
     carbs: number;
     fats: number;
   };
-  showProgress?: boolean;
 }
 
 export function MacroDisplay({ current, target }: MacroDisplayProps) {
+  const caloriesPercent = Math.min((current.calories / target.calories) * 100, 100);
+  const carbsPercent = Math.min((current.carbs / target.carbs) * 100, 100);
+  const proteinPercent = Math.min((current.protein / target.protein) * 100, 100);
+  const fatsPercent = Math.min((current.fats / target.fats) * 100, 100);
+
   return (
-    <div className="space-y-1 text-xs">
-      {/* Calories - Primary Line */}
-      <div className="flex items-center gap-1.5">
-        <Flame className="h-3 w-3 text-orange-400" />
-        <span className="text-muted-foreground">Calories:</span>
-        <span className="font-bold text-foreground">{current.calories}</span>
-        <span className="text-muted-foreground">/ {target.calories} kcal</span>
+    <div className="space-y-3">
+      {/* Calories */}
+      <div className="space-y-1.5">
+        <div className="flex justify-between items-center text-sm">
+          <span className="font-medium">Kalorije</span>
+          <span className="font-bold">
+            {Math.round(current.calories)}/{Math.round(target.calories)} kcal
+          </span>
+        </div>
+        <Progress value={caloriesPercent} className="h-2" />
       </div>
-      
-      {/* Macros - Secondary Line */}
-      <div className="flex items-center gap-3 text-[11px]">
-        <div className="flex items-center gap-1">
-          <Wheat className="h-2.5 w-2.5 text-yellow-400" />
-          <span className="text-muted-foreground">Carbs:</span>
-          <span className="font-semibold">{current.carbs}</span>
-          <span className="text-muted-foreground">/ {target.carbs}g</span>
+
+      {/* Macros */}
+      <div className="space-y-2">
+        {/* Carbs */}
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Ugljikohidrati</span>
+            <span className="font-semibold">{Math.round(current.carbs)}/{Math.round(target.carbs)}g</span>
+          </div>
+          <Progress value={carbsPercent} className="h-1.5 progress-carbs" />
         </div>
-        <span className="text-muted-foreground">•</span>
-        <div className="flex items-center gap-1">
-          <Beef className="h-2.5 w-2.5 text-red-400" />
-          <span className="text-muted-foreground">Protein:</span>
-          <span className="font-semibold">{current.protein}</span>
-          <span className="text-muted-foreground">/ {target.protein}g</span>
+
+        {/* Protein */}
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Proteini</span>
+            <span className="font-semibold">{Math.round(current.protein)}/{Math.round(target.protein)}g</span>
+          </div>
+          <Progress value={proteinPercent} className="h-1.5 progress-protein" />
         </div>
-        <span className="text-muted-foreground">•</span>
-        <div className="flex items-center gap-1">
-          <Droplet className="h-2.5 w-2.5 text-blue-400" />
-          <span className="text-muted-foreground">Fat:</span>
-          <span className="font-semibold">{current.fats}</span>
-          <span className="text-muted-foreground">/ {target.fats}g</span>
+
+        {/* Fat */}
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Masti</span>
+            <span className="font-semibold">{Math.round(current.fats)}/{Math.round(target.fats)}g</span>
+          </div>
+          <Progress value={fatsPercent} className="h-1.5 progress-fats" />
         </div>
       </div>
     </div>
