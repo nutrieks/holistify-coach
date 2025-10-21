@@ -271,55 +271,100 @@ export type Database = {
       }
       clients: {
         Row: {
+          alcohol_consumption: string | null
+          alcohol_details: string | null
+          best_contact_time: string | null
+          blood_type: string | null
           contract_end_date: string | null
           contract_start_date: string | null
           created_at: string | null
           date_of_birth: string | null
           email: string
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           full_name: string
           gender: string | null
           height: number | null
           id: string
           notes: string | null
+          number_of_children: number | null
+          occupation: string | null
           phone: string | null
+          place_of_birth: string | null
+          preferred_contact_method: string | null
+          preferred_pronouns: string | null
+          relationship_status: string | null
           sessions_remaining: number | null
+          smoking_details: string | null
+          smoking_status: string | null
           starting_weight: number | null
           updated_at: string | null
           user_id: string
+          weekly_work_hours: string | null
         }
         Insert: {
+          alcohol_consumption?: string | null
+          alcohol_details?: string | null
+          best_contact_time?: string | null
+          blood_type?: string | null
           contract_end_date?: string | null
           contract_start_date?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           full_name: string
           gender?: string | null
           height?: number | null
           id?: string
           notes?: string | null
+          number_of_children?: number | null
+          occupation?: string | null
           phone?: string | null
+          place_of_birth?: string | null
+          preferred_contact_method?: string | null
+          preferred_pronouns?: string | null
+          relationship_status?: string | null
           sessions_remaining?: number | null
+          smoking_details?: string | null
+          smoking_status?: string | null
           starting_weight?: number | null
           updated_at?: string | null
           user_id: string
+          weekly_work_hours?: string | null
         }
         Update: {
+          alcohol_consumption?: string | null
+          alcohol_details?: string | null
+          best_contact_time?: string | null
+          blood_type?: string | null
           contract_end_date?: string | null
           contract_start_date?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           full_name?: string
           gender?: string | null
           height?: number | null
           id?: string
           notes?: string | null
+          number_of_children?: number | null
+          occupation?: string | null
           phone?: string | null
+          place_of_birth?: string | null
+          preferred_contact_method?: string | null
+          preferred_pronouns?: string | null
+          relationship_status?: string | null
           sessions_remaining?: number | null
+          smoking_details?: string | null
+          smoking_status?: string | null
           starting_weight?: number | null
           updated_at?: string | null
           user_id?: string
+          weekly_work_hours?: string | null
         }
         Relationships: []
       }
