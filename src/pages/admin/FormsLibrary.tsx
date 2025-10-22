@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { CreateCompleteNAQButton } from "@/components/CreateCompleteNAQButton"
+import { CreateCoachingIntakeButton } from "@/components/CreateCoachingIntakeButton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface Questionnaire {
@@ -75,6 +76,25 @@ export default function FormsLibrary() {
         .from('questionnaires')
         .select('id, title, questionnaire_questions(count)')
         .eq('questionnaire_type', 'naq')
+        .maybeSingle();
+      
+      return data ? {
+        exists: true,
+        questionCount: data.questionnaire_questions?.length || 0,
+        title: data.title
+      } : { exists: false, questionCount: 0, title: null };
+    },
+    enabled: !!profile?.id
+  });
+
+  // Check if Coaching Intake exists
+  const { data: coachingIntakeExists, isLoading: isLoadingCoachingIntake } = useQuery({
+    queryKey: ['coaching-intake-exists'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('questionnaires')
+        .select('id, title, questionnaire_questions(count)')
+        .eq('title', 'Inicijalni Coaching Upitnik')
         .maybeSingle();
       
       return data ? {
@@ -421,6 +441,42 @@ export default function FormsLibrary() {
               </CardTitle>
               <CardDescription>
                 {naqExists.title} je aktivan u sustavu ({naqExists.questionCount} pitanja)
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
+
+        {/* Coaching Intake Section */}
+        {!isLoadingCoachingIntake && !coachingIntakeExists?.exists && (
+          <Card className="border-blue-500/20 bg-blue-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-600" />
+                Inicijalni Coaching Upitnik
+              </CardTitle>
+              <CardDescription>
+                Kompletan upitnik za inicijalnu procjenu klijenta (141 pitanje).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Alert className="mb-4">
+                <AlertDescription>
+                  Ovaj upitnik automatski prikuplja sve osnovne podatke o klijentu i popunjava profil nakon submita.
+                </AlertDescription>
+              </Alert>
+              <CreateCoachingIntakeButton />
+            </CardContent>
+          </Card>
+        )}
+
+        {coachingIntakeExists?.exists && (
+          <Card className="border-green-500/20 bg-green-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                ✓ Inicijalni Coaching Upitnik
+              </CardTitle>
+              <CardDescription>
+                {coachingIntakeExists.title} je aktivan u sustavu ({coachingIntakeExists.questionCount} pitanja)
               </CardDescription>
             </CardHeader>
           </Card>

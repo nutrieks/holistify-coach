@@ -26,6 +26,11 @@ interface Question {
   options?: string | null
   section?: string | null
   category?: string | null
+  conditional?: {
+    show_if: string
+    answer_equals?: string
+    answer_not_equals?: string
+  }
 }
 
 interface QuestionnaireData {
@@ -216,6 +221,35 @@ export default function QuestionnaireForm() {
         })
       }
       
+      // Check if this is Coaching Intake and process it
+      if (questionnaire?.title === 'Inicijalni Coaching Upitnik' && submission.id) {
+        try {
+          console.log('Processing coaching intake submission:', submission.id)
+          
+          const { data, error } = await supabase.functions.invoke(
+            'process-coaching-intake-submission',
+            { body: { submission_id: submission.id } }
+          )
+          
+          if (error) {
+            console.error('Error processing coaching intake:', error)
+            toast({
+              title: "Upozorenje",
+              description: "Upitnik je poslan, ali automatsko popunjavanje profila nije uspjelo.",
+              variant: "default"
+            })
+          } else {
+            console.log('Coaching intake processed successfully:', data)
+            toast({
+              title: "Profil ažuriran!",
+              description: `Vaši podaci su automatski dodani u profil (${data.updatedFields?.length || 0} polja).`
+            })
+          }
+        } catch (err) {
+          console.error('Error calling submission handler:', err)
+        }
+      }
+      
       toast({
         title: "Uspješno poslano!",
         description: isNAQ ? "Vaši odgovori su uspješno zabilježeni i analizirani." : "Vaši odgovori su uspješno zabilježeni."
@@ -231,8 +265,26 @@ export default function QuestionnaireForm() {
     }
   })
 
-  const currentQuestion = questionnaire?.questions[currentQuestionIndex]
-  const progress = questionnaire ? ((currentQuestionIndex + 1) / questionnaire.questions.length) * 100 : 0
+  // Helper function for conditional logic
+  const shouldShowQuestion = (question: Question): boolean => {
+    if (!question.conditional) return true
+    
+    const conditional = question.conditional
+    const { show_if, answer_equals, answer_not_equals } = conditional
+    
+    const triggerAnswer = answers[show_if]
+    
+    if (answer_equals && triggerAnswer !== answer_equals) return false
+    if (answer_not_equals && triggerAnswer === answer_not_equals) return false
+    
+    return true
+  }
+
+  const visibleQuestions = questionnaire?.questions.filter(shouldShowQuestion) || []
+  const currentQuestion = visibleQuestions[currentQuestionIndex]
+  const progress = visibleQuestions.length > 0 
+    ? ((currentQuestionIndex + 1) / visibleQuestions.length) * 100 
+    : 0
 
   const handleAnswerChange = (questionId: string, value: any) => {
     setAnswers(prev => ({
@@ -242,7 +294,7 @@ export default function QuestionnaireForm() {
   }
 
   const goToNext = () => {
-    if (questionnaire && currentQuestionIndex < questionnaire.questions.length - 1) {
+    if (currentQuestionIndex < visibleQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1)
     }
   }
