@@ -62,7 +62,7 @@ export function NutritionPlanViewer({ planId, clientId, editable = false, onPlan
         .from('meal_plans')
         .select(`
           *,
-          meal_plan_entries!inner (
+          meal_plan_entries (
             *,
             food:food_database (*),
             recipe:recipes (*)
