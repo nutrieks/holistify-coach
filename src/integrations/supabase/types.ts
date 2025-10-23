@@ -128,11 +128,14 @@ export type Database = {
           created_at: string
           digit_ratio_2d4d: number | null
           fat_mass: number | null
+          frame_size: string | null
           height: number | null
           hip_circumference: number | null
           id: string
           lean_body_mass: number | null
           measurement_date: string
+          morphotype: string | null
+          muscle_potential_score: number | null
           neck_circumference: number | null
           notes: string | null
           updated_at: string
@@ -147,11 +150,14 @@ export type Database = {
           created_at?: string
           digit_ratio_2d4d?: number | null
           fat_mass?: number | null
+          frame_size?: string | null
           height?: number | null
           hip_circumference?: number | null
           id?: string
           lean_body_mass?: number | null
           measurement_date?: string
+          morphotype?: string | null
+          muscle_potential_score?: number | null
           neck_circumference?: number | null
           notes?: string | null
           updated_at?: string
@@ -166,11 +172,14 @@ export type Database = {
           created_at?: string
           digit_ratio_2d4d?: number | null
           fat_mass?: number | null
+          frame_size?: string | null
           height?: number | null
           hip_circumference?: number | null
           id?: string
           lean_body_mass?: number | null
           measurement_date?: string
+          morphotype?: string | null
+          muscle_potential_score?: number | null
           neck_circumference?: number | null
           notes?: string | null
           updated_at?: string
@@ -181,6 +190,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "client_anthropometric_data_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      client_biochemical_data: {
+        Row: {
+          client_id: string
+          created_at: string
+          fasting_glucose: number | null
+          ggt: number | null
+          hba1c: number | null
+          id: string
+          insulin_sensitivity_score: number | null
+          measurement_date: string
+          metabolic_flexibility_score: number | null
+          notes: string | null
+          triglycerides: number | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          fasting_glucose?: number | null
+          ggt?: number | null
+          hba1c?: number | null
+          id?: string
+          insulin_sensitivity_score?: number | null
+          measurement_date?: string
+          metabolic_flexibility_score?: number | null
+          notes?: string | null
+          triglycerides?: number | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          fasting_glucose?: number | null
+          ggt?: number | null
+          hba1c?: number | null
+          id?: string
+          insulin_sensitivity_score?: number | null
+          measurement_date?: string
+          metabolic_flexibility_score?: number | null
+          notes?: string | null
+          triglycerides?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_biochemical_data_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
@@ -224,6 +286,59 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "habits"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_psychological_profile: {
+        Row: {
+          calculated_at: string
+          client_id: string
+          created_at: string
+          diet_history_complexity: number | null
+          food_relationship_score: number | null
+          id: string
+          mental_priorities: Json | null
+          motivation_level: string | null
+          recommended_deficit_speed: string | null
+          stress_level: string | null
+          time_availability_minutes: number | null
+          updated_at: string
+        }
+        Insert: {
+          calculated_at?: string
+          client_id: string
+          created_at?: string
+          diet_history_complexity?: number | null
+          food_relationship_score?: number | null
+          id?: string
+          mental_priorities?: Json | null
+          motivation_level?: string | null
+          recommended_deficit_speed?: string | null
+          stress_level?: string | null
+          time_availability_minutes?: number | null
+          updated_at?: string
+        }
+        Update: {
+          calculated_at?: string
+          client_id?: string
+          created_at?: string
+          diet_history_complexity?: number | null
+          food_relationship_score?: number | null
+          id?: string
+          mental_priorities?: Json | null
+          motivation_level?: string | null
+          recommended_deficit_speed?: string | null
+          stress_level?: string | null
+          time_availability_minutes?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_psychological_profile_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -403,6 +518,83 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "meal_plans"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      energy_calculations: {
+        Row: {
+          adaptive_tdee: number | null
+          calculation_date: string
+          calculation_method: string | null
+          carbs_target_g: number | null
+          client_id: string
+          created_at: string
+          dee: number | null
+          deficit_speed: string | null
+          ea: number | null
+          fat_target_g: number | null
+          id: string
+          insulin_sensitivity: string | null
+          muscle_potential: string | null
+          neat: number | null
+          parameters_used: Json | null
+          protein_target_g: number | null
+          reasoning: Json | null
+          recommended_calories: number | null
+          tef_correction: number | null
+          updated_at: string
+        }
+        Insert: {
+          adaptive_tdee?: number | null
+          calculation_date?: string
+          calculation_method?: string | null
+          carbs_target_g?: number | null
+          client_id: string
+          created_at?: string
+          dee?: number | null
+          deficit_speed?: string | null
+          ea?: number | null
+          fat_target_g?: number | null
+          id?: string
+          insulin_sensitivity?: string | null
+          muscle_potential?: string | null
+          neat?: number | null
+          parameters_used?: Json | null
+          protein_target_g?: number | null
+          reasoning?: Json | null
+          recommended_calories?: number | null
+          tef_correction?: number | null
+          updated_at?: string
+        }
+        Update: {
+          adaptive_tdee?: number | null
+          calculation_date?: string
+          calculation_method?: string | null
+          carbs_target_g?: number | null
+          client_id?: string
+          created_at?: string
+          dee?: number | null
+          deficit_speed?: string | null
+          ea?: number | null
+          fat_target_g?: number | null
+          id?: string
+          insulin_sensitivity?: string | null
+          muscle_potential?: string | null
+          neat?: number | null
+          parameters_used?: Json | null
+          protein_target_g?: number | null
+          reasoning?: Json | null
+          recommended_calories?: number | null
+          tef_correction?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "energy_calculations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["user_id"]
           },
         ]
       }

@@ -1295,6 +1295,149 @@ const COACHING_INTAKE_QUESTIONS = [
     is_required: true,
     options: null,
     category: "goals"
+  },
+
+  // SEKCIJA 11: Odnos prema Hrani i Prehrani (5 pitanja)
+  {
+    question_text: "Kako biste opisali svoj odnos prema hrani?",
+    question_type: "single_choice",
+    section: "Odnos prema Hrani i Prehrani",
+    order_index: 142,
+    is_required: true,
+    options: ["Hrana je samo gorivo", "Volim dobru hranu, ali ne pretjerujem", "Ponekad prejedim kada sam pod stresom", "Često mislim o hrani tijekom dana", "Imam problema s kontrolom porcija"],
+    category: "psychology"
+  },
+  {
+    question_text: "Koliko često osjećate glad tijekom dana?",
+    question_type: "single_choice",
+    section: "Odnos prema Hrani i Prehrani",
+    order_index: 143,
+    is_required: true,
+    options: ["Rijetko (2-3 puta)", "Umjereno (4-5 puta)", "Često (6+ puta)", "Konstantno"],
+    category: "psychology"
+  },
+  {
+    question_text: "Koje obrasce primjećujete kod svoje prehrane?",
+    question_type: "checkbox",
+    section: "Odnos prema Hrani i Prehrani",
+    order_index: 144,
+    is_required: true,
+    options: ["Preskačem doručak", "Ručam pred ekranom", "Večeram kasno navečer", "Grickam između obroka", "Jedem brzo", "Nemam specifičan obrazac"],
+    category: "psychology"
+  },
+  {
+    question_text: "Koliko često jedete iz dosade ili stresa?",
+    question_type: "single_choice",
+    section: "Odnos prema Hrani i Prehrani",
+    order_index: 145,
+    is_required: true,
+    options: ["Nikada", "Rijetko (jednom tjedno)", "Ponekad (2-3 puta tjedno)", "Često (4+ puta tjedno)", "Gotovo svakodnevno"],
+    category: "psychology"
+  },
+  {
+    question_text: "Kako se osjećate nakon velikih obroka?",
+    question_type: "single_choice",
+    section: "Odnos prema Hrani i Prehrani",
+    order_index: 146,
+    is_required: true,
+    options: ["Energičan/a i zadovoljan/a", "Umoran/a i napuhan/a", "Osjećam žgaravicu", "Spava mi se", "Osjećam se krivo"],
+    category: "psychology"
+  },
+
+  // SEKCIJA 12: Stresni Čimbenici i Životne Okolnosti (3 pitanja)
+  {
+    question_text: "Kako biste ocijenili razinu stresa u svom životu?",
+    question_type: "single_choice",
+    section: "Stresni Čimbenici i Životne Okolnosti",
+    order_index: 147,
+    is_required: true,
+    options: ["Nizak (rijetko se osjećam pod stresom)", "Umjeren (ponekad imam stresnih dana)", "Visok (često sam pod pritiskom)", "Ekstremno visok (gotovo konstantno)"],
+    category: "psychology"
+  },
+  {
+    question_text: "Jesu li se nedavno dogodile velike životne promjene?",
+    question_type: "checkbox",
+    section: "Stresni Čimbenici i Životne Okolnosti",
+    order_index: 148,
+    is_required: true,
+    options: ["Promjena posla", "Preseljenje", "Promjena u obitelji", "Zdravstveni problemi", "Financijski stres", "Ne, sve je stabilno"],
+    category: "psychology"
+  },
+  {
+    question_text: "Koliko kvalitetno spavate?",
+    question_type: "single_choice",
+    section: "Stresni Čimbenici i Životne Okolnosti",
+    order_index: 149,
+    is_required: true,
+    options: ["Odlično (7-9h, bez buđenja)", "Dobro (6-7h, ponekad se probudim)", "Loše (manje od 6h ili često buđenje)", "Jako loše (nesanica, konstantan umor)"],
+    category: "psychology"
+  },
+
+  // SEKCIJA 13: Prioriteti i Motivacija (3 pitanja)
+  {
+    question_text: "Što vam je trenutno najvažnije u životu?",
+    question_type: "checkbox",
+    section: "Prioriteti i Motivacija",
+    order_index: 150,
+    is_required: true,
+    options: ["Karijera i posao", "Obitelj i odnosi", "Zdravlje i fitness", "Osobni razvoj", "Financijska stabilnost", "Ravnoteža života"],
+    category: "psychology"
+  },
+  {
+    question_text: "Koliko ste spremni posvetiti vremena svakodnevno novoj prehrani/programu?",
+    question_type: "single_choice",
+    section: "Prioriteti i Motivacija",
+    order_index: 151,
+    is_required: true,
+    options: ["Minimalno (manje od 30 min)", "Umjereno (30-60 min)", "Značajno (1-2h)", "Maksimalno (2h+)"],
+    category: "psychology"
+  },
+  {
+    question_text: "Kako biste opisali svoju trenutnu motivaciju?",
+    question_type: "single_choice",
+    section: "Prioriteti i Motivacija",
+    order_index: 152,
+    is_required: true,
+    options: ["Ekstremno motiviran/a (spreman/na na sve)", "Jako motiviran/a (fokusiran/a na cilj)", "Umjereno motiviran/a (pokušavam)", "Nisam siguran/a (istražujem opcije)"],
+    category: "psychology"
+  },
+
+  // SEKCIJA 14: Povijest Dijeta (4 pitanja)
+  {
+    question_text: "Koliko puta ste pokušavali sa smanjivanjem težine?",
+    question_type: "single_choice",
+    section: "Povijest Dijeta",
+    order_index: 153,
+    is_required: true,
+    options: ["Nikada", "1-2 puta", "3-5 puta", "Više od 5 puta", "Previše da brojim (yo-yo efekt)"],
+    category: "psychology"
+  },
+  {
+    question_text: "Koje ste dijete probali?",
+    question_type: "checkbox",
+    section: "Povijest Dijeta",
+    order_index: 154,
+    is_required: true,
+    options: ["Nisam bio/la na dijeti", "Kalorijska restrikcija", "Low-carb / Keto", "Intermittent fasting", "Paleo / Whole30", "Vegetarijanska / Veganska", "Komercijalni programi (Weight Watchers, itd.)", "Ostalo"],
+    category: "psychology"
+  },
+  {
+    question_text: "Što se obično dogodi nakon završetka dijete?",
+    question_type: "single_choice",
+    section: "Povijest Dijeta",
+    order_index: 155,
+    is_required: true,
+    options: ["Nisam bio/la na dijeti", "Održavam rezultate", "Vratim dio kilograma", "Vratim sve + dodatno (yo-yo)", "Još uvijek sam na dijeti"],
+    category: "psychology"
+  },
+  {
+    question_text: "Imate li iskustva s prebrajanjem kalorija ili makronurijenata?",
+    question_type: "single_choice",
+    section: "Povijest Dijeta",
+    order_index: 156,
+    is_required: true,
+    options: ["Da, trenutno pratim", "Da, imao/la sam u prošlosti", "Pokušao/la sam, ali mi je teško", "Ne, nikada nisam"],
+    category: "psychology"
   }
 ];
 
