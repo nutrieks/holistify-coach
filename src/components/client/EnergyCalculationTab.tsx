@@ -229,95 +229,51 @@ export default function EnergyCalculationTab({
         </CardContent>
       </Card>
 
-      {/* Results Section */}
-      <Tabs defaultValue="summary" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="summary">Sažetak</TabsTrigger>
-          <TabsTrigger value="detailed">Detaljno</TabsTrigger>
+      {/* Results Section with 4 Tabs */}
+      <Tabs defaultValue="osnovno" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="osnovno">Osnovno</TabsTrigger>
+          <TabsTrigger value="metabolicko">Metaboličko</TabsTrigger>
+          <TabsTrigger value="psiholosko">Psihološko</TabsTrigger>
+          <TabsTrigger value="finalno">Finalni Unos</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="summary" className="space-y-4">
-          {averageTDEE && averageTarget ? (
-            <>
-              {/* Average TDEE Card */}
-              <Card className="border-primary/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Flame className="h-5 w-5 text-orange-500" />
-                      Preporučeni Dnevni Unos
-                    </span>
-                    <Badge variant="default" className="text-lg px-4 py-1">
-                      {Math.round(averageTarget)} kcal
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">TDEE (Održavanje)</p>
-                      <p className="text-2xl font-bold">{Math.round(averageTDEE)} kcal</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Prosječno iz {[tdee1, tdee2, tdee3, tdee4].filter(v => v !== null).length} formule
-                      </p>
-                    </div>
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Ciljna Kalorija</p>
-                      <p className="text-2xl font-bold flex items-center gap-2">
-                        {Math.round(averageTarget)} kcal
-                        {goal === 'deficit' && <TrendingDown className="h-5 w-5 text-green-500" />}
-                        {goal === 'surplus' && <TrendingUp className="h-5 w-5 text-blue-500" />}
-                        {goal === 'maintain' && <Activity className="h-5 w-5 text-primary" />}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {goalAdjustments[goal].label}
-                      </p>
-                    </div>
-                  </div>
+        {/* Tab 1: Osnovno - DEE Model + Formule */}
+        <TabsContent value="osnovno" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>DEE Model (Dynamic Energy Expenditure)</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Prosječni BMR izračunat iz više formula za veću točnost
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Harris-Benedict</p>
+                  <p className="text-xl font-bold">{bmr1 ? Math.round(bmr1) : '-'}</p>
+                </div>
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Mifflin-St Jeor</p>
+                  <p className="text-xl font-bold">{bmr2 ? Math.round(bmr2) : '-'}</p>
+                </div>
+                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Katch-McArdle</p>
+                  <p className="text-xl font-bold">{bmr3 ? Math.round(bmr3) : '-'}</p>
+                </div>
+                <div className="text-center p-4 bg-primary/10 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Prosječni DEE</p>
+                  <p className="text-xl font-bold text-primary">
+                    {[bmr1, bmr2, bmr3].filter(v => v !== null).length > 0
+                      ? Math.round([bmr1, bmr2, bmr3].filter(v => v !== null).reduce((a, b) => a! + b!, 0)! / 
+                        [bmr1, bmr2, bmr3].filter(v => v !== null).length)
+                      : '-'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                  {/* Macronutrient Recommendations */}
-                  <div className="pt-4 border-t">
-                    <h4 className="font-semibold mb-3">Preporučena Raspodjela Makronutrijenata</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center p-3 bg-blue-500/10 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Proteini</p>
-                        <p className="text-xl font-bold text-blue-600">
-                          {weight ? Math.round(parseFloat(weight) * 2.2) : '-'}g
-                        </p>
-                        <p className="text-xs text-muted-foreground">~2.2g/kg</p>
-                      </div>
-                      <div className="text-center p-3 bg-yellow-500/10 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Masti</p>
-                        <p className="text-xl font-bold text-yellow-600">
-                          {weight ? Math.round(parseFloat(weight) * 1) : '-'}g
-                        </p>
-                        <p className="text-xs text-muted-foreground">~1g/kg</p>
-                      </div>
-                      <div className="text-center p-3 bg-green-500/10 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Ugljikohidrati</p>
-                        <p className="text-xl font-bold text-green-600">
-                          {weight && averageTarget 
-                            ? Math.round((averageTarget - (parseFloat(weight) * 2.2 * 4) - (parseFloat(weight) * 1 * 9)) / 4)
-                            : '-'}g
-                        </p>
-                        <p className="text-xs text-muted-foreground">Preostale kalorije</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                <Calculator className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p>Unesite težinu, visinu i dob za izračun energetskih potreba.</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="detailed" className="space-y-4">
           {/* Harris-Benedict */}
           <Card>
             <CardHeader>
@@ -454,6 +410,120 @@ export default function EnergyCalculationTab({
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Tab 2: Metaboličko - Placeholder for Sprint 3 */}
+        <TabsContent value="metabolicko" className="space-y-4">
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Activity className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">Metaboličko Zdravlje</h3>
+              <p className="text-muted-foreground">
+                Analiza inzulinske osjetljivosti, metaboličke fleksibilnosti i potencijala za mišićnu masu.
+              </p>
+              <p className="text-sm text-muted-foreground mt-4">
+                Ova sekcija će biti dostupna u sljedećem sprinta nakon unosa biokemijskih podataka.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab 3: Psihološko - Placeholder for Sprint 3 */}
+        <TabsContent value="psiholosko" className="space-y-4">
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Activity className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">Psihološki Profil</h3>
+              <p className="text-muted-foreground">
+                Analiza odnosa prema hrani, razine stresa i preporučene brzine deficita.
+              </p>
+              <p className="text-sm text-muted-foreground mt-4">
+                Ova sekcija će biti dostupna nakon što klijent ispuni Inicijalni Coaching Upitnik.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab 4: Finalni Unos - Main Summary */}
+        <TabsContent value="finalno" className="space-y-4">
+          {averageTDEE && averageTarget ? (
+            <>
+              {/* Average TDEE Card */}
+              <Card className="border-primary/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Flame className="h-5 w-5 text-orange-500" />
+                      Preporučeni Dnevni Unos
+                    </span>
+                    <Badge variant="default" className="text-lg px-4 py-1">
+                      {Math.round(averageTarget)} kcal
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">TDEE (Održavanje)</p>
+                      <p className="text-2xl font-bold">{Math.round(averageTDEE)} kcal</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Prosječno iz {[tdee1, tdee2, tdee3, tdee4].filter(v => v !== null).length} formule
+                      </p>
+                    </div>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Ciljna Kalorija</p>
+                      <p className="text-2xl font-bold flex items-center gap-2">
+                        {Math.round(averageTarget)} kcal
+                        {goal === 'deficit' && <TrendingDown className="h-5 w-5 text-green-500" />}
+                        {goal === 'surplus' && <TrendingUp className="h-5 w-5 text-blue-500" />}
+                        {goal === 'maintain' && <Activity className="h-5 w-5 text-primary" />}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {goalAdjustments[goal].label}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Macronutrient Recommendations */}
+                  <div className="pt-4 border-t">
+                    <h4 className="font-semibold mb-3">Preporučena Raspodjela Makronutrijenata</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center p-3 bg-blue-500/10 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Proteini</p>
+                        <p className="text-xl font-bold text-blue-600">
+                          {weight ? Math.round(parseFloat(weight) * 2.2) : '-'}g
+                        </p>
+                        <p className="text-xs text-muted-foreground">~2.2g/kg</p>
+                      </div>
+                      <div className="text-center p-3 bg-yellow-500/10 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Masti</p>
+                        <p className="text-xl font-bold text-yellow-600">
+                          {weight ? Math.round(parseFloat(weight) * 1) : '-'}g
+                        </p>
+                        <p className="text-xs text-muted-foreground">~1g/kg</p>
+                      </div>
+                      <div className="text-center p-3 bg-green-500/10 rounded-lg">
+                        <p className="text-sm text-muted-foreground">Ugljikohidrati</p>
+                        <p className="text-xl font-bold text-green-600">
+                          {weight && averageTarget 
+                            ? Math.round((averageTarget - (parseFloat(weight) * 2.2 * 4) - (parseFloat(weight) * 1 * 9)) / 4)
+                            : '-'}g
+                        </p>
+                        <p className="text-xs text-muted-foreground">Preostale kalorije</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <Calculator className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p>Unesite težinu, visinu i dob za izračun energetskih potreba.</p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
