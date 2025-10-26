@@ -178,11 +178,152 @@ serve(async (req) => {
 
     console.log('Client data updated successfully');
 
+    // ===== GENERIRANJE PSIHOLOŠKOG PROFILA =====
+    console.log('Generating psychological profile...');
+    
+    // Ekstrakcija odgovora iz novih pitanja (142-156)
+    const foodRelationshipRaw = answers['142']; // Skala 1-10
+    const currentStress = answers['143']; // Nizak/Umjeren/Visok
+    const sleepQuality = answers['144']; // 1-10
+    const workLifeBalance = answers['145']; // 1-10
+    const supportSystem = answers['146']; // Da/Ne
+    const majorLifeChanges = answers['147']; // Opciono text
+    
+    const mentalPriorities = answers['148']; // Array checkboxes
+    const motivationLevel = answers['149']; // Nizak/Umjeren/Visok
+    const readinessForChange = answers['150']; // 1-10
+    const mainGoal = answers['151']; // text
+    const timeCommitment = answers['152']; // text (sati tjedno)
+    
+    const previousDiets = answers['153']; // Da/Ne
+    const dietAttempts = answers['154']; // broj puta
+    const longestDietDuration = answers['155']; // text
+    const dietChallenges = answers['156']; // text
+    
+    // Računanje Food Relationship Score (1-10)
+    let foodRelationshipScore = parseFloat(foodRelationshipRaw) || 5;
+    
+    // Prilagodba score-a na temelju ostalih faktora
+    if (sleepQuality && parseFloat(sleepQuality) < 5) {
+      foodRelationshipScore = Math.max(1, foodRelationshipScore - 1);
+    }
+    if (workLifeBalance && parseFloat(workLifeBalance) < 5) {
+      foodRelationshipScore = Math.max(1, foodRelationshipScore - 1);
+    }
+    
+    // Određivanje stress level-a
+    const stressLevelMap: Record<string, string> = {
+      'Nizak': 'low',
+      'Umjeren': 'moderate',
+      'Visok': 'high'
+    };
+    const stressLevel = stressLevelMap[currentStress] || 'moderate';
+    
+    // Računanje Diet History Complexity
+    let dietHistoryComplexity = 0;
+    if (previousDiets === 'Da' && dietAttempts) {
+      dietHistoryComplexity = parseInt(dietAttempts) || 0;
+    }
+    
+    // Parsiranje Mental Priorities
+    let mentalPrioritiesArray: string[] = [];
+    if (Array.isArray(mentalPriorities)) {
+      mentalPrioritiesArray = mentalPriorities;
+    } else if (typeof mentalPriorities === 'string') {
+      mentalPrioritiesArray = [mentalPriorities];
+    }
+    
+    // Parsiranje Time Availability
+    let timeAvailabilityMinutes: number | null = null;
+    if (timeCommitment) {
+      const hoursMatch = timeCommitment.match(/(\d+)/);
+      if (hoursMatch) {
+        timeAvailabilityMinutes = parseInt(hoursMatch[1]) * 60;
+      }
+    }
+    
+    // Određivanje Recommended Deficit Speed
+    let recommendedDeficitSpeed = 'moderate';
+    
+    // Faktori koji utječu na brzinu deficita
+    const readinessScore = parseFloat(readinessForChange) || 5;
+    const motivationMap: Record<string, number> = {
+      'Nizak': 1,
+      'Umjeren': 2,
+      'Visok': 3
+    };
+    const motivationScore = motivationMap[motivationLevel] || 2;
+    
+    // Logika odlučivanja
+    if (stressLevel === 'high' || dietHistoryComplexity > 5 || foodRelationshipScore < 5) {
+      recommendedDeficitSpeed = 'slow';
+    } else if (motivationScore === 3 && readinessScore >= 8 && stressLevel === 'low') {
+      recommendedDeficitSpeed = 'fast';
+    }
+    
+    // Mapiranje motivation level-a
+    const motivationLevelMap: Record<string, string> = {
+      'Nizak': 'low',
+      'Umjeren': 'moderate',
+      'Visok': 'high'
+    };
+    const motivationLevelMapped = motivationLevelMap[motivationLevel] || 'moderate';
+    
+    // Spremanje psihološkog profila
+    const psychologicalProfile = {
+      client_id: submission.client_id,
+      food_relationship_score: foodRelationshipScore,
+      stress_level: stressLevel,
+      mental_priorities: mentalPrioritiesArray,
+      diet_history_complexity: dietHistoryComplexity,
+      time_availability_minutes: timeAvailabilityMinutes,
+      recommended_deficit_speed: recommendedDeficitSpeed,
+      motivation_level: motivationLevelMapped,
+      calculated_at: new Date().toISOString()
+    };
+    
+    console.log('Psychological profile data:', psychologicalProfile);
+    
+    // Prvo provjeriti postoji li već profil
+    const { data: existingProfile } = await supabase
+      .from('client_psychological_profile')
+      .select('id')
+      .eq('client_id', submission.client_id)
+      .maybeSingle();
+    
+    if (existingProfile) {
+      console.log('Updating existing psychological profile');
+      const { error: profileUpdateError } = await supabase
+        .from('client_psychological_profile')
+        .update(psychologicalProfile)
+        .eq('client_id', submission.client_id);
+      
+      if (profileUpdateError) {
+        console.error('Error updating psychological profile:', profileUpdateError);
+        // Ne bacamo error jer je glavni task (update client data) uspio
+      } else {
+        console.log('Psychological profile updated successfully');
+      }
+    } else {
+      console.log('Creating new psychological profile');
+      const { error: profileInsertError } = await supabase
+        .from('client_psychological_profile')
+        .insert(psychologicalProfile);
+      
+      if (profileInsertError) {
+        console.error('Error creating psychological profile:', profileInsertError);
+        // Ne bacamo error jer je glavni task (update client data) uspio
+      } else {
+        console.log('Psychological profile created successfully');
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Client data updated successfully',
-        updatedFields: Object.keys(clientUpdates)
+        message: 'Client data and psychological profile updated successfully',
+        updatedFields: Object.keys(clientUpdates),
+        psychologicalProfile: psychologicalProfile
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

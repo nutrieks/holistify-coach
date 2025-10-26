@@ -21,6 +21,8 @@ import { LoadingSpinner } from "@/components/LoadingSpinner"
 import AnthropometryTab from "@/components/client/AnthropometryTab"
 import EnergyCalculationTabSimplified from "@/components/client/EnergyCalculationTabSimplified"
 import { EditableClientInfo } from "@/components/client/EditableClientInfo"
+import BiochemicalDataTab from "@/components/client/BiochemicalDataTab"
+import PsychologicalProfileCard from "@/components/client/PsychologicalProfileCard"
 import ChatInterface from "@/components/chat/ChatInterface"
 import { ClientNAQDashboard } from "@/components/naq/ClientNAQDashboard"
 import { NutritionalDiagnosticsTab } from "@/components/NutritionalDiagnosticsTab"
@@ -223,6 +225,7 @@ export default function ClientDetail() {
           <TabsList className="grid w-full grid-cols-12 overflow-x-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="anthropometry">Antropometrija</TabsTrigger>
+            <TabsTrigger value="biochemical">Biokemija</TabsTrigger>
             <TabsTrigger value="energy">Energija</TabsTrigger>
             <TabsTrigger value="diagnostics">NAQ</TabsTrigger>
             <TabsTrigger value="nutritional">Nutritivna dijagnostika</TabsTrigger>
@@ -297,6 +300,9 @@ export default function ClientDetail() {
               </CardContent>
             </Card>
 
+            {/* Psychological Profile */}
+            <PsychologicalProfileCard clientId={client.user_id} />
+
             {/* Activity Log */}
             <Card>
               <CardHeader>
@@ -367,6 +373,15 @@ export default function ClientDetail() {
               }}
               onDataUpdated={() => {
                 fetchAnthropometricData();
+                fetchClient();
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="biochemical">
+            <BiochemicalDataTab 
+              clientId={id!}
+              onDataUpdated={() => {
                 fetchClient();
               }}
             />
