@@ -7,21 +7,28 @@ import { Badge } from "@/components/ui/badge";
 import { Calculator, Flame, TrendingUp, TrendingDown, Activity, Info } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { calculateIdealBodyWeight, calculateAdjustedWeight, calculateREE } from "@/utils/anthropometricCalculations";
+import MetabolicDataTab from "./MetabolicDataTab";
+import PsychologicalDataTab from "./PsychologicalDataTab";
+import FinalCalculationTab from "./FinalCalculationTab";
 
 interface EnergyCalculationTabProps {
+  clientId: string;
   clientGender: string | null;
   latestWeight: number | null;
   latestHeight: number | null;
   latestLBM: number | null;
   clientAge: number | null;
+  onOpenNutritionPlanModal?: (prefilledData: any) => void;
 }
 
 export default function EnergyCalculationTab({
+  clientId,
   clientGender,
   latestWeight,
   latestHeight,
   latestLBM,
   clientAge,
+  onOpenNutritionPlanModal,
 }: EnergyCalculationTabProps) {
   const [weight, setWeight] = useState(latestWeight?.toString() || "");
   const [height, setHeight] = useState(latestHeight?.toString() || "");

@@ -19,7 +19,7 @@ import { ContractProgressBar } from "@/components/ContractProgressBar"
 import { FormsTab } from "@/components/FormsTab"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import AnthropometryTab from "@/components/client/AnthropometryTab"
-import EnergyCalculationTabSimplified from "@/components/client/EnergyCalculationTabSimplified"
+import EnergyCalculationTab from "@/components/client/EnergyCalculationTab"
 import { EditableClientInfo } from "@/components/client/EditableClientInfo"
 import BiochemicalDataTab from "@/components/client/BiochemicalDataTab"
 import PsychologicalProfileCard from "@/components/client/PsychologicalProfileCard"
@@ -71,6 +71,8 @@ export default function ClientDetail() {
   const [loadingPlan, setLoadingPlan] = useState(true)
   const [anthropometricData, setAnthropometricData] = useState<any[]>([])
   const { toast } = useToast()
+  
+  const latestAnthropometricData = anthropometricData[0] || null
 
   const fetchClient = async () => {
     if (!id) return
@@ -387,9 +389,17 @@ export default function ClientDetail() {
             />
           </TabsContent>
 
-                  <TabsContent value="energy">
-                    <EnergyCalculationTabSimplified
+          <TabsContent value="energy">
+            <EnergyCalculationTab
               clientId={id!}
+              clientGender={client.gender}
+              latestWeight={latestAnthropometricData?.weight ?? null}
+              latestHeight={latestAnthropometricData?.height ?? null}
+              latestLBM={latestAnthropometricData?.lean_body_mass ?? null}
+              clientAge={calculateAge(client.date_of_birth)}
+              onOpenNutritionPlanModal={(prefilledData) => {
+                setShowAssignNutritionModal(true);
+              }}
             />
           </TabsContent>
 
