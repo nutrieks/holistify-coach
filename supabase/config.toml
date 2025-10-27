@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.process-coaching-intake-submission]
 verify_jwt = false
+
+[functions.analyze-body-composition]
+verify_jwt = true

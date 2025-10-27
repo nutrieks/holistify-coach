@@ -12,6 +12,10 @@ interface FinalCalculationTabProps {
   clientId: string;
   clientGender: string | null;
   clientAge: number | null;
+  clientDetails?: {
+    first_name?: string | null;
+    last_name?: string | null;
+  };
   onOpenNutritionPlanModal?: (prefilledData: any) => void;
 }
 
@@ -19,6 +23,7 @@ export default function FinalCalculationTab({
   clientId, 
   clientGender, 
   clientAge,
+  clientDetails,
   onOpenNutritionPlanModal 
 }: FinalCalculationTabProps) {
   const [loading, setLoading] = useState(false);
@@ -273,7 +278,10 @@ export default function FinalCalculationTab({
       {/* Results */}
       {result && (
         <>
-          <ExpertSystemRecommendations result={result} />
+          <ExpertSystemRecommendations 
+            result={result} 
+            clientName={`${clientDetails?.first_name || ''} ${clientDetails?.last_name || ''}`.trim() || 'Klijent'}
+          />
 
           {/* Action Buttons */}
           <div className="grid md:grid-cols-2 gap-4">

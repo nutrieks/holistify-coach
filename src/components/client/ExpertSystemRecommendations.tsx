@@ -3,12 +3,14 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, TrendingUp, Flame, Target } from "lucide-react";
 import { OptimalCaloriesResult } from "@/utils/expertSystemCalculations";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import ExpertSystemPDFExport from "./ExpertSystemPDFExport";
 
 interface ExpertSystemRecommendationsProps {
   result: OptimalCaloriesResult;
+  clientName?: string;
 }
 
-export default function ExpertSystemRecommendations({ result }: ExpertSystemRecommendationsProps) {
+export default function ExpertSystemRecommendations({ result, clientName = "Klijent" }: ExpertSystemRecommendationsProps) {
   const macroData = [
     { name: "Protein", value: result.protein * 4, color: "#ef4444" },
     { name: "Carbs", value: result.carbs * 4, color: "#3b82f6" },
@@ -156,6 +158,9 @@ export default function ExpertSystemRecommendations({ result }: ExpertSystemReco
           </ul>
         </CardContent>
       </Card>
+
+      {/* PDF Export */}
+      <ExpertSystemPDFExport result={result} clientName={clientName} />
     </div>
   );
 }

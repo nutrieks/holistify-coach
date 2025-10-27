@@ -18,6 +18,10 @@ interface EnergyCalculationTabProps {
   latestHeight: number | null;
   latestLBM: number | null;
   clientAge: number | null;
+  clientDetails?: {
+    first_name?: string | null;
+    last_name?: string | null;
+  };
   onOpenNutritionPlanModal?: (prefilledData: any) => void;
 }
 
@@ -28,6 +32,7 @@ export default function EnergyCalculationTab({
   latestHeight,
   latestLBM,
   clientAge,
+  clientDetails,
   onOpenNutritionPlanModal,
 }: EnergyCalculationTabProps) {
   const [weight, setWeight] = useState(latestWeight?.toString() || "");

@@ -397,6 +397,10 @@ export default function ClientDetail() {
               latestHeight={latestAnthropometricData?.height ?? null}
               latestLBM={latestAnthropometricData?.lean_body_mass ?? null}
               clientAge={calculateAge(client.date_of_birth)}
+              clientDetails={{
+                first_name: client.full_name?.split(' ')[0] || null,
+                last_name: client.full_name?.split(' ').slice(1).join(' ') || null,
+              }}
               onOpenNutritionPlanModal={(prefilledData) => {
                 setShowAssignNutritionModal(true);
               }}

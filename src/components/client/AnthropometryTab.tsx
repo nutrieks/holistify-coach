@@ -16,6 +16,7 @@ import {
   calculateFatMass
 } from "@/utils/anthropometricCalculations";
 import { CheckCircle, XCircle } from "lucide-react";
+import BodyCompositionImageUpload from "./BodyCompositionImageUpload";
 
 interface AnthropometryTabProps {
   clientId: string;
@@ -368,6 +369,47 @@ export default function AnthropometryTab({ clientId, initialData, onDataUpdated 
           </Card>
         </div>
       )}
+
+      {/* AI Body Composition Upload */}
+      <BodyCompositionImageUpload 
+        clientId={clientId}
+        onAnalysisComplete={async (bodyFatPercentage) => {
+          // Try to update the latest anthropometric data with AI-estimated BF
+          const { data: latestData } = await supabase
+            .from('client_anthropometric_data')
+            .select('id')
+            .eq('client_id', clientId)
+            .order('measurement_date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (latestData) {
+            const { error } = await supabase
+              .from('client_anthropometric_data')
+              .update({ body_fat_manual: bodyFatPercentage })
+              .eq('id', latestData.id);
+
+            if (!error) {
+              toast({
+                title: "Uspješno",
+                description: `%BF (${bodyFatPercentage}%) je spremljen u zadnje mjerenje.`,
+              });
+              onDataUpdated();
+            } else {
+              toast({
+                title: "Greška",
+                description: "Nije moguće spremiti procijenjeni %BF.",
+                variant: "destructive",
+              });
+            }
+          } else {
+            toast({
+              title: "Info",
+              description: "Prvo dodajte antropometrijsko mjerenje, zatim koristite AI analizu.",
+            });
+          }
+        }}
+      />
     </div>
   );
 }
