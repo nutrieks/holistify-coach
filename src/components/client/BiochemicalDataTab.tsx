@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, Droplet, Activity } from "lucide-react";
+import { CheckCircle, XCircle, Droplet, Activity, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { calculateInsulinSensitivity } from "@/utils/expertSystemCalculations";
 
 interface BiochemicalDataTabProps {
@@ -27,6 +28,7 @@ export default function BiochemicalDataTab({
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showRecalcPrompt, setShowRecalcPrompt] = useState(false);
   
   // Form state
   const [ggt, setGgt] = useState("");
@@ -131,9 +133,10 @@ export default function BiochemicalDataTab({
 
       toast({
         title: "Uspješno",
-        description: "Biokemijski podaci su spremljeni"
+        description: "Biokemijski podaci su spremljeni. Razmislite o re-kalkulaciji Expert System preporuka."
       });
 
+      setShowRecalcPrompt(true);
       onDataUpdated();
     } catch (error: any) {
       console.error('Save error:', error);
@@ -159,6 +162,24 @@ export default function BiochemicalDataTab({
 
   return (
     <div className="space-y-6">
+      {/* Re-calculation Prompt */}
+      {showRecalcPrompt && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Biokemijski podaci su ažurirani. Preporučujemo re-kalkulaciju u Expert System tabu kako bi preporuke bile točne.
+            <Button
+              size="sm"
+              variant="link"
+              onClick={() => setShowRecalcPrompt(false)}
+              className="ml-2"
+            >
+              Zatvori
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Status Badge */}
       <Card>
         <CardHeader>

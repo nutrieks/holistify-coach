@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, Save, Apple, AlertCircle } from "lucide-react";
+import { Calculator, Save, Apple, AlertCircle, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { calculateOptimalCalories, OptimalCaloriesResult } from "@/utils/expertSystemCalculations";
 import ExpertSystemRecommendations from "./ExpertSystemRecommendations";
+import CalculationHistory from "./CalculationHistory";
+import CalculationComparison from "./CalculationComparison";
 
 interface FinalCalculationTabProps {
   clientId: string;
@@ -31,6 +33,9 @@ export default function FinalCalculationTab({
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<OptimalCaloriesResult | null>(null);
   const [hasRequiredData, setHasRequiredData] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [comparisonCalcs, setComparisonCalcs] = useState<any[] | null>(null);
+  const [viewingCalculation, setViewingCalculation] = useState<any | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -233,6 +238,31 @@ export default function FinalCalculationTab({
     });
   };
 
+  const handleCompare = (calc1: any, calc2: any) => {
+    setComparisonCalcs([calc1, calc2]);
+    setShowHistory(false);
+  };
+
+  const handleViewDetails = (calc: any) => {
+    // Convert saved calculation back to OptimalCaloriesResult format
+    const calculationResult: OptimalCaloriesResult = {
+      recommendedCalories: calc.recommended_calories || 0,
+      protein: calc.protein_target_g || 0,
+      carbs: calc.carbs_target_g || 0,
+      fats: calc.fat_target_g || 0,
+      dee: calc.dee || 0,
+      tef: calc.tef_correction || 0,
+      adaptiveTDEE: calc.adaptive_tdee || 0,
+      insulinSensitivity: calc.insulin_sensitivity || "moderate",
+      musclePotential: calc.muscle_potential || "moderate",
+      deficitSpeed: calc.deficit_speed || "moderate",
+      reasoning: calc.reasoning as string[] || [],
+    };
+    setResult(calculationResult);
+    setViewingCalculation(calc);
+    setShowHistory(false);
+  };
+
   if (!hasRequiredData) {
     return (
       <Card>
@@ -251,8 +281,38 @@ export default function FinalCalculationTab({
 
   return (
     <div className="space-y-6">
+      {/* Comparison View */}
+      {comparisonCalcs && (
+        <CalculationComparison
+          calculation1={comparisonCalcs[0]}
+          calculation2={comparisonCalcs[1]}
+          onClose={() => setComparisonCalcs(null)}
+        />
+      )}
+
+      {/* History View */}
+      {showHistory && !comparisonCalcs && (
+        <CalculationHistory
+          clientId={clientId}
+          onCompare={handleCompare}
+          onViewDetails={handleViewDetails}
+        />
+      )}
+
+      {/* Toggle History Button */}
+      {!comparisonCalcs && (
+        <Button
+          onClick={() => setShowHistory(!showHistory)}
+          variant="outline"
+          className="w-full"
+        >
+          <History className="h-4 w-4 mr-2" />
+          {showHistory ? "Sakrij Historiju" : "Prikaži Historiju Kalkulacija"}
+        </Button>
+      )}
+
       {/* Calculate Button */}
-      {!result && (
+      {!result && !showHistory && !comparisonCalcs && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -276,8 +336,17 @@ export default function FinalCalculationTab({
       )}
 
       {/* Results */}
-      {result && (
+      {result && !showHistory && !comparisonCalcs && (
         <>
+          {viewingCalculation && (
+            <Card className="bg-muted/30">
+              <CardContent className="py-3">
+                <p className="text-sm text-muted-foreground">
+                  Prikazujete historijsku kalkulaciju iz {new Date(viewingCalculation.calculation_date).toLocaleDateString('hr-HR')}
+                </p>
+              </CardContent>
+            </Card>
+          )}
           <ExpertSystemRecommendations 
             result={result} 
             clientName={`${clientDetails?.first_name || ''} ${clientDetails?.last_name || ''}`.trim() || 'Klijent'}
@@ -305,7 +374,10 @@ export default function FinalCalculationTab({
 
           {/* Recalculate Button */}
           <Button 
-            onClick={handleCalculate} 
+            onClick={() => {
+              setViewingCalculation(null);
+              handleCalculate();
+            }} 
             disabled={calculating}
             variant="secondary"
             className="w-full"

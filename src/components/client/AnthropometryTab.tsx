@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import { 
   calculateBMI, 
   calculateBRI, 
@@ -36,6 +38,7 @@ interface AnthropometryTabProps {
 export default function AnthropometryTab({ clientId, initialData, onDataUpdated }: AnthropometryTabProps) {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [showRecalcPrompt, setShowRecalcPrompt] = useState(false);
   
   // Form state
   const [gender, setGender] = useState(initialData?.gender || "");
@@ -135,9 +138,10 @@ export default function AnthropometryTab({ clientId, initialData, onDataUpdated 
 
       toast({
         title: "Uspješno",
-        description: "Antropometrijski podaci su spremljeni"
+        description: "Antropometrijski podaci su spremljeni. Razmislite o re-kalkulaciji Expert System preporuka."
       });
 
+      setShowRecalcPrompt(true);
       onDataUpdated();
     } catch (error: any) {
       console.error('Save error:', error);
@@ -153,6 +157,24 @@ export default function AnthropometryTab({ clientId, initialData, onDataUpdated 
 
   return (
     <div className="space-y-6">
+      {/* Re-calculation Prompt */}
+      {showRecalcPrompt && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Antropometrijski podaci su ažurirani. Preporučujemo re-kalkulaciju u Expert System tabu kako bi preporuke bile točne.
+            <Button
+              size="sm"
+              variant="link"
+              onClick={() => setShowRecalcPrompt(false)}
+              className="ml-2"
+            >
+              Zatvori
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Status Badge */}
       <Card>
         <CardHeader>
