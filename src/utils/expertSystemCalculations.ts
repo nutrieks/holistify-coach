@@ -1,25 +1,214 @@
 /**
  * Expert System za Određivanje Kalorijskih Ciljeva
- * Prema specifikaciji iz PDF dokumenta
+ * FAZA 1: BRI/FLI Indeksi, Pathway A/B Logika, Ispravljeni TEF Calculation
+ * Prema specifikaciji iz PDF dokumenta (Str. 1-24)
  */
 
-// TEF Lookup tablica (Str. 2 PDF-a)
-export const TEF_TABLE = {
-  high_protein: { protein: 0.25, carbs: 0.05, fats: 0.02 },
-  balanced: { protein: 0.20, carbs: 0.05, fats: 0.02 },
-  low_protein: { protein: 0.15, carbs: 0.05, fats: 0.02 }
-} as const;
+// ============================================
+// TEF LOOKUP TABLE (PDF Str. 2-4)
+// ============================================
+const TEF_TABLE = {
+  standard: { protein: 0.25, carbs: 0.06, fats: 0.03 },
+  higher_protein: { protein: 0.30, carbs: 0.06, fats: 0.03 },
+  high_carb: { protein: 0.25, carbs: 0.08, fats: 0.03 }
+};
 
-export type DietType = keyof typeof TEF_TABLE;
+type DietType = keyof typeof TEF_TABLE;
 
-// Interfaces
+// ============================================
+// BRI & FLI CALCULATIONS (PDF Str. 6-7)
+// ============================================
+
+/**
+ * Body Roundness Index (BRI) - PDF Str. 6
+ * Formula: BRI = 364.2 - 365.5 × √(1 - ((WC / (2π))² / (0.5 × Height)²))
+ */
+export function calculateBRI(height: number, waistCircumference: number): number {
+  const radius = waistCircumference / (2 * Math.PI);
+  const halfHeight = 0.5 * height;
+  const ratio = (radius * radius) / (halfHeight * halfHeight);
+  const bri = 364.2 - 365.5 * Math.sqrt(Math.max(0, 1 - ratio));
+  return Math.max(0, bri);
+}
+
+/**
+ * Fatty Liver Index (FLI) - PDF Str. 7
+ * Formula: FLI = (e^y / (1 + e^y)) × 100
+ * y = 0.953×ln(TG) + 0.139×BMI + 0.718×ln(GGT) + 0.053×WC - 15.745
+ */
+export function calculateFLI(params: {
+  bmi: number;
+  waistCircumference: number;
+  triglycerides: number;
+  ggt: number;
+}): number {
+  const { bmi, waistCircumference, triglycerides, ggt } = params;
+  
+  const y = 
+    0.953 * Math.log(triglycerides) +
+    0.139 * bmi +
+    0.718 * Math.log(ggt) +
+    0.053 * waistCircumference -
+    15.745;
+  
+  const fli = (Math.exp(y) / (1 + Math.exp(y))) * 100;
+  return Math.min(100, Math.max(0, fli));
+}
+
+// ============================================
+// PATHWAY A vs B LOGIC (PDF Str. 17-24)
+// ============================================
+
+export interface PathwayParams {
+  currentWeight: number;
+  targetWeight?: number;
+  targetDate?: Date;
+  goal: 'fat_loss' | 'muscle_gain' | 'maintain';
+  currentFFMI?: number;
+  gender: 'male' | 'female';
+}
+
+export interface PathwayResult {
+  pathway: 'A' | 'B';
+  usesTwoPhaseModel: boolean;
+  ffmiCeiling?: number;
+  canSurplus?: boolean;
+  reasoning: string;
+}
+
+/**
+ * Determines Pathway A (user-defined) or B (system-defined) - PDF Str. 17
+ */
+export function determinePathway(params: PathwayParams): PathwayResult {
+  const { targetWeight, targetDate, goal, currentFFMI, gender } = params;
+  
+  // Pathway A: User provides target weight AND target date
+  if (targetWeight && targetDate) {
+    return {
+      pathway: 'A',
+      usesTwoPhaseModel: true,
+      reasoning: 'Korisnik definirao ciljnu težinu i datum → Pathway A (Two-Phase DEE Model)'
+    };
+  }
+  
+  // Check FFMI ceiling for muscle gain
+  if (goal === 'muscle_gain' && currentFFMI) {
+    const maxFFMI = gender === 'male' ? 25 : 21.5;
+    const canSurplus = currentFFMI < maxFFMI;
+    
+    return {
+      pathway: 'B',
+      usesTwoPhaseModel: false,
+      ffmiCeiling: maxFFMI,
+      canSurplus,
+      reasoning: canSurplus 
+        ? `FFMI ${currentFFMI.toFixed(1)} < ${maxFFMI} - prostor za rast → Pathway B`
+        : `FFMI ${currentFFMI.toFixed(1)} ≥ ${maxFFMI} - genetski limit → NE preporučujemo surplus`
+    };
+  }
+  
+  // Pathway B: System determines tempo
+  return {
+    pathway: 'B',
+    usesTwoPhaseModel: false,
+    reasoning: 'Sistem određuje tempo (Pathway B) na osnovu psiholoških/metaboličkih faktora'
+  };
+}
+
+/**
+ * Two-Phase DEE Model for Pathway A - PDF Str. 18-21
+ */
+export interface TwoPhaseCaloriesParams {
+  currentWeight: number;
+  targetWeight: number;
+  targetDate: Date;
+  dee: number;
+  gender: 'male' | 'female';
+}
+
+export interface TwoPhaseCaloriesResult {
+  phase1Calories: number;
+  stabilizedCalories: number;
+  expectedWeeklyLoss: number;
+  weeksToTarget: number;
+  reasoning: string[];
+}
+
+export function calculateTwoPhaseCalories(params: TwoPhaseCaloriesParams): TwoPhaseCaloriesResult {
+  const { currentWeight, targetWeight, targetDate, dee, gender } = params;
+  const reasoning: string[] = [];
+  
+  // Phase 1: First 2 weeks
+  const phase1DEE = currentWeight * 3000;
+  reasoning.push(`Faza 1 DEE (prve 2 sedmice): ${currentWeight} kg × 3000 = ${phase1DEE.toFixed(0)} kcal`);
+  
+  // Phase 2: Stabilized
+  const multiplier = gender === 'male' ? 6500 : 5500;
+  const stabilizedDEE = targetWeight * multiplier;
+  reasoning.push(`Stabilizirani DEE: ${targetWeight} kg × ${multiplier} = ${stabilizedDEE.toFixed(0)} kcal`);
+  
+  // Calculate timeline
+  const now = new Date();
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const weeksToTarget = Math.max(1, Math.ceil((targetDate.getTime() - now.getTime()) / msPerWeek));
+  
+  // Backtracking
+  const totalWeightChange = Math.abs(currentWeight - targetWeight);
+  const expectedWeeklyLoss = totalWeightChange / weeksToTarget;
+  reasoning.push(`Očekivani tjedni gubitak: ${expectedWeeklyLoss.toFixed(2)} kg/sedmicu`);
+  
+  // Safety check
+  const maxSafeWeeklyLoss = currentWeight * 0.01;
+  if (expectedWeeklyLoss > maxSafeWeeklyLoss) {
+    reasoning.push(`⚠️ UPOZORENJE: Traženi tempo (${expectedWeeklyLoss.toFixed(2)} kg/tjedan) > sigurna granica (${maxSafeWeeklyLoss.toFixed(2)} kg/tjedan)`);
+  }
+  
+  return {
+    phase1Calories: phase1DEE,
+    stabilizedCalories: stabilizedDEE,
+    expectedWeeklyLoss,
+    weeksToTarget,
+    reasoning
+  };
+}
+
+/**
+ * FFMI Ceiling Check for Muscle Gain - PDF Str. 23-24
+ */
+export interface FFMICeilingResult {
+  canSurplus: boolean;
+  currentFFMI: number;
+  maxFFMI: number;
+  remainingPotential: number;
+  reasoning: string;
+}
+
+export function checkFFMICeiling(currentFFMI: number, gender: 'male' | 'female'): FFMICeilingResult {
+  const maxFFMI = gender === 'male' ? 25 : 21.5;
+  const remainingPotential = Math.max(0, maxFFMI - currentFFMI);
+  const canSurplus = currentFFMI < maxFFMI;
+  
+  return {
+    canSurplus,
+    currentFFMI,
+    maxFFMI,
+    remainingPotential,
+    reasoning: canSurplus
+      ? `FFMI ${currentFFMI.toFixed(1)} < ${maxFFMI} → Preostali potencijal: ${remainingPotential.toFixed(1)} bodova. Surplus preporučen.`
+      : `FFMI ${currentFFMI.toFixed(1)} ≥ ${maxFFMI} → Dostignut genetski maksimum. Surplus NE preporučen.`
+  };
+}
+
+// ============================================
+// CORE CALCULATION INTERFACES
+// ============================================
+
 export interface DEEParams {
-  weight: number;
-  height: number;
   age: number;
   gender: 'male' | 'female';
-  lbm?: number;
-  bodyFat?: number;
+  height: number;
+  weight: number;
+  bodyFatPercentage: number;
 }
 
 export interface TEFParams {
@@ -36,91 +225,106 @@ export interface InsulinSensitivityParams {
   fastingGlucose?: number;
   hba1c?: number;
   waistCircumference?: number;
-  bodyFat?: number;
+  bodyFatPercentage?: number;
   gender?: 'male' | 'female';
 }
 
 export interface MusclePotentialParams {
-  digitRatio?: number; // 2D:4D
+  digitRatio2D4D?: number;
   wristCircumference?: number;
   height: number;
   gender: 'male' | 'female';
-}
-
-export interface PsychologicalProfile {
-  foodRelationshipScore: number; // 1-10
-  stressLevel: 'low' | 'moderate' | 'high' | 'extreme';
-  dietHistoryComplexity: number;
-  timeAvailabilityMinutes?: number;
-  motivationLevel?: 'exploring' | 'moderate' | 'high' | 'extreme';
-}
-
-export interface AdaptiveTDEEParams {
-  dee: number;
-  neat: number;
-  ea: number;
-  tef: number;
-  metabolicAdaptation?: number;
+  leanBodyMass: number;
 }
 
 export interface DeficitSpeedParams {
-  psychologicalProfile: PsychologicalProfile;
-  metabolicHealth: 'excellent' | 'good' | 'fair' | 'poor';
   goal: 'fat_loss' | 'maintain' | 'muscle_gain';
+  stressLevel?: 'low' | 'moderate' | 'high' | 'extreme';
+  foodRelationshipScore?: number;
+  dietHistoryComplexity?: number;
+  motivationLevel?: 'exploring' | 'moderate' | 'high' | 'extreme';
+  insulinSensitivity: string;
+  musclePotential: string;
 }
 
 export interface OptimalCaloriesParams {
-  // Antropometrija
-  weight: number;
-  height: number;
+  // Anthropometric
   age: number;
   gender: 'male' | 'female';
-  lbm?: number;
-  bodyFat?: number;
+  height: number;
+  weight: number;
+  bodyFatPercentage: number;
   waistCircumference?: number;
+  neckCircumference?: number;
+  hipCircumference?: number;
+  wristCircumference?: number;
+  digitRatio2D4D?: number;
   
-  // Biokemija
+  // Goal & Pathway (NEW)
+  goal: 'fat_loss' | 'muscle_gain' | 'maintain';
+  targetWeight?: number;
+  targetDate?: Date;
+  
+  // Biochemical
   ggt?: number;
   triglycerides?: number;
   fastingGlucose?: number;
   hba1c?: number;
   
-  // Psihološki profil
-  foodRelationshipScore?: number;
+  // Psychological
   stressLevel?: 'low' | 'moderate' | 'high' | 'extreme';
+  foodRelationshipScore?: number;
   dietHistoryComplexity?: number;
   timeAvailabilityMinutes?: number;
   motivationLevel?: 'exploring' | 'moderate' | 'high' | 'extreme';
   
-  // Aktivnost
+  // Activity
   neatLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
   exerciseMinutesPerWeek: number;
-  
-  // Cilj
-  goal: 'fat_loss' | 'maintain' | 'muscle_gain';
-  
-  // Napredni parametri
-  digitRatio?: number;
-  wristCircumference?: number;
 }
 
 export interface OptimalCaloriesResult {
+  // Final recommendations
   recommendedCalories: number;
   protein: number;
   carbs: number;
   fats: number;
+  
+  // Intermediate results
   dee: number;
   tef: number;
+  neat: number;
+  ea: number;
+  maintenanceTDEE: number;
   adaptiveTDEE: number;
-  insulinSensitivity: string;
-  musclePotential: string;
-  deficitSpeed: string;
+  insulinSensitivity: { score: 'high' | 'moderate' | 'low' | 'very_low'; numericScore: number };
+  musclePotential: { score: 'high' | 'moderate' | 'low'; numericScore: number };
+  deficitSpeed: {
+    speed: 'slow' | 'moderate' | 'fast';
+    percentage: number;
+    recommendDietBreaks: boolean;
+    reasoning: string[];
+  };
+  
+  // NEW: Pathway & Goal Info
+  pathway?: PathwayResult;
+  twoPhaseModel?: TwoPhaseCaloriesResult;
+  ffmiCeiling?: FFMICeilingResult;
+  bri?: number;
+  fli?: number;
+  
   reasoning: string[];
 }
 
-// 1. DEE Model (Dynamic Energy Expenditure)
+// ============================================
+// CALCULATION FUNCTIONS
+// ============================================
+
+/**
+ * DEE Calculation (Harris-Benedict, Mifflin-St Jeor, Katch-McArdle)
+ */
 export function calculateDEE(params: DEEParams): number {
-  const { weight, height, age, gender, lbm, bodyFat } = params;
+  const { age, gender, height, weight, bodyFatPercentage } = params;
   
   // Harris-Benedict
   let harrisBenedict: number;
@@ -138,426 +342,405 @@ export function calculateDEE(params: DEEParams): number {
     mifflinStJeor = (10 * weight) + (6.25 * height) - (5 * age) - 161;
   }
   
-  // Katch-McArdle (ako imamo LBM)
+  // Katch-McArdle (if body fat available)
   let katchMcArdle: number | null = null;
-  if (lbm) {
+  if (bodyFatPercentage > 0) {
+    const lbm = weight * (1 - bodyFatPercentage / 100);
     katchMcArdle = 370 + (21.6 * lbm);
-  } else if (bodyFat && bodyFat > 0) {
-    const calculatedLBM = weight * (1 - bodyFat / 100);
-    katchMcArdle = 370 + (21.6 * calculatedLBM);
   }
   
-  // Prosječni DEE
+  // Average
   const formulas = [harrisBenedict, mifflinStJeor];
-  if (katchMcArdle !== null) {
-    formulas.push(katchMcArdle);
-  }
+  if (katchMcArdle !== null) formulas.push(katchMcArdle);
   
-  const dee = formulas.reduce((sum, val) => sum + val, 0) / formulas.length;
-  
-  return Math.round(dee);
+  return formulas.reduce((sum, val) => sum + val, 0) / formulas.length;
 }
 
-// 2. TEF Korekcija
+/**
+ * TEF (Thermic Effect of Food) - PDF Str. 2-4
+ */
 export function calculateTEF(params: TEFParams): number {
   const { proteinGrams, carbsGrams, fatsGrams, dietType } = params;
-  
   const tefRates = TEF_TABLE[dietType];
   
-  const proteinCalories = proteinGrams * 4;
-  const carbsCalories = carbsGrams * 4;
-  const fatsCalories = fatsGrams * 9;
+  const proteinCal = proteinGrams * 4;
+  const carbsCal = carbsGrams * 4;
+  const fatsCal = fatsGrams * 9;
   
-  const tef = 
-    (proteinCalories * tefRates.protein) +
-    (carbsCalories * tefRates.carbs) +
-    (fatsCalories * tefRates.fats);
-  
-  return Math.round(tef);
+  return (proteinCal * tefRates.protein) +
+         (carbsCal * tefRates.carbs) +
+         (fatsCal * tefRates.fats);
 }
 
-// 3. Insulin Sensitivity Score
+/**
+ * Insulin Sensitivity Score
+ */
 export function calculateInsulinSensitivity(params: InsulinSensitivityParams): {
   score: 'high' | 'moderate' | 'low' | 'very_low';
   numericScore: number;
 } {
-  const { ggt, triglycerides, fastingGlucose, hba1c, waistCircumference, bodyFat } = params;
+  const { ggt, triglycerides, fastingGlucose, hba1c, waistCircumference, bodyFatPercentage, gender } = params;
   
-  let score = 100; // Start at perfect
-  const factors: string[] = [];
+  let score = 100;
   
-  // GGT (Gamma-glutamyl transferase)
   if (ggt !== undefined) {
-    if (ggt > 60) {
-      score -= 20;
-      factors.push('Povišena GGT');
-    } else if (ggt > 40) {
-      score -= 10;
-      factors.push('Umjereno povišena GGT');
-    }
+    if (ggt > 60) score -= 20;
+    else if (ggt > 40) score -= 10;
   }
   
-  // Trigliceridi
   if (triglycerides !== undefined) {
-    if (triglycerides > 200) {
-      score -= 25;
-      factors.push('Visoki trigliceridi');
-    } else if (triglycerides > 150) {
-      score -= 15;
-      factors.push('Umjereno povišeni trigliceridi');
-    }
+    if (triglycerides > 200) score -= 25;
+    else if (triglycerides > 150) score -= 15;
   }
   
-  // Glukoza natašte
   if (fastingGlucose !== undefined) {
-    if (fastingGlucose > 126) {
-      score -= 30;
-      factors.push('Dijabetes indikatori');
-    } else if (fastingGlucose > 100) {
-      score -= 20;
-      factors.push('Pre-dijabetes indikatori');
-    }
+    if (fastingGlucose > 126) score -= 30;
+    else if (fastingGlucose > 100) score -= 20;
   }
   
-  // HbA1c
   if (hba1c !== undefined) {
-    if (hba1c > 6.5) {
-      score -= 30;
-      factors.push('Visok HbA1c');
-    } else if (hba1c > 5.7) {
-      score -= 15;
-      factors.push('Umjereno povišen HbA1c');
-    }
+    if (hba1c > 6.5) score -= 30;
+    else if (hba1c > 5.7) score -= 15;
   }
   
-  // Obim struka (centralna pretilost)
-  if (waistCircumference !== undefined) {
-    const threshold = params.gender === 'male' ? 102 : 88;
-    if (waistCircumference > threshold) {
-      score -= 15;
-      factors.push('Centralna pretilost');
-    }
+  if (waistCircumference !== undefined && gender) {
+    const threshold = gender === 'male' ? 102 : 88;
+    if (waistCircumference > threshold) score -= 15;
   }
   
-  // % tjelesne masti
-  if (bodyFat !== undefined) {
-    const threshold = params.gender === 'male' ? 25 : 32;
-    if (bodyFat > threshold) {
-      score -= 10;
-      factors.push('Visok postotak tjelesne masti');
-    }
+  if (bodyFatPercentage !== undefined && gender) {
+    const threshold = gender === 'male' ? 25 : 32;
+    if (bodyFatPercentage > threshold) score -= 10;
   }
   
-  // Kategorije
   let category: 'high' | 'moderate' | 'low' | 'very_low';
-  if (score >= 80) {
-    category = 'high';
-  } else if (score >= 60) {
-    category = 'moderate';
-  } else if (score >= 40) {
-    category = 'low';
-  } else {
-    category = 'very_low';
-  }
+  if (score >= 80) category = 'high';
+  else if (score >= 60) category = 'moderate';
+  else if (score >= 40) category = 'low';
+  else category = 'very_low';
   
   return { score: category, numericScore: Math.max(0, score) };
 }
 
-// 4. Muscle Potential Score
+/**
+ * Muscle Potential Score
+ */
 export function calculateMusclePotential(params: MusclePotentialParams): {
   score: 'high' | 'moderate' | 'low';
   numericScore: number;
 } {
-  const { digitRatio, wristCircumference, height, gender } = params;
+  const { digitRatio2D4D, wristCircumference, height, gender } = params;
+  let score = 50;
   
-  let score = 50; // Start at neutral
-  
-  // 2D:4D digit ratio (niži = veći potencijal za mišiće)
-  if (digitRatio !== undefined) {
-    if (digitRatio < 0.95) {
-      score += 20;
-    } else if (digitRatio < 1.0) {
-      score += 10;
-    } else if (digitRatio > 1.05) {
-      score -= 10;
-    }
+  if (digitRatio2D4D !== undefined) {
+    if (digitRatio2D4D < 0.95) score += 20;
+    else if (digitRatio2D4D < 1.0) score += 10;
+    else if (digitRatio2D4D > 1.05) score -= 10;
   }
   
-  // Frame size iz wrist circumference
   if (wristCircumference !== undefined && height > 0) {
     const frameRatio = wristCircumference / height;
+    const thresholds = gender === 'male' ? [0.11, 0.10] : [0.10, 0.09];
     
-    if (gender === 'male') {
-      if (frameRatio > 0.11) {
-        score += 20; // Large frame
-      } else if (frameRatio > 0.10) {
-        score += 10; // Medium frame
-      } else {
-        score -= 10; // Small frame
-      }
-    } else {
-      if (frameRatio > 0.10) {
-        score += 20;
-      } else if (frameRatio > 0.09) {
-        score += 10;
-      } else {
-        score -= 10;
-      }
-    }
+    if (frameRatio > thresholds[0]) score += 20;
+    else if (frameRatio > thresholds[1]) score += 10;
+    else score -= 10;
   }
   
-  // Kategorije
   let category: 'high' | 'moderate' | 'low';
-  if (score >= 70) {
-    category = 'high';
-  } else if (score >= 50) {
-    category = 'moderate';
-  } else {
-    category = 'low';
-  }
+  if (score >= 70) category = 'high';
+  else if (score >= 50) category = 'moderate';
+  else category = 'low';
   
   return { score: category, numericScore: score };
 }
 
-// 5. Adaptive TDEE Model
-export function calculateAdaptiveTDEE(params: AdaptiveTDEEParams): number {
-  const { dee, neat, ea, tef, metabolicAdaptation = 0 } = params;
-  
-  const adaptiveTDEE = dee + neat + ea + tef - metabolicAdaptation;
-  
-  return Math.round(Math.max(dee * 1.1, adaptiveTDEE)); // Never go below 110% of DEE
-}
-
-// 6. Deficit/Surplus Speed Matrix
+/**
+ * Deficit Speed Matrix
+ */
 export function determineDeficitSpeed(params: DeficitSpeedParams): {
   speed: 'slow' | 'moderate' | 'fast';
   percentage: number;
   recommendDietBreaks: boolean;
   reasoning: string[];
 } {
-  const { psychologicalProfile, metabolicHealth, goal } = params;
+  const { goal, stressLevel, foodRelationshipScore, dietHistoryComplexity, motivationLevel } = params;
   const reasoning: string[] = [];
   
-  // Ako nije fat loss, nema deficita
   if (goal === 'maintain') {
-    return { speed: 'moderate', percentage: 0, recommendDietBreaks: false, reasoning: ['Održavanje težine'] };
+    return { speed: 'moderate', percentage: 0, recommendDietBreaks: false, reasoning: ['Održavanje'] };
   }
   
   if (goal === 'muscle_gain') {
-    return { speed: 'moderate', percentage: 10, recommendDietBreaks: false, reasoning: ['Blagi suficit za gradnju mišića'] };
+    return { speed: 'moderate', percentage: 10, recommendDietBreaks: false, reasoning: ['Suficit 10%'] };
   }
   
-  // Fat loss logika
+  // Fat loss logic
   let speedScore = 0;
   
-  // Psihološki faktori
-  if (psychologicalProfile.foodRelationshipScore <= 4) {
+  if (foodRelationshipScore && foodRelationshipScore <= 4) {
     speedScore -= 2;
-    reasoning.push('Kompleksan odnos prema hrani zahtijeva sporiji pristup');
-  } else if (psychologicalProfile.foodRelationshipScore >= 8) {
-    speedScore += 1;
-    reasoning.push('Zdrav odnos prema hrani omogućava brži pristup');
+    reasoning.push('Kompleksan odnos prema hrani → sporiji pristup');
   }
   
-  if (psychologicalProfile.stressLevel === 'extreme' || psychologicalProfile.stressLevel === 'high') {
+  if (stressLevel === 'extreme' || stressLevel === 'high') {
     speedScore -= 2;
-    reasoning.push('Visok stres zahtijeva oprezniji pristup');
+    reasoning.push('Visok stres → sporiji deficit');
   }
   
-  if (psychologicalProfile.dietHistoryComplexity > 5) {
+  if (dietHistoryComplexity && dietHistoryComplexity > 5) {
     speedScore -= 2;
-    reasoning.push('Yo-yo dijeta povijest - potreban sporiji pristup');
+    reasoning.push('Yo-yo dijeta povijest → sporiji pristup');
   }
   
-  if (psychologicalProfile.motivationLevel === 'extreme') {
-    speedScore += 1;
-  } else if (psychologicalProfile.motivationLevel === 'exploring') {
+  if (motivationLevel === 'exploring') {
     speedScore -= 1;
-    reasoning.push('Niska motivacija - sporiji pristup za dugoročnost');
+    reasoning.push('Niska motivacija → sporiji tempo');
   }
   
-  // Metaboličko zdravlje
-  if (metabolicHealth === 'poor') {
-    speedScore -= 2;
-    reasoning.push('Loše metaboličko zdravlje - potreban sporiji deficit');
-  } else if (metabolicHealth === 'excellent') {
-    speedScore += 1;
-    reasoning.push('Odlično metaboličko zdravlje podržava brži deficit');
-  }
-  
-  // Odluka
+  // Determine speed
   let speed: 'slow' | 'moderate' | 'fast';
   let percentage: number;
   let recommendDietBreaks = false;
   
   if (speedScore <= -3) {
     speed = 'slow';
-    percentage = 12.5; // 10-15%
+    percentage = 12.5;
     recommendDietBreaks = true;
-    reasoning.push('Preporuka: spori deficit (10-15%) sa planiranim diet breaks');
+    reasoning.push('Spori deficit (10-15%) + diet breaks');
   } else if (speedScore >= 2) {
     speed = 'fast';
-    percentage = 22.5; // 20-25%
-    reasoning.push('Preporuka: brži deficit (20-25%)');
+    percentage = 22.5;
+    reasoning.push('Brži deficit (20-25%)');
   } else {
     speed = 'moderate';
-    percentage = 17.5; // 15-20%
-    reasoning.push('Preporuka: umjeren deficit (15-20%)');
+    percentage = 17.5;
+    reasoning.push('Umjeren deficit (15-20%)');
   }
   
   return { speed, percentage, recommendDietBreaks, reasoning };
 }
 
-// 7. NEAT Procjena
+/**
+ * NEAT Estimation
+ */
 function estimateNEAT(neatLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active', dee: number): number {
-  const neatMultipliers = {
+  const multipliers = {
     sedentary: 0.15,
     light: 0.20,
     moderate: 0.30,
     active: 0.40,
     very_active: 0.50
   };
-  
-  return Math.round(dee * neatMultipliers[neatLevel]);
+  return dee * multipliers[neatLevel];
 }
 
-// 8. EA (Exercise Activity) Procjena
+/**
+ * EA (Exercise Activity) Estimation
+ */
 function estimateEA(exerciseMinutesPerWeek: number, weight: number): number {
-  // Prosječno 5 kcal/min za umjereni intenzitet
   const caloriesPerMinute = 5;
   const weeklyEA = exerciseMinutesPerWeek * caloriesPerMinute;
-  const dailyEA = weeklyEA / 7;
-  
-  return Math.round(dailyEA);
+  return weeklyEA / 7;
 }
 
-// 9. Makronutrijenti
-function calculateMacros(calories: number, goal: 'fat_loss' | 'maintain' | 'muscle_gain', weight: number, insulinSensitivity: string): {
-  protein: number;
-  carbs: number;
-  fats: number;
-} {
-  // Protein (g/kg tjelesne težine)
-  let proteinGPerKg: number;
-  if (goal === 'muscle_gain') {
-    proteinGPerKg = 2.2;
-  } else if (goal === 'fat_loss') {
-    proteinGPerKg = 2.4;
-  } else {
-    proteinGPerKg = 2.0;
-  }
+/**
+ * Macronutrient Calculation
+ */
+function calculateMacros(
+  calories: number,
+  goal: 'fat_loss' | 'maintain' | 'muscle_gain',
+  weight: number,
+  insulinSensitivity: string
+): { protein: number; carbs: number; fats: number } {
+  // Protein (g/kg)
+  let proteinGPerKg = 2.0;
+  if (goal === 'muscle_gain') proteinGPerKg = 2.2;
+  else if (goal === 'fat_loss') proteinGPerKg = 2.4;
   
-  const protein = Math.round(weight * proteinGPerKg);
-  const proteinCalories = protein * 4;
+  const protein = weight * proteinGPerKg;
+  const proteinCal = protein * 4;
   
-  // Masti (% kalorija)
+  // Fats
   let fatPercentage = 0.25;
   if (insulinSensitivity === 'very_low' || insulinSensitivity === 'low') {
-    fatPercentage = 0.35; // Više masti, manje ugljikohidrata za lošu insulin sensitivity
+    fatPercentage = 0.35;
   }
   
-  const fatCalories = calories * fatPercentage;
-  const fats = Math.round(fatCalories / 9);
+  const fatCal = calories * fatPercentage;
+  const fats = fatCal / 9;
   
-  // Ugljikohidrati (ostatak)
-  const carbsCalories = calories - proteinCalories - fatCalories;
-  const carbs = Math.round(carbsCalories / 4);
+  // Carbs (remainder)
+  const carbsCal = calories - proteinCal - fatCal;
+  const carbs = carbsCal / 4;
   
   return { protein, carbs, fats };
 }
 
-// 10. Glavni Expert System Function
+// ============================================
+// MAIN EXPERT SYSTEM FUNCTION (CORRECTED)
+// ============================================
+
+/**
+ * Calculate Optimal Calories with CORRECTED TEF Calculation (PDF Str. 2-4)
+ * 
+ * CRITICAL FIX: TEF must be recalculated based on ACTUAL planned intake (not maintenance).
+ * This follows the 3-step process from the PDF:
+ * 1. Calculate maintenance TDEE (DEE + NEAT + EA)
+ * 2. Apply deficit/surplus → target calories
+ * 3. Re-calculate TEF based on new macros
+ */
 export function calculateOptimalCalories(clientData: OptimalCaloriesParams): OptimalCaloriesResult {
   const reasoning: string[] = [];
   
-  // 1. Izračunaj DEE
+  // === NEW: Calculate BRI & FLI ===
+  let bri: number | undefined;
+  let fli: number | undefined;
+  
+  if (clientData.height && clientData.waistCircumference) {
+    bri = calculateBRI(clientData.height, clientData.waistCircumference);
+    reasoning.push(`📊 Body Roundness Index (BRI): ${bri.toFixed(2)}`);
+  }
+  
+  if (clientData.waistCircumference && clientData.triglycerides && clientData.ggt) {
+    const bmi = clientData.weight / Math.pow(clientData.height / 100, 2);
+    fli = calculateFLI({
+      bmi,
+      waistCircumference: clientData.waistCircumference,
+      triglycerides: clientData.triglycerides,
+      ggt: clientData.ggt
+    });
+    reasoning.push(`🏥 Fatty Liver Index (FLI): ${fli.toFixed(1)}%`);
+  }
+  
+  // === NEW: Determine Pathway (A or B) ===
+  const leanBodyMass = clientData.weight * (1 - clientData.bodyFatPercentage / 100);
+  const ffmi = leanBodyMass / Math.pow(clientData.height / 100, 2);
+  
+  const pathway = determinePathway({
+    currentWeight: clientData.weight,
+    targetWeight: clientData.targetWeight,
+    targetDate: clientData.targetDate,
+    goal: clientData.goal,
+    currentFFMI: ffmi,
+    gender: clientData.gender
+  });
+  reasoning.push(`\n🎯 PATHWAY: ${pathway.pathway}`);
+  reasoning.push(pathway.reasoning);
+  
+  // === NEW: Two-Phase Model for Pathway A ===
+  let twoPhaseModel: TwoPhaseCaloriesResult | undefined;
+  if (pathway.pathway === 'A' && clientData.targetWeight && clientData.targetDate) {
+    const dee = calculateDEE({
+      age: clientData.age,
+      gender: clientData.gender,
+      height: clientData.height,
+      weight: clientData.weight,
+      bodyFatPercentage: clientData.bodyFatPercentage
+    });
+    
+    twoPhaseModel = calculateTwoPhaseCalories({
+      currentWeight: clientData.weight,
+      targetWeight: clientData.targetWeight,
+      targetDate: clientData.targetDate,
+      dee,
+      gender: clientData.gender
+    });
+    reasoning.push('\n📊 TWO-PHASE MODEL:');
+    reasoning.push(...twoPhaseModel.reasoning);
+  }
+  
+  // === NEW: FFMI Ceiling Check ===
+  let ffmiCeiling: FFMICeilingResult | undefined;
+  if (clientData.goal === 'muscle_gain') {
+    ffmiCeiling = checkFFMICeiling(ffmi, clientData.gender);
+    reasoning.push('\n💪 FFMI CEILING:');
+    reasoning.push(ffmiCeiling.reasoning);
+    
+    if (!ffmiCeiling.canSurplus) {
+      reasoning.push('⚠️ Surplus nije preporučen!');
+    }
+  }
+  
+  // 1. Calculate DEE
   const dee = calculateDEE({
-    weight: clientData.weight,
-    height: clientData.height,
     age: clientData.age,
     gender: clientData.gender,
-    lbm: clientData.lbm,
-    bodyFat: clientData.bodyFat
+    height: clientData.height,
+    weight: clientData.weight,
+    bodyFatPercentage: clientData.bodyFatPercentage
   });
-  reasoning.push(`DEE (Dynamic Energy Expenditure): ${dee} kcal/dan`);
+  reasoning.push(`\n🔥 DEE: ${dee.toFixed(0)} kcal`);
   
-  // 2. Procijeni NEAT
+  // 2. NEAT
   const neat = estimateNEAT(clientData.neatLevel, dee);
-  reasoning.push(`NEAT (Non-Exercise Activity): ${neat} kcal/dan (${clientData.neatLevel})`);
+  reasoning.push(`🚶 NEAT: ${neat.toFixed(0)} kcal (${clientData.neatLevel})`);
   
-  // 3. Procijeni EA
-  const ea = estimateEA(clientData.exerciseMinutesPerWeek, clientData.weight);
-  reasoning.push(`EA (Exercise Activity): ${ea} kcal/dan (${clientData.exerciseMinutesPerWeek} min/tjedan)`);
+  // 3. EA
+  const ea = estimateEA(clientData.exerciseMinutesPerWeek || 0, clientData.weight);
+  reasoning.push(`🏋️ EA: ${ea.toFixed(0)} kcal (${clientData.exerciseMinutesPerWeek || 0} min/tjedan)`);
   
-  // 4. Izračunaj Insulin Sensitivity
-  const insulinSensitivityResult = calculateInsulinSensitivity({
+  // 4. Insulin Sensitivity
+  const insulinSensitivity = calculateInsulinSensitivity({
     ggt: clientData.ggt,
     triglycerides: clientData.triglycerides,
     fastingGlucose: clientData.fastingGlucose,
     hba1c: clientData.hba1c,
     waistCircumference: clientData.waistCircumference,
-    bodyFat: clientData.bodyFat,
+    bodyFatPercentage: clientData.bodyFatPercentage,
     gender: clientData.gender
   });
-  reasoning.push(`Insulin Sensitivity: ${insulinSensitivityResult.score} (score: ${insulinSensitivityResult.numericScore}/100)`);
+  reasoning.push(`🩺 Insulin Sensitivity: ${insulinSensitivity.score} (${insulinSensitivity.numericScore})`);
   
-  // 5. Izračunaj Muscle Potential
-  const musclePotentialResult = calculateMusclePotential({
-    digitRatio: clientData.digitRatio,
+  // 5. Muscle Potential
+  const musclePotential = calculateMusclePotential({
+    digitRatio2D4D: clientData.digitRatio2D4D,
     wristCircumference: clientData.wristCircumference,
     height: clientData.height,
-    gender: clientData.gender
+    gender: clientData.gender,
+    leanBodyMass
   });
-  reasoning.push(`Muscle Potential: ${musclePotentialResult.score} (score: ${musclePotentialResult.numericScore})`);
+  reasoning.push(`💪 Muscle Potential: ${musclePotential.score} (${musclePotential.numericScore})`);
   
-  // 6. Određi metaboličko zdravlje
-  let metabolicHealth: 'excellent' | 'good' | 'fair' | 'poor';
-  if (insulinSensitivityResult.numericScore >= 80) {
-    metabolicHealth = 'excellent';
-  } else if (insulinSensitivityResult.numericScore >= 60) {
-    metabolicHealth = 'good';
-  } else if (insulinSensitivityResult.numericScore >= 40) {
-    metabolicHealth = 'fair';
-  } else {
-    metabolicHealth = 'poor';
+  // 6. Deficit Speed
+  const deficitSpeed = determineDeficitSpeed({
+    goal: clientData.goal,
+    stressLevel: clientData.stressLevel,
+    foodRelationshipScore: clientData.foodRelationshipScore,
+    dietHistoryComplexity: clientData.dietHistoryComplexity,
+    motivationLevel: clientData.motivationLevel,
+    insulinSensitivity: insulinSensitivity.score,
+    musclePotential: musclePotential.score
+  });
+  reasoning.push(`⚡ Deficit Speed: ${deficitSpeed.speed} (${deficitSpeed.percentage}%)`);
+  reasoning.push(...deficitSpeed.reasoning);
+  
+  // 7. Metabolic Adaptation
+  const metabolicAdaptation = (clientData.dietHistoryComplexity || 0) > 3 ? 0.95 : 1.0;
+  if (metabolicAdaptation < 1.0) {
+    reasoning.push(`📉 Metabolička adaptacija: ${((1 - metabolicAdaptation) * 100).toFixed(0)}% smanjenje DEE`);
   }
   
-  // 7. Određi Deficit Speed
-  const deficitSpeedResult = determineDeficitSpeed({
-    psychologicalProfile: {
-      foodRelationshipScore: clientData.foodRelationshipScore || 5,
-      stressLevel: clientData.stressLevel || 'moderate',
-      dietHistoryComplexity: clientData.dietHistoryComplexity || 0,
-      timeAvailabilityMinutes: clientData.timeAvailabilityMinutes,
-      motivationLevel: clientData.motivationLevel || 'moderate'
-    },
-    metabolicHealth,
-    goal: clientData.goal
-  });
-  reasoning.push(...deficitSpeedResult.reasoning);
+  // 8. CORRECTED ADAPTIVE TDEE (3-Step TEF Process)
+  const adaptedDEE = dee * metabolicAdaptation;
+  const maintenanceTDEE = adaptedDEE + neat + ea;
   
-  // 8. Privremeni TDEE (bez TEF-a)
-  const baseTDEE = dee + neat + ea;
-  
-  // 9. Izračunaj makronutrijente za preporučene kalorije
-  let targetCalories: number;
-  if (clientData.goal === 'maintain') {
-    targetCalories = baseTDEE;
+  // Apply deficit/surplus
+  let targetCalories = maintenanceTDEE;
+  if (clientData.goal === 'fat_loss') {
+    targetCalories = maintenanceTDEE * (1 - deficitSpeed.percentage / 100);
   } else if (clientData.goal === 'muscle_gain') {
-    targetCalories = Math.round(baseTDEE * (1 + deficitSpeedResult.percentage / 100));
-  } else {
-    targetCalories = Math.round(baseTDEE * (1 - deficitSpeedResult.percentage / 100));
+    targetCalories = maintenanceTDEE * 1.10;
   }
   
-  const macros = calculateMacros(targetCalories, clientData.goal, clientData.weight, insulinSensitivityResult.score);
+  // Re-calculate macros for target calories
+  const macros = calculateMacros(targetCalories, clientData.goal, clientData.weight, insulinSensitivity.score);
   
-  // 10. Izračunaj TEF korekciju
-  let dietType: DietType = 'balanced';
-  if (macros.protein >= clientData.weight * 2.2) {
-    dietType = 'high_protein';
-  } else if (macros.protein < clientData.weight * 1.6) {
-    dietType = 'low_protein';
-  }
+  // Re-calculate TEF based on ACTUAL planned intake
+  const proteinPercent = (macros.protein * 4) / targetCalories;
+  let dietType: DietType = 'standard';
+  if (proteinPercent > 0.30) dietType = 'higher_protein';
+  else if ((macros.carbs * 4) / targetCalories > 0.50) dietType = 'high_carb';
   
   const tef = calculateTEF({
     calories: targetCalories,
@@ -566,55 +749,43 @@ export function calculateOptimalCalories(clientData: OptimalCaloriesParams): Opt
     fatsGrams: macros.fats,
     dietType
   });
-  reasoning.push(`TEF (Thermic Effect of Food): ${tef} kcal/dan (${dietType} dijeta)`);
   
-  // 11. Metabolička adaptacija (ako ima povijest dijeta)
-  let metabolicAdaptation = 0;
-  if (clientData.dietHistoryComplexity && clientData.dietHistoryComplexity > 3) {
-    metabolicAdaptation = Math.round(dee * 0.05); // 5% smanjenje zbog metaboličke adaptacije
-    reasoning.push(`Metabolička Adaptacija: -${metabolicAdaptation} kcal/dan (zbog yo-yo dijeta povijesti)`);
-  }
+  const adaptiveTDEE = adaptedDEE + neat + ea + tef;
   
-  // 12. Finalni Adaptive TDEE
-  const adaptiveTDEE = calculateAdaptiveTDEE({
-    dee,
-    neat,
-    ea,
-    tef,
-    metabolicAdaptation
-  });
-  reasoning.push(`Adaptive TDEE (finalni): ${adaptiveTDEE} kcal/dan`);
+  reasoning.push(`\n📊 ADAPTIVE TDEE (CORRECTED):`);
+  reasoning.push(`   Maintenance: ${maintenanceTDEE.toFixed(0)} kcal`);
+  reasoning.push(`   Target: ${targetCalories.toFixed(0)} kcal`);
+  reasoning.push(`   TEF (recalculated): ${tef.toFixed(0)} kcal`);
+  reasoning.push(`   Adaptive TDEE: ${adaptiveTDEE.toFixed(0)} kcal`);
   
-  // 13. Primijeni deficit/surplus
-  let recommendedCalories: number;
-  if (clientData.goal === 'maintain') {
-    recommendedCalories = adaptiveTDEE;
-  } else if (clientData.goal === 'muscle_gain') {
-    recommendedCalories = Math.round(adaptiveTDEE * (1 + deficitSpeedResult.percentage / 100));
-    reasoning.push(`Preporučeni suficit: +${deficitSpeedResult.percentage}% = ${recommendedCalories} kcal/dan`);
-  } else {
-    recommendedCalories = Math.round(adaptiveTDEE * (1 - deficitSpeedResult.percentage / 100));
-    reasoning.push(`Preporučeni deficit: -${deficitSpeedResult.percentage}% = ${recommendedCalories} kcal/dan`);
-  }
+  reasoning.push(`\n📋 MAKRONUTRIJENTI:`);
+  reasoning.push(`   Proteini: ${macros.protein.toFixed(0)}g (${((macros.protein * 4 / targetCalories) * 100).toFixed(0)}%)`);
+  reasoning.push(`   Ugljikohidrati: ${macros.carbs.toFixed(0)}g (${((macros.carbs * 4 / targetCalories) * 100).toFixed(0)}%)`);
+  reasoning.push(`   Masti: ${macros.fats.toFixed(0)}g (${((macros.fats * 9 / targetCalories) * 100).toFixed(0)}%)`);
   
-  // 14. Prepočet makronurijenata sa finalnim kalorijama
-  const finalMacros = calculateMacros(recommendedCalories, clientData.goal, clientData.weight, insulinSensitivityResult.score);
-  
-  if (deficitSpeedResult.recommendDietBreaks) {
-    reasoning.push('⚠️ Preporuka: Uključi planirane diet breaks svaka 6-8 tjedana');
+  if (deficitSpeed.recommendDietBreaks) {
+    reasoning.push('\n⚠️ Preporučeni diet breaks svaka 6-8 tjedana');
   }
   
   return {
-    recommendedCalories,
-    protein: finalMacros.protein,
-    carbs: finalMacros.carbs,
-    fats: finalMacros.fats,
+    recommendedCalories: Math.round(targetCalories),
+    protein: Math.round(macros.protein),
+    carbs: Math.round(macros.carbs),
+    fats: Math.round(macros.fats),
     dee,
     tef,
+    neat,
+    ea,
+    maintenanceTDEE,
     adaptiveTDEE,
-    insulinSensitivity: insulinSensitivityResult.score,
-    musclePotential: musclePotentialResult.score,
-    deficitSpeed: deficitSpeedResult.speed,
+    insulinSensitivity,
+    musclePotential,
+    deficitSpeed,
+    pathway,
+    twoPhaseModel,
+    ffmiCeiling,
+    bri,
+    fli,
     reasoning
   };
 }

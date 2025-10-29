@@ -250,6 +250,53 @@ export type Database = {
           },
         ]
       }
+      client_goals: {
+        Row: {
+          client_id: string
+          created_at: string
+          goal: Database["public"]["Enums"]["goal_type"]
+          id: string
+          is_active: boolean | null
+          pathway: Database["public"]["Enums"]["pathway_type"]
+          target_date: string | null
+          target_ffmi: number | null
+          target_weight: number | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          goal: Database["public"]["Enums"]["goal_type"]
+          id?: string
+          is_active?: boolean | null
+          pathway: Database["public"]["Enums"]["pathway_type"]
+          target_date?: string | null
+          target_ffmi?: number | null
+          target_weight?: number | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          goal?: Database["public"]["Enums"]["goal_type"]
+          id?: string
+          is_active?: boolean | null
+          pathway?: Database["public"]["Enums"]["pathway_type"]
+          target_date?: string | null
+          target_ffmi?: number | null
+          target_weight?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_goals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_habits: {
         Row: {
           client_id: string
@@ -285,6 +332,44 @@ export type Database = {
             columns: ["habit_id"]
             isOneToOne: false
             referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_metabolic_indices: {
+        Row: {
+          bri_score: number | null
+          client_id: string
+          created_at: string
+          fli_score: number | null
+          id: string
+          measurement_date: string
+          updated_at: string
+        }
+        Insert: {
+          bri_score?: number | null
+          client_id: string
+          created_at?: string
+          fli_score?: number | null
+          id?: string
+          measurement_date?: string
+          updated_at?: string
+        }
+        Update: {
+          bri_score?: number | null
+          client_id?: string
+          created_at?: string
+          fli_score?: number | null
+          id?: string
+          measurement_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_metabolic_indices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -1389,6 +1474,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "client"
+      goal_type: "fat_loss" | "muscle_gain" | "maintain"
+      pathway_type: "pathway_a" | "pathway_b"
       questionnaire_status: "sent" | "viewed" | "completed"
     }
     CompositeTypes: {
@@ -1518,6 +1605,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "client"],
+      goal_type: ["fat_loss", "muscle_gain", "maintain"],
+      pathway_type: ["pathway_a", "pathway_b"],
       questionnaire_status: ["sent", "viewed", "completed"],
     },
   },
