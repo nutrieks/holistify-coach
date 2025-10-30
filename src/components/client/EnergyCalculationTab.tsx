@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { calculateIdealBodyWeight, calculateAdjustedWeight, calculateREE } from "@/utils/anthropometricCalculations";
 import MetabolicDataTab from "./MetabolicDataTab";
 import PsychologicalDataTab from "./PsychologicalDataTab";
+import DailyTrackingTab from "./DailyTrackingTab";
 import FinalCalculationTab from "./FinalCalculationTab";
 
 interface EnergyCalculationTabProps {
@@ -241,12 +242,13 @@ export default function EnergyCalculationTab({
         </CardContent>
       </Card>
 
-      {/* Results Section with 4 Tabs */}
+      {/* Results Section with 5 Tabs */}
       <Tabs defaultValue="osnovno" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="osnovno">Osnovno</TabsTrigger>
           <TabsTrigger value="metabolicko">Metaboličko</TabsTrigger>
           <TabsTrigger value="psiholosko">Psihološko</TabsTrigger>
+          <TabsTrigger value="tracking">Praćenje</TabsTrigger>
           <TabsTrigger value="finalno">Finalni Unos</TabsTrigger>
         </TabsList>
 
@@ -440,23 +442,17 @@ export default function EnergyCalculationTab({
           </Card>
         </TabsContent>
 
-        {/* Tab 3: Psihološko - Placeholder for Sprint 3 */}
+        {/* Tab 3: Psihološko */}
         <TabsContent value="psiholosko" className="space-y-4">
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Activity className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">Psihološki Profil</h3>
-              <p className="text-muted-foreground">
-                Analiza odnosa prema hrani, razine stresa i preporučene brzine deficita.
-              </p>
-              <p className="text-sm text-muted-foreground mt-4">
-                Ova sekcija će biti dostupna nakon što klijent ispuni Inicijalni Coaching Upitnik.
-              </p>
-            </CardContent>
-          </Card>
+          <PsychologicalDataTab clientId={clientId} />
         </TabsContent>
 
-        {/* Tab 4: Finalni Unos - Main Summary */}
+        {/* Tab 4: Dnevno Praćenje (FAZA 2) */}
+        <TabsContent value="tracking" className="space-y-4">
+          <DailyTrackingTab clientId={clientId} />
+        </TabsContent>
+
+        {/* Tab 5: Finalni Unos - Main Summary */}
         <TabsContent value="finalno" className="space-y-4">
           {averageTDEE && averageTarget ? (
             <>

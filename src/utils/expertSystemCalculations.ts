@@ -56,6 +56,116 @@ export function calculateFLI(params: {
 }
 
 // ============================================
+// DAILY ADAPTIVE TRACKING (PDF Str. 26-31)
+// ============================================
+
+export interface DailyTrackingEntry {
+  date: Date;
+  weight: number;
+  caloriesConsumed: number;
+  weightEWMA?: number;
+  storeChange?: number;
+  adaptiveTDEE?: number;
+}
+
+/**
+ * EWMA Weight Trend (PDF Str. 26-27)
+ * Formula: EWMA_today = alpha × Weight_today + (1 - alpha) × EWMA_yesterday
+ * @param weights Array of {date, weight} ordered chronologically
+ * @param alpha Smoothing factor (default 0.3 per PDF)
+ */
+export function calculateEWMA(
+  weights: Array<{ date: Date; weight: number }>,
+  alpha: number = 0.3
+): number[] {
+  if (weights.length === 0) return [];
+  
+  const ewmaValues: number[] = [];
+  ewmaValues[0] = weights[0].weight; // Initialize with first weight
+  
+  for (let i = 1; i < weights.length; i++) {
+    ewmaValues[i] = alpha * weights[i].weight + (1 - alpha) * ewmaValues[i - 1];
+  }
+  
+  return ewmaValues;
+}
+
+/**
+ * Daily Change in Energy Stores (PDF Str. 28)
+ * Formula: ΔStores = (Weight_today - Weight_yesterday) × 7700 kcal
+ */
+export function calculateDailyStoreChange(
+  weightToday: number,
+  weightYesterday: number
+): number {
+  return (weightToday - weightYesterday) * 7700;
+}
+
+/**
+ * Weighted 7-Day Adaptive TDEE (PDF Str. 29-30)
+ * TDEE_daily = Calories_consumed + ΔStores
+ * Weighted average with recent days having more weight
+ */
+export function calculateWeightedAdaptiveTDEE(
+  dailyData: Array<{
+    caloriesConsumed: number;
+    storeChange: number;
+  }>
+): number {
+  if (dailyData.length === 0) return 0;
+  
+  // Weights from PDF Str. 29: Most recent = 0.25, oldest = 0.05
+  const weights = [0.25, 0.20, 0.15, 0.15, 0.10, 0.10, 0.05];
+  
+  // If less than 7 days, normalize weights
+  const numDays = Math.min(dailyData.length, 7);
+  const applicableWeights = weights.slice(0, numDays);
+  const weightSum = applicableWeights.reduce((sum, w) => sum + w, 0);
+  
+  let weightedTDEE = 0;
+  for (let i = 0; i < numDays; i++) {
+    const dailyTDEE = dailyData[i].caloriesConsumed + dailyData[i].storeChange;
+    weightedTDEE += dailyTDEE * (applicableWeights[i] / weightSum);
+  }
+  
+  return weightedTDEE;
+}
+
+/**
+ * Fast Adaptation Mode Check (PDF Str. 31)
+ * Enable if weight loss < 0.5% per week during fat loss phase
+ */
+export function shouldEnableFastAdaptation(
+  goalType: 'fat_loss' | 'muscle_gain' | 'maintain',
+  weeklyWeightChange: number,
+  targetWeeklyChange: number
+): {
+  shouldEnable: boolean;
+  reasoning: string;
+} {
+  if (goalType !== 'fat_loss') {
+    return {
+      shouldEnable: false,
+      reasoning: 'Fast Adaptation samo za fazu smanjenja težine'
+    };
+  }
+  
+  const weeklyChangePercentage = Math.abs(weeklyWeightChange);
+  
+  if (weeklyChangePercentage < 0.005) { // Less than 0.5%
+    return {
+      shouldEnable: true,
+      reasoning: `Gubitak težine ${(weeklyChangePercentage * 100).toFixed(2)}% < 0.5% tjedno → Aktiviraj Fast Adaptation`
+    };
+  }
+  
+  return {
+    shouldEnable: false,
+    reasoning: `Gubitak težine ${(weeklyChangePercentage * 100).toFixed(2)}% ≥ 0.5% tjedno → Nastaviti standardno`
+  };
+}
+
+// ============================================
 // PATHWAY A vs B LOGIC (PDF Str. 17-24)
 // ============================================
 

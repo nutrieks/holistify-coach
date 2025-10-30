@@ -250,6 +250,53 @@ export type Database = {
           },
         ]
       }
+      client_daily_tracking: {
+        Row: {
+          adaptive_tdee_7day: number | null
+          client_id: string
+          created_at: string
+          daily_calories_consumed: number | null
+          daily_change_in_stores: number | null
+          daily_weight: number | null
+          id: string
+          tracking_date: string
+          updated_at: string
+          weight_ewma: number | null
+        }
+        Insert: {
+          adaptive_tdee_7day?: number | null
+          client_id: string
+          created_at?: string
+          daily_calories_consumed?: number | null
+          daily_change_in_stores?: number | null
+          daily_weight?: number | null
+          id?: string
+          tracking_date: string
+          updated_at?: string
+          weight_ewma?: number | null
+        }
+        Update: {
+          adaptive_tdee_7day?: number | null
+          client_id?: string
+          created_at?: string
+          daily_calories_consumed?: number | null
+          daily_change_in_stores?: number | null
+          daily_weight?: number | null
+          id?: string
+          tracking_date?: string
+          updated_at?: string
+          weight_ewma?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_daily_tracking_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_goals: {
         Row: {
           client_id: string
