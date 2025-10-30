@@ -58,18 +58,17 @@ export default function MetabolicDataTab({ clientId }: MetabolicDataTabProps) {
         triglycerides: biochemicalData.triglycerides || 150,
         fastingGlucose: biochemicalData.fasting_glucose || 90,
         hba1c: biochemicalData.hba1c || 5.5,
-        waistCircumference: anthropometricData.waist_circumference || 85,
-        bodyFat: anthropometricData.body_fat_manual || anthropometricData.body_fat_navy || undefined,
-        gender: anthropometricData.gender || 'male',
+        waistCircumference: anthropometricData.waist_circumference || 85
       })
     : null;
 
   const musclePotential = anthropometricData
     ? calculateMusclePotential({
         wristCircumference: anthropometricData.wrist_circumference || 17,
-        digitRatio: anthropometricData.digit_ratio_2d4d || 0.95,
         height: anthropometricData.height || 175,
         gender: anthropometricData.gender || 'male',
+        leanBodyMass: anthropometricData.lean_body_mass || (anthropometricData.weight || 70) * 0.75,
+        digitRatio2D4D: anthropometricData.digit_ratio_2d4d || undefined
       })
     : null;
 

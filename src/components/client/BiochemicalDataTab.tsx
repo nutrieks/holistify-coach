@@ -78,8 +78,7 @@ export default function BiochemicalDataTab({
         triglycerides: parseFloat(triglycerides),
         fastingGlucose: parseFloat(fastingGlucose),
         hba1c: hba1c ? parseFloat(hba1c) : undefined,
-        waistCircumference: latestAnthropometricData?.waist_circumference || undefined,
-        bodyFat: latestAnthropometricData?.body_fat_navy || undefined
+        waistCircumference: latestAnthropometricData?.waist_circumference || undefined
       })
     : null;
 

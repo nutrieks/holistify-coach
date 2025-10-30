@@ -125,15 +125,15 @@ export default function ExpertSystemRecommendations({ result, clientName = "Klij
           <div className="grid md:grid-cols-3 gap-4 mt-4">
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <p className="text-xs text-muted-foreground">Insulin Sensitivity</p>
-              <Badge className="mt-2">{result.insulinSensitivity.toUpperCase()}</Badge>
+              <Badge className="mt-2">{result.insulinSensitivity.score.toUpperCase()}</Badge>
             </div>
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <p className="text-xs text-muted-foreground">Muscle Potential</p>
-              <Badge className="mt-2">{result.musclePotential.toUpperCase()}</Badge>
+              <Badge className="mt-2">{result.musclePotential.score.toUpperCase()}</Badge>
             </div>
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <p className="text-xs text-muted-foreground">Deficit Speed</p>
-              <Badge className="mt-2">{result.deficitSpeed.toUpperCase()}</Badge>
+              <Badge className="mt-2">{result.deficitSpeed.speed.toUpperCase()}</Badge>
             </div>
           </div>
         </CardContent>

@@ -130,9 +130,9 @@ export default function ExpertSystemPDFExport({
   <p><strong>Adaptive TDEE:</strong> ${Math.round(result.adaptiveTDEE)} kcal</p>
 
   <h2>Metabolički Profil</h2>
-  <p><span class="badge">Insulin Sensitivity: ${result.insulinSensitivity.toUpperCase()}</span></p>
-  <p><span class="badge">Muscle Potential: ${result.musclePotential.toUpperCase()}</span></p>
-  <p><span class="badge">Deficit Speed: ${result.deficitSpeed.toUpperCase()}</span></p>
+  <p><span class="badge">Insulin Sensitivity: ${result.insulinSensitivity.score.toUpperCase()}</span></p>
+  <p><span class="badge">Muscle Potential: ${result.musclePotential.score.toUpperCase()}</span></p>
+  <p><span class="badge">Deficit Speed: ${result.deficitSpeed.speed.toUpperCase()}</span></p>
 
   <h2>Razlozi za Preporuke</h2>
   ${result.reasoning.map(reason => `<div class="reasoning">✓ ${reason}</div>`).join('')}
