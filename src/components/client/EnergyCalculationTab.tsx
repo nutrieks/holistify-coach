@@ -10,6 +10,7 @@ import { calculateIdealBodyWeight, calculateAdjustedWeight, calculateREE } from 
 import MetabolicDataTab from "./MetabolicDataTab";
 import PsychologicalDataTab from "./PsychologicalDataTab";
 import DailyTrackingTab from "./DailyTrackingTab";
+import { ProjectionsTab } from "./ProjectionsTab";
 import FinalCalculationTab from "./FinalCalculationTab";
 
 interface EnergyCalculationTabProps {
@@ -244,11 +245,12 @@ export default function EnergyCalculationTab({
 
       {/* Results Section with 5 Tabs */}
       <Tabs defaultValue="osnovno" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="osnovno">Osnovno</TabsTrigger>
           <TabsTrigger value="metabolicko">Metaboličko</TabsTrigger>
           <TabsTrigger value="psiholosko">Psihološko</TabsTrigger>
           <TabsTrigger value="tracking">Praćenje</TabsTrigger>
+          <TabsTrigger value="projekcije">Projekcije</TabsTrigger>
           <TabsTrigger value="finalno">Finalni Unos</TabsTrigger>
         </TabsList>
 
@@ -452,7 +454,12 @@ export default function EnergyCalculationTab({
           <DailyTrackingTab clientId={clientId} />
         </TabsContent>
 
-        {/* Tab 5: Finalni Unos - Main Summary */}
+        {/* Tab 5: Projekcije (FAZA 3) */}
+        <TabsContent value="projekcije" className="space-y-4">
+          <ProjectionsTab clientId={clientId} targetCalories={averageTarget ?? undefined} />
+        </TabsContent>
+
+        {/* Tab 6: Finalni Unos - Main Summary */}
         <TabsContent value="finalno" className="space-y-4">
           {averageTDEE && averageTarget ? (
             <>
