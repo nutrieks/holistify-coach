@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Activity, TrendingUp, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { calculateInsulinSensitivity, calculateMusclePotential } from "@/utils/expertSystemCalculations";
+import { calculateInsulinSensitivity, calculateMusclePotential, calculateBRI, calculateFLI } from "@/utils/expertSystemCalculations";
 
 interface MetabolicDataTabProps {
   clientId: string;
@@ -91,8 +91,105 @@ export default function MetabolicDataTab({ clientId }: MetabolicDataTabProps) {
     }
   };
 
+  const getBRIColor = (bri: number) => {
+    if (bri < 3) return "text-green-600 bg-green-50";
+    if (bri < 5) return "text-yellow-600 bg-yellow-50";
+    if (bri < 7) return "text-orange-600 bg-orange-50";
+    return "text-red-600 bg-red-50";
+  };
+
+  const getBRIRisk = (bri: number) => {
+    if (bri < 3) return "Nizak rizik";
+    if (bri < 5) return "Umjeren rizik";
+    if (bri < 7) return "Visok rizik";
+    return "Vrlo visok rizik";
+  };
+
+  const getFLIColor = (fli: number) => {
+    if (fli < 30) return "text-green-600 bg-green-50";
+    if (fli < 60) return "text-yellow-600 bg-yellow-50";
+    return "text-red-600 bg-red-50";
+  };
+
+  const getFLIRisk = (fli: number) => {
+    if (fli < 30) return "Nizak rizik";
+    if (fli < 60) return "Umjeren rizik";
+    return "Visok rizik";
+  };
+
+  // Calculate BRI and FLI
+  const bri = anthropometricData?.height && anthropometricData?.waist_circumference
+    ? calculateBRI(anthropometricData.height, anthropometricData.waist_circumference)
+    : null;
+
+  const fli = biochemicalData && anthropometricData
+    ? (() => {
+        const weight = anthropometricData.weight || 0;
+        const height = anthropometricData.height || 0;
+        const bmi = height > 0 ? weight / ((height / 100) ** 2) : 0;
+        
+        return biochemicalData.triglycerides && biochemicalData.ggt && anthropometricData.waist_circumference
+          ? calculateFLI({
+              bmi,
+              waistCircumference: anthropometricData.waist_circumference,
+              triglycerides: biochemicalData.triglycerides,
+              ggt: biochemicalData.ggt
+            })
+          : null;
+      })()
+    : null;
+
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* BRI Card */}
+      {bri !== null && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Body Roundness Index (BRI)</CardTitle>
+            <CardDescription>Indikator tjelesne zaobljenosti i metaboličkog rizika</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">{bri.toFixed(2)}</span>
+              <Badge className={getBRIColor(bri)}>{getBRIRisk(bri)}</Badge>
+            </div>
+            <Progress value={Math.min((bri / 10) * 100, 100)} className="h-2" />
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p><strong>Visina:</strong> {anthropometricData?.height} cm</p>
+              <p><strong>Opseg struka:</strong> {anthropometricData?.waist_circumference} cm</p>
+              <p className="pt-2 text-xs">
+                BRI koristi visinu i opseg struka za procjenu distribucije tjelesne masti i kardiovaskularnog rizika.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* FLI Card */}
+      {fli !== null && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Fatty Liver Index (FLI)</CardTitle>
+            <CardDescription>Procjena rizika od masne jetre</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">{fli.toFixed(1)}</span>
+              <Badge className={getFLIColor(fli)}>{getFLIRisk(fli)}</Badge>
+            </div>
+            <Progress value={Math.min(fli, 100)} className="h-2" />
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p><strong>Trigliceridi:</strong> {biochemicalData?.triglycerides} mg/dL</p>
+              <p><strong>GGT:</strong> {biochemicalData?.ggt} U/L</p>
+              <p><strong>Opseg struka:</strong> {anthropometricData?.waist_circumference} cm</p>
+              <p className="pt-2 text-xs">
+                FLI {"<"} 30: Nizak rizik | FLI 30-60: Umjeren rizik | FLI {">"} 60: Visok rizik od masne jetre
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Insulin Sensitivity Score */}
       <Card>
         <CardHeader>
