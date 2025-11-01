@@ -36,6 +36,18 @@ export default function BiochemicalDataTab({
   const [fastingGlucose, setFastingGlucose] = useState("");
   const [hba1c, setHba1c] = useState("");
   const [notes, setNotes] = useState("");
+  
+  // Insulin Sensitivity Questionnaire (10 questions, 1-5 scale)
+  const [q1, setQ1] = useState(3); // Post-meal energy
+  const [q2, setQ2] = useState(3); // Morning wake-up
+  const [q3, setQ3] = useState(3); // Appetite stability
+  const [q4, setQ4] = useState(3); // Sugar cravings
+  const [q5, setQ5] = useState(3); // Post-exercise energy
+  const [q6, setQ6] = useState(3); // Menstrual regularity (if applicable)
+  const [q7, setQ7] = useState(3); // Mental focus
+  const [q8, setQ8] = useState(3); // Sleep quality
+  const [q9, setQ9] = useState(3); // Stress level
+  const [q10, setQ10] = useState(3); // Water retention
 
   // Load existing data
   useEffect(() => {
@@ -70,6 +82,12 @@ export default function BiochemicalDataTab({
   };
 
   const isComplete = !!(ggt && triglycerides && fastingGlucose);
+  
+  // Calculate subjective insulin sensitivity score (inverse scoring: lower = better)
+  const subjectiveScore = ((50 - (q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8 + q9 + q10)) / 40) * 100;
+  const subjectiveRating = subjectiveScore >= 75 ? 'high' : 
+                           subjectiveScore >= 50 ? 'moderate' : 
+                           subjectiveScore >= 25 ? 'low' : 'very_low';
 
   // Calculate insulin sensitivity score
   const insulinSensitivityResult = isComplete
@@ -200,6 +218,254 @@ export default function BiochemicalDataTab({
             )}
           </div>
         </CardHeader>
+      </Card>
+
+      {/* Insulin Sensitivity Questionnaire */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Insulin Sensitivity Questionnaire
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Subjektivna procjena inzulinske osjetljivosti (1 = najbolje, 5 = najgore)
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Question 1 */}
+          <div className="space-y-2">
+            <Label>1. Kako se osjećate nakon obroka bogatog ugljikohidratima?</Label>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Odlično</span>
+              {[1, 2, 3, 4, 5].map(val => (
+                <Button
+                  key={val}
+                  type="button"
+                  variant={q1 === val ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQ1(val)}
+                  className="w-10 h-10"
+                >
+                  {val}
+                </Button>
+              ))}
+              <span className="text-xs text-muted-foreground">Umorno/pospanije</span>
+            </div>
+          </div>
+
+          {/* Question 2 */}
+          <div className="space-y-2">
+            <Label>2. Koliko brzo se razbudite ujutro?</Label>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Odmah</span>
+              {[1, 2, 3, 4, 5].map(val => (
+                <Button
+                  key={val}
+                  type="button"
+                  variant={q2 === val ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQ2(val)}
+                  className="w-10 h-10"
+                >
+                  {val}
+                </Button>
+              ))}
+              <span className="text-xs text-muted-foreground">Teško ustajanje</span>
+            </div>
+          </div>
+
+          {/* Question 3 */}
+          <div className="space-y-2">
+            <Label>3. Kako bi opisali svoj apetit kroz dan?</Label>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Stabilan</span>
+              {[1, 2, 3, 4, 5].map(val => (
+                <Button
+                  key={val}
+                  type="button"
+                  variant={q3 === val ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQ3(val)}
+                  className="w-10 h-10"
+                >
+                  {val}
+                </Button>
+              ))}
+              <span className="text-xs text-muted-foreground">Česte gladi</span>
+            </div>
+          </div>
+
+          {/* Question 4 */}
+          <div className="space-y-2">
+            <Label>4. Kako često osjećate žudnju za slatkim?</Label>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Rijetko</span>
+              {[1, 2, 3, 4, 5].map(val => (
+                <Button
+                  key={val}
+                  type="button"
+                  variant={q4 === val ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQ4(val)}
+                  className="w-10 h-10"
+                >
+                  {val}
+                </Button>
+              ))}
+              <span className="text-xs text-muted-foreground">Stalno</span>
+            </div>
+          </div>
+
+          {/* Question 5 */}
+          <div className="space-y-2">
+            <Label>5. Kako se osjećate nakon vježbanja?</Label>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Energično</span>
+              {[1, 2, 3, 4, 5].map(val => (
+                <Button
+                  key={val}
+                  type="button"
+                  variant={q5 === val ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQ5(val)}
+                  className="w-10 h-10"
+                >
+                  {val}
+                </Button>
+              ))}
+              <span className="text-xs text-muted-foreground">Iscrpljeno dugo</span>
+            </div>
+          </div>
+
+          {/* Question 6 */}
+          <div className="space-y-2">
+            <Label>6. Menstrualna regularnost (za žene) / Hormonska stabilnost (za muškarce)</Label>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Redovna</span>
+              {[1, 2, 3, 4, 5].map(val => (
+                <Button
+                  key={val}
+                  type="button"
+                  variant={q6 === val ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQ6(val)}
+                  className="w-10 h-10"
+                >
+                  {val}
+                </Button>
+              ))}
+              <span className="text-xs text-muted-foreground">Nepravilna</span>
+            </div>
+          </div>
+
+          {/* Question 7 */}
+          <div className="space-y-2">
+            <Label>7. Kako bi opisali svoju mentalnu koncentraciju?</Label>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Fokusirana</span>
+              {[1, 2, 3, 4, 5].map(val => (
+                <Button
+                  key={val}
+                  type="button"
+                  variant={q7 === val ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQ7(val)}
+                  className="w-10 h-10"
+                >
+                  {val}
+                </Button>
+              ))}
+              <span className="text-xs text-muted-foreground">Magla</span>
+            </div>
+          </div>
+
+          {/* Question 8 */}
+          <div className="space-y-2">
+            <Label>8. Koliko često se budite noću?</Label>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Rijetko</span>
+              {[1, 2, 3, 4, 5].map(val => (
+                <Button
+                  key={val}
+                  type="button"
+                  variant={q8 === val ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQ8(val)}
+                  className="w-10 h-10"
+                >
+                  {val}
+                </Button>
+              ))}
+              <span className="text-xs text-muted-foreground">Često</span>
+            </div>
+          </div>
+
+          {/* Question 9 */}
+          <div className="space-y-2">
+            <Label>9. Kako biste ocijenili svoju razinu stresa?</Label>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Niska</span>
+              {[1, 2, 3, 4, 5].map(val => (
+                <Button
+                  key={val}
+                  type="button"
+                  variant={q9 === val ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQ9(val)}
+                  className="w-10 h-10"
+                >
+                  {val}
+                </Button>
+              ))}
+              <span className="text-xs text-muted-foreground">Visoka</span>
+            </div>
+          </div>
+
+          {/* Question 10 */}
+          <div className="space-y-2">
+            <Label>10. Kako bi opisali zadržavanje vode u tijelu?</Label>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Ne</span>
+              {[1, 2, 3, 4, 5].map(val => (
+                <Button
+                  key={val}
+                  type="button"
+                  variant={q10 === val ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setQ10(val)}
+                  className="w-10 h-10"
+                >
+                  {val}
+                </Button>
+              ))}
+              <span className="text-xs text-muted-foreground">Često</span>
+            </div>
+          </div>
+
+          {/* Subjective Score Display */}
+          <div className="pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Subjektivni Score:</p>
+                <p className="text-2xl font-bold">{subjectiveScore.toFixed(0)}/100</p>
+              </div>
+              <Badge 
+                variant="outline"
+                className={
+                  subjectiveRating === 'high' ? 'bg-green-500/10 text-green-500' :
+                  subjectiveRating === 'moderate' ? 'bg-yellow-500/10 text-yellow-500' :
+                  subjectiveRating === 'low' ? 'bg-orange-500/10 text-orange-500' :
+                  'bg-red-500/10 text-red-500'
+                }
+              >
+                {subjectiveRating.toUpperCase()}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Ovaj subjektivni upitnik dopunjuje objektivne laboratorijske nalaze.
+            </p>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Input Fields */}
