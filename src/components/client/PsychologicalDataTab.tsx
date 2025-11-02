@@ -2,16 +2,27 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Brain, Heart, Clock, TrendingDown, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Brain, Heart, Clock, TrendingDown, Target, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface PsychologicalDataTabProps {
   clientId: string;
 }
 
 export default function PsychologicalDataTab({ clientId }: PsychologicalDataTabProps) {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  
+  // Questionnaire state (1-5 scale)
+  const [emotionalEating, setEmotionalEating] = useState<number>(3);
+  const [motivation, setMotivation] = useState<number>(3);
+  const [dietSuccess, setDietSuccess] = useState<number>(3);
+  const [timeAvailable, setTimeAvailable] = useState<number>(3);
 
   useEffect(() => {
     loadProfile();
@@ -84,8 +95,137 @@ export default function PsychologicalDataTab({ clientId }: PsychologicalDataTabP
     }
   };
 
+  const handleSaveQuestionnaire = async () => {
+    setSaving(true);
+    try {
+      // Calculate scores
+      const foodRelationshipScore = (6 - emotionalEating) * 2; // Inverted: less emotional = better score
+      const motivationLevel = motivation >= 4 ? "high" : motivation >= 3 ? "moderate" : "low";
+      const stressLevel = emotionalEating >= 4 ? "high" : emotionalEating >= 3 ? "moderate" : "low";
+      const dietHistoryComplexity = 6 - dietSuccess; // Less success = more complexity
+      const timeAvailabilityMinutes = timeAvailable * 60; // 1-5 scale to minutes (60-300)
+      const recommendedDeficitSpeed = 
+        (stressLevel === "high" || dietHistoryComplexity >= 4) ? "slow" :
+        (stressLevel === "low" && motivationLevel === "high") ? "fast" : "moderate";
+
+      const { error } = await supabase
+        .from("client_psychological_profile")
+        .upsert({
+          client_id: clientId,
+          food_relationship_score: foodRelationshipScore,
+          stress_level: stressLevel,
+          motivation_level: motivationLevel,
+          diet_history_complexity: dietHistoryComplexity,
+          time_availability_minutes: timeAvailabilityMinutes,
+          recommended_deficit_speed: recommendedDeficitSpeed,
+          mental_priorities: [],
+          calculated_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Uspješno spremljeno",
+        description: "Psihološki profil je ažuriran.",
+      });
+
+      loadProfile();
+    } catch (error) {
+      console.error("Error saving questionnaire:", error);
+      toast({
+        title: "Greška",
+        description: "Nije moguće spremiti upitnik.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const renderScaleButtons = (value: number, onChange: (v: number) => void) => {
+    return (
+      <div className="flex gap-2 justify-center">
+        {[1, 2, 3, 4, 5].map((num) => (
+          <Button
+            key={num}
+            variant={value === num ? "default" : "outline"}
+            size="sm"
+            onClick={() => onChange(num)}
+            className="w-12 h-12"
+          >
+            {num}
+          </Button>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
+      {/* Questionnaire Form */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5" />
+            Psihološki Upitnik
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Question 1: Emotional Eating */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">
+              1. Koliko često jedem iz emocionalnih razloga?
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              1 = Nikad, 5 = Uvijek
+            </p>
+            {renderScaleButtons(emotionalEating, setEmotionalEating)}
+          </div>
+
+          {/* Question 2: Motivation */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">
+              2. Koliko sam motiviran/a postići svoj cilj?
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              1 = Vrlo nisko, 5 = Ekstremno visoko
+            </p>
+            {renderScaleButtons(motivation, setMotivation)}
+          </div>
+
+          {/* Question 3: Diet Success */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">
+              3. Koliko mi je dijeta dosad bila uspješna?
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              1 = Nikad uspješna, 5 = Uvijek uspješna
+            </p>
+            {renderScaleButtons(dietSuccess, setDietSuccess)}
+          </div>
+
+          {/* Question 4: Time Available */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">
+              4. Koliko imam vremena tjedno za pripremu hrane?
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              1 = {'<'} 1h, 2 = 1-2h, 3 = 2-3h, 4 = 3-4h, 5 = {'>'} 4h
+            </p>
+            {renderScaleButtons(timeAvailable, setTimeAvailable)}
+          </div>
+
+          <Button 
+            onClick={handleSaveQuestionnaire} 
+            disabled={saving}
+            className="w-full"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? "Spremanje..." : "Spremi Upitnik"}
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Food Relationship Score */}
       <Card>
         <CardHeader>
