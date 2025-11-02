@@ -56,44 +56,92 @@ export function ProjectionsTab({ clientId, targetCalories = 2000 }: ProjectionsT
     );
   }
 
+  // Weekend pattern detection
+  const detectWeekendPattern = (data: typeof trackingData) => {
+    const mondaySpikes: number[] = [];
+    const saturdaySpikes: number[] = [];
+    
+    data.forEach((entry, idx) => {
+      if (idx === 0) return;
+      const dayOfWeek = entry.date.getDay();
+      const weightChange = entry.weight - data[idx - 1].weight;
+      
+      if (dayOfWeek === 1) mondaySpikes.push(weightChange); // Monday
+      if (dayOfWeek === 6) saturdaySpikes.push(weightChange); // Saturday
+    });
+    
+    const avgMondaySpike = mondaySpikes.length > 0 
+      ? mondaySpikes.reduce((a, b) => a + b, 0) / mondaySpikes.length 
+      : 0;
+    const avgSaturdaySpike = saturdaySpikes.length > 0 
+      ? saturdaySpikes.reduce((a, b) => a + b, 0) / saturdaySpikes.length 
+      : 0;
+    
+    return { avgMondaySpike, avgSaturdaySpike, hasPattern: Math.abs(avgMondaySpike) > 0.3 || Math.abs(avgSaturdaySpike) > 0.3 };
+  };
+  
+  const weekendPattern = detectWeekendPattern(trackingData);
+
   // Calculate projections locally
   const lastEntry = trackingData[trackingData.length - 1];
   const avgTDEE = trackingData.slice(-7).reduce((sum, e) => sum + (e.adaptiveTDEE || 2000), 0) / Math.min(7, trackingData.length);
   const dailyDeficit = avgTDEE - targetCalories;
   const dailyWeightChange = dailyDeficit / 7700;
 
+  // Advanced metabolic adaptation based on deficit size
+  const deficitPercentage = (dailyDeficit / avgTDEE) * 100;
+  let baseAdaptationRate = 0.01 / 30; // 1% per month baseline
+  
+  if (deficitPercentage > 25) {
+    baseAdaptationRate = 0.025 / 30; // 2.5% per month for aggressive deficit
+  } else if (deficitPercentage > 15) {
+    baseAdaptationRate = 0.015 / 30; // 1.5% per month for moderate deficit
+  }
+
   const weightProjections = [];
   let currentWeight = lastEntry.weight;
   let currentEWMA = lastEntry.ewmaWeight;
+  let currentTDEE = avgTDEE;
 
   for (let i = 1; i <= 90; i++) {
-    currentWeight -= dailyWeightChange;
-    currentEWMA = currentEWMA * 0.9 + currentWeight * 0.1;
-    
     const date = new Date();
     date.setDate(date.getDate() + i);
+    const dayOfWeek = date.getDay();
+    
+    // Apply weekend pattern if detected
+    let weekendAdjustment = 0;
+    if (weekendPattern.hasPattern) {
+      if (dayOfWeek === 1) weekendAdjustment = weekendPattern.avgMondaySpike;
+      if (dayOfWeek === 6) weekendAdjustment = weekendPattern.avgSaturdaySpike;
+    }
+    
+    // Metabolic adaptation increases over time
+    const adaptationMultiplier = 1 + (i / 90) * 0.5; // Adaptation gets stronger over 90 days
+    currentTDEE *= (1 - baseAdaptationRate * adaptationMultiplier);
+    
+    // Recalculate daily weight change based on adapted TDEE
+    const adaptedDailyChange = (currentTDEE - targetCalories) / 7700;
+    
+    currentWeight -= adaptedDailyChange;
+    currentWeight += weekendAdjustment;
+    currentEWMA = currentEWMA * 0.9 + currentWeight * 0.1;
+    
+    // Uncertainty corridor (±5%)
+    const uncertaintyFactor = 0.05;
+    const weightUpper = currentWeight * (1 + uncertaintyFactor);
+    const weightLower = currentWeight * (1 - uncertaintyFactor);
+    const tdeeUpper = currentTDEE * (1 + uncertaintyFactor);
+    const tdeeLower = currentTDEE * (1 - uncertaintyFactor);
     
     weightProjections.push({
       date: date.toISOString().split('T')[0],
       projectedWeight: Math.round(currentWeight * 10) / 10,
-      projectedEWMA: Math.round(currentEWMA * 10) / 10
-    });
-  }
-
-  // TDEE projections
-  const adaptationRate = 0.01 / 30;
-  const tdeeProjections = [];
-  let currentTDEE = avgTDEE;
-
-  for (let i = 1; i <= 90; i++) {
-    currentTDEE *= (1 - adaptationRate);
-    
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    
-    tdeeProjections.push({
-      date: date.toISOString().split('T')[0],
-      projectedTDEE: Math.round(currentTDEE)
+      projectedEWMA: Math.round(currentEWMA * 10) / 10,
+      weightUpper: Math.round(weightUpper * 10) / 10,
+      weightLower: Math.round(weightLower * 10) / 10,
+      projectedTDEE: Math.round(currentTDEE),
+      tdeeUpper: Math.round(tdeeUpper),
+      tdeeLower: Math.round(tdeeLower)
     });
   }
 
@@ -109,6 +157,8 @@ export function ProjectionsTab({ clientId, targetCalories = 2000 }: ProjectionsT
     date: proj.date,
     weight: proj.projectedWeight,
     ewma: proj.projectedEWMA,
+    weightUpper: proj.weightUpper,
+    weightLower: proj.weightLower,
     type: 'projected'
   }));
 
@@ -123,9 +173,11 @@ export function ProjectionsTab({ clientId, targetCalories = 2000 }: ProjectionsT
       type: 'historical'
     }));
 
-  const projectedTDEEData = tdeeProjections.map(proj => ({
+  const projectedTDEEData = weightProjections.map(proj => ({
     date: proj.date,
     tdee: proj.projectedTDEE,
+    tdeeUpper: proj.tdeeUpper,
+    tdeeLower: proj.tdeeLower,
     type: 'projected'
   }));
 
@@ -137,11 +189,23 @@ export function ProjectionsTab({ clientId, targetCalories = 2000 }: ProjectionsT
   const totalProjectedLoss = currentWeightValue - projectedWeightIn90Days;
 
   const currentTDEEValue = trackingData[trackingData.length - 1].adaptiveTDEE;
-  const projectedTDEEIn90Days = tdeeProjections[tdeeProjections.length - 1]?.projectedTDEE || currentTDEEValue;
+  const projectedTDEEIn90Days = weightProjections[weightProjections.length - 1]?.projectedTDEE || currentTDEEValue;
   const tdeeChange = currentTDEEValue - projectedTDEEIn90Days;
 
   return (
     <div className="space-y-6">
+      {/* Weekend Pattern Alert */}
+      {weekendPattern.hasPattern && (
+        <Alert>
+          <AlertDescription>
+            <strong>Vikend pattern detektiran:</strong> {' '}
+            {weekendPattern.avgMondaySpike > 0.3 && `Ponedjeljak: prosječno +${weekendPattern.avgMondaySpike.toFixed(2)} kg. `}
+            {weekendPattern.avgSaturdaySpike > 0.3 && `Subota: prosječno +${weekendPattern.avgSaturdaySpike.toFixed(2)} kg. `}
+            Projekcije uključuju ovaj pattern.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -233,6 +297,26 @@ export function ProjectionsTab({ clientId, targetCalories = 2000 }: ProjectionsT
                 dot={false}
                 connectNulls
               />
+              <Line 
+                type="monotone" 
+                dataKey="weightUpper" 
+                stroke="hsl(var(--muted-foreground))" 
+                strokeWidth={1}
+                strokeDasharray="2 2"
+                name="Gornja granica (+5%)"
+                dot={false}
+                connectNulls
+              />
+              <Line 
+                type="monotone" 
+                dataKey="weightLower" 
+                stroke="hsl(var(--muted-foreground))" 
+                strokeWidth={1}
+                strokeDasharray="2 2"
+                name="Donja granica (-5%)"
+                dot={false}
+                connectNulls
+              />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -273,11 +357,33 @@ export function ProjectionsTab({ clientId, targetCalories = 2000 }: ProjectionsT
                 dot={{ r: 2 }}
                 connectNulls
               />
+              <Line 
+                type="monotone" 
+                dataKey="tdeeUpper" 
+                stroke="hsl(var(--muted-foreground))" 
+                strokeWidth={1}
+                strokeDasharray="2 2"
+                name="Gornja granica (+5%)"
+                dot={false}
+                connectNulls
+              />
+              <Line 
+                type="monotone" 
+                dataKey="tdeeLower" 
+                stroke="hsl(var(--muted-foreground))" 
+                strokeWidth={1}
+                strokeDasharray="2 2"
+                name="Donja granica (-5%)"
+                dot={false}
+                connectNulls
+              />
             </LineChart>
           </ResponsiveContainer>
           <Alert className="mt-4">
             <AlertDescription>
-              Projekcija pretpostavlja konstantan unos od {targetCalories} kcal/dan i metaboličku adaptaciju od ~1% mjesečno.
+              <strong>Napredni model:</strong> Projekcija uključuje uncertainty corridor (±5%), progresivnu metaboličku adaptaciju 
+              ({deficitPercentage > 25 ? '2.5%' : deficitPercentage > 15 ? '1.5%' : '1%'} mjesečno bazno, progresivno jača), 
+              i detektirane vikend patterne. Deficit: {deficitPercentage.toFixed(1)}%.
             </AlertDescription>
           </Alert>
         </CardContent>
