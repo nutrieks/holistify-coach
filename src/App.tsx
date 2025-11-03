@@ -29,6 +29,7 @@ import CheckIn from "./pages/CheckIn";
 import MyProgress from "./pages/MyProgress";
 import NotFound from "./pages/NotFound";
 import QuestionnaireForm from "./pages/QuestionnaireForm";
+import MicronutrientQuestionnaire from "./pages/MicronutrientQuestionnaire";
 
 const queryClient = new QueryClient();
 
@@ -227,6 +228,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="client">
                   <QuestionnaireForm />
+                </ProtectedRoute>
+              } 
+            />
+            <Route
+              path="/micronutrient-questionnaire" 
+              element={
+                <ProtectedRoute requiredRole="client">
+                  <MicronutrientQuestionnaire />
                 </ProtectedRoute>
               } 
             />

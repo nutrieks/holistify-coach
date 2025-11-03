@@ -20,3 +20,9 @@ verify_jwt = false
 
 [functions.analyze-body-composition]
 verify_jwt = true
+
+[functions.seed-micronutrient-questionnaire]
+verify_jwt = true
+
+[functions.calculate-micronutrient-assessment]
+verify_jwt = true

@@ -27,6 +27,8 @@ import ChatInterface from "@/components/chat/ChatInterface"
 import { ClientNAQDashboard } from "@/components/naq/ClientNAQDashboard"
 import { NutritionalDiagnosticsTab } from "@/components/NutritionalDiagnosticsTab"
 import RetrospectiveChartsTab from "@/components/client/RetrospectiveChartsTab"
+import { MicronutrientResultsView } from "@/components/micronutrient/MicronutrientResultsView"
+import { MicronutrientQuestionnaireForm } from "@/components/micronutrient/MicronutrientQuestionnaireForm"
 
 function ChatInterfaceWrapper({ clientUserId, clientName }: { clientUserId: string; clientName: string }) {
   const [currentUserId, setCurrentUserId] = useState<string>('');
@@ -225,13 +227,14 @@ export default function ClientDetail() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-13 overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-14 overflow-x-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="anthropometry">Antropometrija</TabsTrigger>
             <TabsTrigger value="biochemical">Biokemija</TabsTrigger>
             <TabsTrigger value="energy">Energija</TabsTrigger>
             <TabsTrigger value="diagnostics">NAQ</TabsTrigger>
-            <TabsTrigger value="nutritional">Nutritivna dijagnostika</TabsTrigger>
+            <TabsTrigger value="nutritional">NAQ (stara)</TabsTrigger>
+            <TabsTrigger value="micronutrient">Mikronutrijenti</TabsTrigger>
             <TabsTrigger value="progress">Napredak</TabsTrigger>
             <TabsTrigger value="retrospective">Retrospektiva</TabsTrigger>
             <TabsTrigger value="training">Trening</TabsTrigger>
@@ -445,12 +448,16 @@ export default function ClientDetail() {
           <TabsContent value="nutritional">
             <Card>
               <CardHeader>
-                <CardTitle>Nutritivna dijagnostika</CardTitle>
+                <CardTitle>Nutritivna dijagnostika (stara verzija)</CardTitle>
               </CardHeader>
               <CardContent>
                 <NutritionalDiagnosticsTab clientId={id!} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="micronutrient">
+            <MicronutrientResultsView clientId={id!} />
           </TabsContent>
 
           <TabsContent value="checkins">

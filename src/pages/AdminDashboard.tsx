@@ -7,6 +7,8 @@ import { AddClientModal } from '@/components/AddClientModal';
 import { ContractsExpiringWidget } from '@/components/ContractsExpiringWidget';
 import { useCreateNAQQuestionnaire } from '@/hooks/useCreateNAQQuestionnaire';
 import { SeedTestDataButton } from '@/components/SeedTestDataButton';
+import { SeedMicronutrientQuestionnaireButton } from '@/components/SeedMicronutrientQuestionnaireButton';
+import { CoachMicronutrientDashboard } from '@/components/micronutrient/CoachMicronutrientDashboard';
 
 const AdminDashboard = () => {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -122,7 +124,10 @@ const AdminDashboard = () => {
                   <CardTitle>Brze akcije</CardTitle>
                   <CardDescription>Često korištene funkcije</CardDescription>
                 </div>
-                <SeedTestDataButton />
+                <div className="flex gap-2">
+                  <SeedTestDataButton />
+                  <SeedMicronutrientQuestionnaireButton />
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -194,6 +199,9 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Micronutrient Dashboard */}
+        <CoachMicronutrientDashboard />
 
         {/* Add Client Modal */}
         <AddClientModal 
