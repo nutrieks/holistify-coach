@@ -114,7 +114,381 @@ export const NUTRIENT_CONFIG: Record<string, any> = {
     prevalenceFactor: 1.0
   }
 
-  // TODO: Add remaining 21 nutrients:
-  // VIT_A, VIT_E, VIT_K1, VIT_K2, B1, B2, B3, B6, FOLAT, BIOTIN, KOLIN,
-  // CA, JOD, SE, CU, MN, CR, B_KOMPLEKS (grouped)
+  'VIT_A': {
+    name: 'Vitamin A',
+    relevantQuestions: {
+      intake: ['A.3.1a', 'A.3.1b', 'A.3.2a', 'A.4.1a', 'A.4.1b', 'A.5.1a', 'A.5.1b', 'A.7.3a', 'A.7.3b'],
+      symptoms: ['B.11.1', 'B.17.1', 'B.10.3']
+    },
+    weightingFactors: {
+      'A.3.2a': 4.0, 'A.7.3a': 3.5, 'A.7.3b': 3.5, 'A.3.1a': 2.5, 'A.4.1a': 2.0, 'A.5.1a': 2.0
+    },
+    symptomScores: {
+      'B.11.1': 5, 'B.17.1': 4, 'B.10.3': 3
+    },
+    riskModifiers: {
+      'C.1.2': 0.7, 'C.3.2': 0.8
+    },
+    prevalenceFactor: 1.1
+  },
+
+  'VIT_E': {
+    name: 'Vitamin E',
+    relevantQuestions: {
+      intake: ['A.9.1a', 'A.9.1b', 'A.9.2a', 'A.9.2b', 'A.10.1a', 'A.10.1b'],
+      symptoms: ['B.13.2', 'B.17.1', 'B.10.3', 'B.6.1']
+    },
+    weightingFactors: {
+      'A.9.1a': 3.5, 'A.9.1b': 3.5, 'A.9.2a': 3.0, 'A.10.1a': 3.0
+    },
+    symptomScores: {
+      'B.13.2': 4, 'B.17.1': 4, 'B.10.3': 3, 'B.6.1': 3
+    },
+    riskModifiers: {
+      'C.3.3': 0.85
+    },
+    prevalenceFactor: 1.0
+  },
+
+  'VIT_K1': {
+    name: 'Vitamin K1',
+    relevantQuestions: {
+      intake: ['A.7.1a', 'A.7.1b', 'A.7.2a', 'A.7.5a'],
+      symptoms: ['B.6.1', 'B.6.2', 'B.12.3']
+    },
+    weightingFactors: {
+      'A.7.1a': 4.0, 'A.7.1b': 4.0, 'A.7.2a': 3.0
+    },
+    symptomScores: {
+      'B.6.1': 5, 'B.6.2': 5, 'B.12.3': 3
+    },
+    riskModifiers: {
+      'C.2.1': 0.6
+    },
+    prevalenceFactor: 1.0
+  },
+
+  'VIT_K2': {
+    name: 'Vitamin K2',
+    relevantQuestions: {
+      intake: ['A.5.1a', 'A.5.1b', 'A.5.2a', 'A.3.1a', 'A.3.1b', 'A.2.1a', 'A.2.1b'],
+      symptoms: ['B.12.3', 'B.12.1', 'B.6.1']
+    },
+    weightingFactors: {
+      'A.5.1a': 3.5, 'A.5.2a': 4.0, 'A.3.1a': 2.5, 'A.2.1a': 2.0
+    },
+    symptomScores: {
+      'B.12.3': 5, 'B.12.1': 4, 'B.6.1': 3
+    },
+    riskModifiers: {
+      'C.1.2': 0.7
+    },
+    prevalenceFactor: 1.05
+  },
+
+  'B1': {
+    name: 'Tiamin (B1)',
+    relevantQuestions: {
+      intake: ['A.1.1a', 'A.1.1b', 'A.2.1a', 'A.2.1b', 'A.12.1a', 'A.12.1b', 'A.9.3a'],
+      symptoms: ['B.1.2', 'B.4.1', 'B.13.3', 'B.14.1']
+    },
+    weightingFactors: {
+      'A.12.1a': 3.5, 'A.1.1a': 3.0, 'A.2.1a': 2.5
+    },
+    symptomScores: {
+      'B.1.2': 5, 'B.4.1': 4, 'B.13.3': 4, 'B.14.1': 4
+    },
+    riskModifiers: {
+      'C.3.3': 0.8, 'C.12.1a': 0.7
+    },
+    prevalenceFactor: 1.1
+  },
+
+  'B2': {
+    name: 'Riboflavin (B2)',
+    relevantQuestions: {
+      intake: ['A.3.1a', 'A.3.1b', 'A.4.1a', 'A.4.1b', 'A.7.1a', 'A.7.1b', 'A.2.1a'],
+      symptoms: ['B.8.1', 'B.11.1', 'B.17.1']
+    },
+    weightingFactors: {
+      'A.4.1a': 3.5, 'A.3.1a': 3.0, 'A.7.1a': 2.5
+    },
+    symptomScores: {
+      'B.8.1': 5, 'B.11.1': 4, 'B.17.1': 3
+    },
+    riskModifiers: {
+      'C.3.2': 0.7
+    },
+    prevalenceFactor: 1.0
+  },
+
+  'B3': {
+    name: 'Niacin (B3)',
+    relevantQuestions: {
+      intake: ['A.2.1a', 'A.2.1b', 'A.2.2a', 'A.2.2b', 'A.9.1a', 'A.9.1b'],
+      symptoms: ['B.1.2', 'B.17.1', 'B.14.1']
+    },
+    weightingFactors: {
+      'A.2.2a': 3.5, 'A.2.1a': 3.0, 'A.9.1a': 2.5
+    },
+    symptomScores: {
+      'B.1.2': 4, 'B.17.1': 4, 'B.14.1': 3
+    },
+    riskModifiers: {
+      'C.3.3': 0.85
+    },
+    prevalenceFactor: 1.0
+  },
+
+  'B6': {
+    name: 'Piridoksin (B6)',
+    relevantQuestions: {
+      intake: ['A.2.1a', 'A.2.1b', 'A.2.2a', 'A.2.2b', 'A.1.1a', 'A.1.1b', 'A.7.8a'],
+      symptoms: ['B.1.2', 'B.8.1', 'B.14.1', 'B.14.3']
+    },
+    weightingFactors: {
+      'A.2.2a': 3.5, 'A.2.1a': 3.0, 'A.1.1a': 2.5, 'A.7.8a': 2.5
+    },
+    symptomScores: {
+      'B.14.1': 5, 'B.1.2': 4, 'B.8.1': 4, 'B.14.3': 4
+    },
+    riskModifiers: {
+      'C.2.3': 0.7
+    },
+    prevalenceFactor: 1.1
+  },
+
+  'FOLAT': {
+    name: 'Folna kiselina',
+    relevantQuestions: {
+      intake: ['A.7.1a', 'A.7.1b', 'A.1.1a', 'A.1.1b', 'A.3.1a', 'A.3.1b', 'A.7.5a'],
+      symptoms: ['B.1.1', 'B.4.1', 'B.14.1', 'B.14.2', 'B.5.1']
+    },
+    weightingFactors: {
+      'A.7.1a': 4.0, 'A.7.1b': 4.0, 'A.1.1a': 3.5, 'A.3.1a': 2.5
+    },
+    symptomScores: {
+      'B.1.1': 5, 'B.14.1': 5, 'B.14.2': 4, 'B.4.1': 4, 'B.5.1': 3
+    },
+    riskModifiers: {
+      'C.2.1': 0.6, 'C.2.3': 0.7, 'C.12.1a': 0.75
+    },
+    prevalenceFactor: 1.2
+  },
+
+  'BIOTIN': {
+    name: 'Biotin (B7)',
+    relevantQuestions: {
+      intake: ['A.3.1a', 'A.3.1b', 'A.9.1a', 'A.9.1b', 'A.3.2a'],
+      symptoms: ['B.5.1', 'B.5.2', 'B.17.1', 'B.15.4']
+    },
+    weightingFactors: {
+      'A.3.1a': 4.0, 'A.3.1b': 4.0, 'A.9.1a': 3.0, 'A.3.2a': 3.5
+    },
+    symptomScores: {
+      'B.5.1': 5, 'B.5.2': 5, 'B.17.1': 4, 'B.15.4': 3
+    },
+    riskModifiers: {
+      'C.1.2': 0.7
+    },
+    prevalenceFactor: 1.0
+  },
+
+  'KOLIN': {
+    name: 'Kolin',
+    relevantQuestions: {
+      intake: ['A.3.1a', 'A.3.1b', 'A.2.1a', 'A.2.1b', 'A.2.2a', 'A.2.2b', 'A.1.1a'],
+      symptoms: ['B.4.1', 'B.4.5', 'B.1.2']
+    },
+    weightingFactors: {
+      'A.3.1a': 4.0, 'A.3.1b': 4.0, 'A.2.2a': 3.0, 'A.2.1a': 2.5
+    },
+    symptomScores: {
+      'B.4.5': 5, 'B.4.1': 4, 'B.1.2': 3
+    },
+    riskModifiers: {
+      'C.3.2': 0.6
+    },
+    prevalenceFactor: 1.1
+  },
+
+  'CA': {
+    name: 'Kalcij',
+    relevantQuestions: {
+      intake: ['A.4.1a', 'A.4.1b', 'A.5.1a', 'A.5.1b', 'A.7.1a', 'A.7.1b', 'A.2.2a', 'A.13.3a'],
+      symptoms: ['B.12.1', 'B.12.3', 'B.15.4', 'B.13.3']
+    },
+    weightingFactors: {
+      'A.4.1a': 4.0, 'A.4.1b': 4.0, 'A.5.1a': 3.5, 'A.7.1a': 2.5, 'A.2.2a': 2.5
+    },
+    symptomScores: {
+      'B.12.1': 5, 'B.12.3': 5, 'B.15.4': 3, 'B.13.3': 3
+    },
+    riskModifiers: {
+      'C.1.2': 0.7, 'C.2.4': 0.75
+    },
+    prevalenceFactor: 1.15
+  },
+
+  'JOD': {
+    name: 'Jod',
+    relevantQuestions: {
+      intake: ['A.2.2a', 'A.2.2b', 'A.2.4a', 'A.2.4b', 'A.14.1', 'A.4.1a'],
+      symptoms: ['B.1.2', 'B.2.4', 'B.3.1', 'B.5.1', 'B.5.2']
+    },
+    weightingFactors: {
+      'A.14.1': 5.0, 'A.2.2a': 3.5, 'A.2.4a': 3.5
+    },
+    symptomScores: {
+      'B.1.2': 5, 'B.2.4': 5, 'B.5.1': 4, 'B.5.2': 4, 'B.3.1': 3
+    },
+    riskModifiers: {
+      'C.1.1': 0.4, 'C.3.2': 0.7
+    },
+    prevalenceFactor: 1.3
+  },
+
+  'SE': {
+    name: 'Selen',
+    relevantQuestions: {
+      intake: ['A.2.2a', 'A.2.2b', 'A.2.1a', 'A.2.1b', 'A.9.1a', 'A.9.1b', 'A.12.1a'],
+      symptoms: ['B.1.2', 'B.5.1', 'B.10.3', 'B.13.2']
+    },
+    weightingFactors: {
+      'A.2.2a': 4.0, 'A.2.1a': 3.0, 'A.9.1a': 2.5, 'A.12.1a': 2.0
+    },
+    symptomScores: {
+      'B.10.3': 5, 'B.5.1': 4, 'B.1.2': 4, 'B.13.2': 3
+    },
+    riskModifiers: {
+      'C.1.1': 0.7, 'C.3.3': 0.8
+    },
+    prevalenceFactor: 1.1
+  },
+
+  'CU': {
+    name: 'Bakar',
+    relevantQuestions: {
+      intake: ['A.9.1a', 'A.9.1b', 'A.2.4a', 'A.2.4b', 'A.1.1a', 'A.1.1b', 'A.3.2a'],
+      symptoms: ['B.1.1', 'B.13.2', 'B.15.1']
+    },
+    weightingFactors: {
+      'A.9.1a': 3.5, 'A.2.4a': 3.5, 'A.1.1a': 2.5, 'A.3.2a': 2.5
+    },
+    symptomScores: {
+      'B.1.1': 5, 'B.13.2': 4, 'B.15.1': 3
+    },
+    riskModifiers: {
+      'C.1.2': 0.7
+    },
+    prevalenceFactor: 1.0
+  },
+
+  'MN': {
+    name: 'Mangan',
+    relevantQuestions: {
+      intake: ['A.12.1a', 'A.12.1b', 'A.9.1a', 'A.9.1b', 'A.11.1a', 'A.11.1b', 'A.1.1a'],
+      symptoms: ['B.12.3', 'B.13.2', 'B.15.4']
+    },
+    weightingFactors: {
+      'A.12.1a': 3.5, 'A.9.1a': 3.0, 'A.11.1a': 2.5, 'A.1.1a': 2.0
+    },
+    symptomScores: {
+      'B.12.3': 4, 'B.13.2': 4, 'B.15.4': 3
+    },
+    riskModifiers: {
+      'C.3.3': 0.85
+    },
+    prevalenceFactor: 1.0
+  },
+
+  'CR': {
+    name: 'Krom',
+    relevantQuestions: {
+      intake: ['A.2.1a', 'A.2.1b', 'A.12.1a', 'A.12.1b', 'A.7.5a', 'A.1.1a'],
+      symptoms: ['B.16.1', 'B.16.2', 'B.1.2']
+    },
+    weightingFactors: {
+      'A.2.1a': 3.0, 'A.12.1a': 3.5, 'A.7.5a': 2.5, 'A.1.1a': 2.0
+    },
+    symptomScores: {
+      'B.16.1': 5, 'B.16.2': 5, 'B.1.2': 3
+    },
+    riskModifiers: {
+      'C.1.4': 0.5, 'C.3.3': 0.8
+    },
+    prevalenceFactor: 1.2
+  },
+
+  'OMEGA_3': {
+    name: 'Omega-3 masne kiseline',
+    relevantQuestions: {
+      intake: ['A.2.2a', 'A.2.2b', 'A.9.2a', 'A.9.2b', 'A.9.3a', 'A.9.3b'],
+      symptoms: ['B.13.1', 'B.14.1', 'B.17.1', 'B.4.1']
+    },
+    weightingFactors: {
+      'A.2.2a': 4.5, 'A.2.2b': 4.5, 'A.9.2a': 3.5, 'A.9.3a': 2.5
+    },
+    symptomScores: {
+      'B.13.1': 5, 'B.14.1': 4, 'B.17.1': 4, 'B.4.1': 3
+    },
+    riskModifiers: {
+      'C.1.3': 0.7, 'C.3.3': 0.8
+    },
+    prevalenceFactor: 1.25
+  },
+
+  'KOENZIM_Q10': {
+    name: 'Koenzim Q10',
+    relevantQuestions: {
+      intake: ['A.2.1a', 'A.2.1b', 'A.2.2a', 'A.2.2b', 'A.9.1a', 'A.9.1b'],
+      symptoms: ['B.1.2', 'B.13.2', 'B.2.4']
+    },
+    weightingFactors: {
+      'A.2.2a': 3.5, 'A.2.1a': 3.0, 'A.9.1a': 2.5
+    },
+    symptomScores: {
+      'B.1.2': 5, 'B.13.2': 4, 'B.2.4': 3
+    },
+    riskModifiers: {
+      'C.2.5': 0.5, 'C.3.3': 0.8
+    },
+    prevalenceFactor: 1.15
+  },
+
+  'PROBIOTICI': {
+    name: 'Probiotici',
+    relevantQuestions: {
+      intake: ['A.5.2a', 'A.5.2b'],
+      symptoms: ['B.7.1', 'B.7.2', 'B.7.3', 'B.10.3']
+    },
+    weightingFactors: {
+      'A.5.2a': 5.0, 'A.5.2b': 5.0
+    },
+    symptomScores: {
+      'B.7.1': 5, 'B.7.2': 4, 'B.7.3': 4, 'B.10.3': 4
+    },
+    riskModifiers: {
+      'C.1.2': 0.6, 'C.2.1': 0.7, 'C.12.2a': 0.7
+    },
+    prevalenceFactor: 1.2
+  },
+
+  'VLAKNA': {
+    name: 'Prehrambena vlakna',
+    relevantQuestions: {
+      intake: ['A.6.1a', 'A.6.1b', 'A.7.1a', 'A.7.1b', 'A.12.1a', 'A.12.1b', 'A.1.1a', 'A.1.1b'],
+      symptoms: ['B.7.1', 'B.16.2', 'B.7.2']
+    },
+    weightingFactors: {
+      'A.6.1a': 3.5, 'A.7.1a': 3.5, 'A.12.1a': 4.0, 'A.1.1a': 3.0
+    },
+    symptomScores: {
+      'B.7.1': 5, 'B.16.2': 4, 'B.7.2': 3
+    },
+    riskModifiers: {
+      'C.1.2': 0.7
+    },
+    prevalenceFactor: 1.1
+  }
 };
