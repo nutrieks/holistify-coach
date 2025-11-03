@@ -24,6 +24,7 @@ export type Database = {
           follow_up_questions: Json | null
           id: string
           questionnaire_id: string
+          questionnaire_type: string | null
           status: Database["public"]["Enums"]["questionnaire_status"]
           updated_at: string | null
         }
@@ -36,6 +37,7 @@ export type Database = {
           follow_up_questions?: Json | null
           id?: string
           questionnaire_id: string
+          questionnaire_type?: string | null
           status?: Database["public"]["Enums"]["questionnaire_status"]
           updated_at?: string | null
         }
@@ -48,6 +50,7 @@ export type Database = {
           follow_up_questions?: Json | null
           id?: string
           questionnaire_id?: string
+          questionnaire_type?: string | null
           status?: Database["public"]["Enums"]["questionnaire_status"]
           updated_at?: string | null
         }
@@ -420,6 +423,153 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_micronutrient_answers: {
+        Row: {
+          answer_value: Json
+          created_at: string | null
+          id: string
+          question_id: string
+          submission_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          answer_value: Json
+          created_at?: string | null
+          id?: string
+          question_id: string
+          submission_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          answer_value?: Json
+          created_at?: string | null
+          id?: string
+          question_id?: string
+          submission_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_micronutrient_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "micronutrient_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_micronutrient_answers_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "client_micronutrient_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_micronutrient_results: {
+        Row: {
+          calculated_at: string | null
+          client_id: string
+          contributing_factors: Json | null
+          final_weighted_score: number | null
+          id: string
+          intake_score_percentage: number | null
+          nutrient_code: string
+          nutrient_name: string
+          risk_category: string
+          risk_score_percentage: number | null
+          submission_id: string
+          symptom_score_percentage: number | null
+        }
+        Insert: {
+          calculated_at?: string | null
+          client_id: string
+          contributing_factors?: Json | null
+          final_weighted_score?: number | null
+          id?: string
+          intake_score_percentage?: number | null
+          nutrient_code: string
+          nutrient_name: string
+          risk_category: string
+          risk_score_percentage?: number | null
+          submission_id: string
+          symptom_score_percentage?: number | null
+        }
+        Update: {
+          calculated_at?: string | null
+          client_id?: string
+          contributing_factors?: Json | null
+          final_weighted_score?: number | null
+          id?: string
+          intake_score_percentage?: number | null
+          nutrient_code?: string
+          nutrient_name?: string
+          risk_category?: string
+          risk_score_percentage?: number | null
+          submission_id?: string
+          symptom_score_percentage?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_micronutrient_results_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_micronutrient_results_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "client_micronutrient_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_micronutrient_submissions: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          id: string
+          questionnaire_id: string
+          started_at: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          id?: string
+          questionnaire_id: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          id?: string
+          questionnaire_id?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_micronutrient_submissions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_micronutrient_submissions_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "micronutrient_questionnaires"
             referencedColumns: ["id"]
           },
         ]
@@ -996,6 +1146,107 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      micronutrient_questionnaires: {
+        Row: {
+          coach_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "micronutrient_questionnaires_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      micronutrient_questions: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          nutrient_relevance: Json | null
+          options: Json | null
+          order_index: number
+          parent_question_id: string | null
+          question_code: string
+          question_text: string
+          question_type: string
+          questionnaire_id: string
+          section: string
+          skip_logic: Json | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          nutrient_relevance?: Json | null
+          options?: Json | null
+          order_index: number
+          parent_question_id?: string | null
+          question_code: string
+          question_text: string
+          question_type: string
+          questionnaire_id: string
+          section: string
+          skip_logic?: Json | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          nutrient_relevance?: Json | null
+          options?: Json | null
+          order_index?: number
+          parent_question_id?: string | null
+          question_code?: string
+          question_text?: string
+          question_type?: string
+          questionnaire_id?: string
+          section?: string
+          skip_logic?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "micronutrient_questions_parent_question_id_fkey"
+            columns: ["parent_question_id"]
+            isOneToOne: false
+            referencedRelation: "micronutrient_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "micronutrient_questions_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "micronutrient_questionnaires"
+            referencedColumns: ["id"]
           },
         ]
       }
