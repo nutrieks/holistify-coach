@@ -112,7 +112,7 @@ export const NUTRIENT_CONFIG: Record<string, any> = {
       'C.3.3': 0.85
     },
     prevalenceFactor: 1.0
-  }
+  },
 
   'VIT_A': {
     name: 'Vitamin A',
