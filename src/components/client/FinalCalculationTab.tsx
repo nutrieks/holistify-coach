@@ -19,6 +19,7 @@ interface FinalCalculationTabProps {
     last_name?: string | null;
   };
   onOpenNutritionPlanModal?: (prefilledData: any) => void;
+  onCalculationComplete?: (recommendedCalories: number) => void;
 }
 
 export default function FinalCalculationTab({ 
@@ -26,7 +27,8 @@ export default function FinalCalculationTab({
   clientGender, 
   clientAge,
   clientDetails,
-  onOpenNutritionPlanModal 
+  onOpenNutritionPlanModal,
+  onCalculationComplete 
 }: FinalCalculationTabProps) {
   const [loading, setLoading] = useState(false);
   const [calculating, setCalculating] = useState(false);
@@ -170,6 +172,9 @@ export default function FinalCalculationTab({
       });
 
       setResult(calculationResult);
+      
+      // Notify parent component about the calculation
+      onCalculationComplete?.(calculationResult.recommendedCalories);
       
       toast({
         title: "Kalkulacija Uspješna",

@@ -43,6 +43,7 @@ export default function EnergyCalculationTab({
   const [lbm, setLbm] = useState(latestLBM?.toString() || "");
   const [activityLevel, setActivityLevel] = useState("moderate");
   const [goal, setGoal] = useState("maintain");
+  const [expertSystemCalories, setExpertSystemCalories] = useState<number | null>(null);
 
   useEffect(() => {
     if (latestWeight) setWeight(latestWeight.toString());
@@ -456,11 +457,26 @@ export default function EnergyCalculationTab({
 
         {/* Tab 5: Projekcije (FAZA 3) */}
         <TabsContent value="projekcije" className="space-y-4">
-          <ProjectionsTab clientId={clientId} targetCalories={averageTarget ?? undefined} />
+          <ProjectionsTab 
+            clientId={clientId} 
+            targetCalories={expertSystemCalories || averageTarget || 2000} 
+          />
         </TabsContent>
 
-        {/* Tab 6: Finalni Unos - Main Summary */}
+        {/* Tab 6: Finalni Unos - Expert System */}
         <TabsContent value="finalno" className="space-y-4">
+          <FinalCalculationTab
+            clientId={clientId}
+            clientGender={clientGender}
+            clientAge={clientAge}
+            clientDetails={clientDetails}
+            onOpenNutritionPlanModal={onOpenNutritionPlanModal}
+            onCalculationComplete={(recommendedCalories) => setExpertSystemCalories(recommendedCalories)}
+          />
+        </TabsContent>
+
+        {/* Tab 7: Osnovna Formula Summary (premješteno) */}
+        <TabsContent value="osnovna-formula" className="space-y-4">
           {averageTDEE && averageTarget ? (
             <>
               {/* Average TDEE Card */}

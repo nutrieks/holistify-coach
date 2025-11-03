@@ -26,6 +26,7 @@ import PsychologicalProfileCard from "@/components/client/PsychologicalProfileCa
 import ChatInterface from "@/components/chat/ChatInterface"
 import { ClientNAQDashboard } from "@/components/naq/ClientNAQDashboard"
 import { NutritionalDiagnosticsTab } from "@/components/NutritionalDiagnosticsTab"
+import RetrospectiveChartsTab from "@/components/client/RetrospectiveChartsTab"
 
 function ChatInterfaceWrapper({ clientUserId, clientName }: { clientUserId: string; clientName: string }) {
   const [currentUserId, setCurrentUserId] = useState<string>('');
@@ -224,7 +225,7 @@ export default function ClientDetail() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-12 overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-13 overflow-x-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="anthropometry">Antropometrija</TabsTrigger>
             <TabsTrigger value="biochemical">Biokemija</TabsTrigger>
@@ -232,6 +233,7 @@ export default function ClientDetail() {
             <TabsTrigger value="diagnostics">NAQ</TabsTrigger>
             <TabsTrigger value="nutritional">Nutritivna dijagnostika</TabsTrigger>
             <TabsTrigger value="progress">Napredak</TabsTrigger>
+            <TabsTrigger value="retrospective">Retrospektiva</TabsTrigger>
             <TabsTrigger value="training">Trening</TabsTrigger>
             <TabsTrigger value="nutrition">Prehrana</TabsTrigger>
             <TabsTrigger value="checkins">Check Ins</TabsTrigger>
@@ -414,6 +416,17 @@ export default function ClientDetail() {
               </CardHeader>
               <CardContent>
                 <ProgressTab clientId={id!} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="retrospective">
+            <Card>
+              <CardHeader>
+                <CardTitle>Retrospektivni Prikaz</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RetrospectiveChartsTab clientId={id!} />
               </CardContent>
             </Card>
           </TabsContent>

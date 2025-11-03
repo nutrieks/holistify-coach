@@ -209,6 +209,7 @@ export type Database = {
           measurement_date: string
           metabolic_flexibility_score: number | null
           notes: string | null
+          subjective_insulin_questionnaire: Json | null
           triglycerides: number | null
           updated_at: string
         }
@@ -223,6 +224,7 @@ export type Database = {
           measurement_date?: string
           metabolic_flexibility_score?: number | null
           notes?: string | null
+          subjective_insulin_questionnaire?: Json | null
           triglycerides?: number | null
           updated_at?: string
         }
@@ -237,6 +239,7 @@ export type Database = {
           measurement_date?: string
           metabolic_flexibility_score?: number | null
           notes?: string | null
+          subjective_insulin_questionnaire?: Json | null
           triglycerides?: number | null
           updated_at?: string
         }

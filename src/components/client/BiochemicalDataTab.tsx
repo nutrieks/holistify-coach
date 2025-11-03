@@ -73,6 +73,21 @@ export default function BiochemicalDataTab({
         setFastingGlucose(data.fasting_glucose?.toString() || "");
         setHba1c(data.hba1c?.toString() || "");
         setNotes(data.notes || "");
+        
+        // Load subjective questionnaire if available
+        const questionnaire = data.subjective_insulin_questionnaire as any;
+        if (questionnaire) {
+          setQ1(questionnaire.q1 || 3);
+          setQ2(questionnaire.q2 || 3);
+          setQ3(questionnaire.q3 || 3);
+          setQ4(questionnaire.q4 || 3);
+          setQ5(questionnaire.q5 || 3);
+          setQ6(questionnaire.q6 || 3);
+          setQ7(questionnaire.q7 || 3);
+          setQ8(questionnaire.q8 || 3);
+          setQ9(questionnaire.q9 || 3);
+          setQ10(questionnaire.q10 || 3);
+        }
       }
     } catch (error: any) {
       console.error('Load error:', error);
@@ -130,7 +145,12 @@ export default function BiochemicalDataTab({
         hba1c: hba1c ? parseFloat(hba1c) : null,
         insulin_sensitivity_score: insulinSensitivityResult?.numericScore || null,
         metabolic_flexibility_score: null, // TODO: Add calculation
-        notes
+        notes,
+        subjective_insulin_questionnaire: {
+          q1, q2, q3, q4, q5, q6, q7, q8, q9, q10,
+          score: subjectiveScore,
+          rating: subjectiveRating
+        }
       };
 
       if (existingData) {
