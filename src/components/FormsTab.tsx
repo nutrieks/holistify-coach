@@ -7,11 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { supabase } from "@/integrations/supabase/client"
 import { NAQScoringResults } from "@/components/naq/NAQScoringResults"
 import { NAQAnalytics } from "@/components/naq/NAQAnalytics"
+import { MicronutrientResultsView } from "@/components/micronutrient/MicronutrientResultsView"
 import { useNAQResults, useClientNAQHistory } from "@/hooks/useNAQScoring"
+import { useMicronutrientResults } from "@/hooks/useMicronutrientResults"
 import { useSeedNAQQuestions } from "@/hooks/useSeedNAQQuestions"
 import { AssignQuestionnaireModal } from "@/components/AssignQuestionnaireModal"
-import { FileText, TrendingUp, Calendar, AlertTriangle, Plus, Send, Eye, CheckCircle } from "lucide-react"
+import { FileText, TrendingUp, Calendar, AlertTriangle, Plus, Send, Eye, CheckCircle, Activity } from "lucide-react"
 import { format } from "date-fns"
+import { useNavigate } from "react-router-dom"
 
 interface FormsTabProps {
   clientId: string
@@ -19,9 +22,13 @@ interface FormsTabProps {
 }
 
 export function FormsTab({ clientId, clientName }: FormsTabProps) {
+  const navigate = useNavigate()
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null)
   const [showAssignModal, setShowAssignModal] = useState(false)
   const seedNAQMutation = useSeedNAQQuestions()
+
+  // Get micronutrient results
+  const { data: micronutrientData } = useMicronutrientResults(clientId)
 
   // Get assigned questionnaires (excluding NAQ)
   const { data: assignedQuestionnaires, refetch: refetchAssigned } = useQuery({
@@ -141,8 +148,9 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="assigned" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="assigned">Dodijeljeni upitnici</TabsTrigger>
+              <TabsTrigger value="micronutrient">Mikronutritivna Analiza</TabsTrigger>
               <TabsTrigger value="naq">NAQ Rezultati</TabsTrigger>
               <TabsTrigger value="analytics">NAQ Analitika</TabsTrigger>
               <TabsTrigger value="history">História NAQ</TabsTrigger>
@@ -196,6 +204,45 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Nema dodijeljenih upitnika</p>
                   <p className="text-sm">Kliknite "Dodijeli upitnik" da biste dodijelili novi upitnik</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="micronutrient" className="space-y-4">
+              {micronutrientData?.results && micronutrientData.results.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">Mikronutritivna Analiza</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Završeno: {micronutrientData.submission?.completed_at 
+                          ? format(new Date(micronutrientData.submission.completed_at), 'dd.MM.yyyy HH:mm')
+                          : 'N/A'}
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => navigate('/micronutrient-questionnaire')}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Activity className="h-4 w-4 mr-2" />
+                      Ponovi analizu
+                    </Button>
+                  </div>
+                  <MicronutrientResultsView clientId={clientId} />
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Activity className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                  <h3 className="text-lg font-semibold mb-2">Nema mikronutritivne analize</h3>
+                  <p className="mb-4">Klijent još nije ispunio mikronutritivni upitnik</p>
+                  <Button 
+                    onClick={() => navigate('/micronutrient-questionnaire')}
+                    size="sm"
+                  >
+                    <Activity className="h-4 w-4 mr-2" />
+                    Započni analizu
+                  </Button>
                 </div>
               )}
             </TabsContent>

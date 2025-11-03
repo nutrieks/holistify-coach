@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, MessageSquare, TrendingUp, CheckCircle, Apple, Dumbbell, Clock, Users, FileText, AlertCircle, ClipboardCheck, BarChart3 } from 'lucide-react';
+import { Calendar, MessageSquare, TrendingUp, CheckCircle, Apple, Dumbbell, Clock, Users, FileText, AlertCircle, ClipboardCheck, BarChart3, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +14,7 @@ import { LoadingCard } from '@/components/LoadingCard';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { ClientNAQDashboard } from '@/components/naq/ClientNAQDashboard';
 import { ContractProgressBar } from '@/components/ContractProgressBar';
+import { useMicronutrientResults } from '@/hooks/useMicronutrientResults';
 import { useToast } from '@/hooks/use-toast';
 
 const ClientDashboard = () => {
@@ -29,6 +30,9 @@ const ClientDashboard = () => {
     isLoading,
     toggleHabit,
   } = useClientDashboard();
+
+  // Get micronutrient results
+  const { data: micronutrientData } = useMicronutrientResults(profile?.id);
 
   // Check for pending questionnaires and NAQ status
   const { data: pendingQuestionnaire } = useQuery({
@@ -500,7 +504,67 @@ const ClientDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* NAQ Dashboard Section */}
+        {/* Micronutrient Analysis Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-purple-600" />
+              Mikronutritivna Dijagnostika
+            </CardTitle>
+            <CardDescription>Procjena rizika deficita mikronutrijenata</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {micronutrientData?.results && micronutrientData.results.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                  <div>
+                    <p className="font-medium">Analiza završena</p>
+                    <p className="text-sm text-muted-foreground">
+                      {micronutrientData.submission?.completed_at 
+                        ? `Datum: ${new Date(micronutrientData.submission.completed_at).toLocaleDateString('hr-HR')}`
+                        : 'N/A'}
+                    </p>
+                    <div className="flex gap-2 mt-2">
+                      <Badge variant="destructive">
+                        {micronutrientData.results.filter(r => r.risk_category === 'high').length} Visok rizik
+                      </Badge>
+                      <Badge variant="secondary">
+                        {micronutrientData.results.filter(r => r.risk_category === 'moderate').length} Umjeren rizik
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/micronutrient-questionnaire')}
+                    >
+                      Pregled rezultata
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <Activity className="h-12 w-12 mx-auto mb-3 opacity-30 text-purple-600" />
+                <p className="font-medium mb-2">Nema mikronutritivne analize</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Ispunite upitnik za procjenu rizika deficita mikronutrijenata
+                </p>
+                <Button 
+                  size="sm"
+                  onClick={() => navigate('/micronutrient-questionnaire')}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  <Activity className="mr-2 h-4 w-4" />
+                  Započni analizu
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* NAQ Dashboard */}
         {profile?.id && (
           <ClientNAQDashboard clientId={profile.id} />
         )}

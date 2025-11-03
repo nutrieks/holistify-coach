@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { CreateCompleteNAQButton } from "@/components/CreateCompleteNAQButton"
 import { CreateCoachingIntakeButton } from "@/components/CreateCoachingIntakeButton"
+import { SeedMicronutrientQuestionnaireButton } from "@/components/SeedMicronutrientQuestionnaireButton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface Questionnaire {
@@ -100,6 +101,25 @@ export default function FormsLibrary() {
       return data ? {
         exists: true,
         questionCount: data.questionnaire_questions?.length || 0,
+        title: data.title
+      } : { exists: false, questionCount: 0, title: null };
+    },
+    enabled: !!profile?.id
+  });
+
+  // Check if Micronutrient Questionnaire exists
+  const { data: micronutrientExists, isLoading: isLoadingMicronutrient } = useQuery({
+    queryKey: ['micronutrient-exists'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('micronutrient_questionnaires')
+        .select('id, title, micronutrient_questions(count)')
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      return data ? {
+        exists: true,
+        questionCount: data.micronutrient_questions?.length || 0,
         title: data.title
       } : { exists: false, questionCount: 0, title: null };
     },
@@ -477,6 +497,42 @@ export default function FormsLibrary() {
               </CardTitle>
               <CardDescription>
                 {coachingIntakeExists.title} je aktivan u sustavu ({coachingIntakeExists.questionCount} pitanja)
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
+
+        {/* Micronutrient Questionnaire Section */}
+        {!isLoadingMicronutrient && !micronutrientExists?.exists && (
+          <Card className="border-purple-500/20 bg-purple-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-purple-600" />
+                Mikronutritivni Upitnik
+              </CardTitle>
+              <CardDescription>
+                Kompletan upitnik za procjenu rizika deficita 27 mikronutrijenata (166 pitanja).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Alert className="mb-4">
+                <AlertDescription>
+                  Ovaj upitnik automatski procjenjuje rizik deficita mikronutrijenata na osnovu unosa hrane, simptoma i rizičnih faktora.
+                </AlertDescription>
+              </Alert>
+              <SeedMicronutrientQuestionnaireButton />
+            </CardContent>
+          </Card>
+        )}
+
+        {micronutrientExists?.exists && (
+          <Card className="border-green-500/20 bg-green-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                ✓ Mikronutritivni Upitnik
+              </CardTitle>
+              <CardDescription>
+                {micronutrientExists.title} je aktivan u sustavu ({micronutrientExists.questionCount} pitanja)
               </CardDescription>
             </CardHeader>
           </Card>
