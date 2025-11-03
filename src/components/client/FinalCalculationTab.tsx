@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, Save, Apple, AlertCircle, History } from "lucide-react";
+import { Calculator, Save, Apple, AlertCircle, History, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { calculateOptimalCalories, OptimalCaloriesResult } from "@/utils/expertSystemCalculations";
@@ -108,6 +108,36 @@ export default function FinalCalculationTab({
     }
   };
 
+  const autoSaveCalculation = async (calculationResult: OptimalCaloriesResult) => {
+    try {
+      const { error } = await supabase
+        .from("energy_calculations")
+        .insert({
+          client_id: clientId,
+          calculation_date: new Date().toISOString().split("T")[0],
+          dee: calculationResult.dee,
+          neat: calculationResult.neat,
+          ea: calculationResult.ea,
+          tef_correction: calculationResult.tef,
+          adaptive_tdee: calculationResult.adaptiveTDEE,
+          recommended_calories: calculationResult.recommendedCalories,
+          protein_target_g: calculationResult.protein,
+          carbs_target_g: calculationResult.carbs,
+          fat_target_g: calculationResult.fats,
+          insulin_sensitivity: calculationResult.insulinSensitivity.score,
+          muscle_potential: calculationResult.musclePotential.score,
+          deficit_speed: calculationResult.deficitSpeed.speed,
+          reasoning: calculationResult.reasoning,
+          calculation_method: "expert_system_v2",
+        });
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error("Auto-save error:", error);
+      // Silent auto-save - don't interrupt user experience
+    }
+  };
+
   const handleCalculate = async () => {
     setCalculating(true);
     try {
@@ -176,9 +206,12 @@ export default function FinalCalculationTab({
       // Notify parent component about the calculation
       onCalculationComplete?.(calculationResult.recommendedCalories);
       
+      // Auto-save immediately after calculation
+      await autoSaveCalculation(calculationResult);
+      
       toast({
         title: "Kalkulacija Uspješna",
-        description: "Expert system je izračunao optimalne preporuke.",
+        description: "Expert system je izračunao i automatski spremio optimalne preporuke.",
       });
     } catch (error: any) {
       console.error("Error calculating:", error);
@@ -365,24 +398,30 @@ export default function FinalCalculationTab({
           />
 
           {/* Action Buttons */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <Button 
-              onClick={handleSaveCalculation} 
-              disabled={saving}
-              variant="outline"
-              className="w-full"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {saving ? "Spremanje..." : "Spremi Kalkulaciju u Bazu"}
-            </Button>
-            <Button 
-              onClick={handleCreateNutritionPlan}
-              className="w-full"
-            >
-              <Apple className="h-4 w-4 mr-2" />
-              Kreiraj Plan Prehrane
-            </Button>
-          </div>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-md">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-muted-foreground">Automatski spremljeno u bazu</span>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Button 
+                    onClick={handleSaveCalculation} 
+                    disabled={saving}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {saving ? "Spremanje..." : "Ponovno Spremi Kalkulaciju"}
+                  </Button>
+                  <Button 
+                    onClick={handleCreateNutritionPlan}
+                    className="w-full"
+                  >
+                    <Apple className="h-4 w-4 mr-2" />
+                    Kreiraj Plan Prehrane
+                  </Button>
+                </div>
+              </div>
 
           {/* Recalculate Button */}
           <Button 
