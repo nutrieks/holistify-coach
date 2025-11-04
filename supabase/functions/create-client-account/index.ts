@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
     
     try {
       const { error: emailError } = await resend.emails.send({
-        from: 'Coach App <onboarding@resend.dev>',
+        from: 'Nutri Ekspert <nikola@nutriekspert.com>',
         to: [clientEmail],
         subject: 'Dobrodošli - Dovršite registraciju',
         html: `
