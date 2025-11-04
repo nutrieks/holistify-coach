@@ -91,30 +91,17 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
 
     setLoading(true)
     try {
-      // Check if email already exists
-      const { data: existingUsers, error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .ilike('id', `%${clientEmail}%`)
-      
-      if (checkError) {
-        console.warn('Could not check existing users:', checkError)
-      }
-
-      // Generate temporary password for client
-      const tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!'
-
       // Call edge function to create client account (admin operation)
       const { data: clientData, error: clientError } = await supabase.functions.invoke('create-client-account', {
         body: {
           clientName,
           clientEmail,
-          tempPassword,
           contractStartDate: startDate.toISOString().split('T')[0],
           contractEndDate: endDate.toISOString().split('T')[0],
           questionnaireId: selectedQuestionnaire === "none" ? null : (selectedQuestionnaire === "auto-naq" ? null : selectedQuestionnaire),
           createNAQ: selectedQuestionnaire === "auto-naq",
-          coachId: profile?.id
+          coachId: profile?.id,
+          redirectUrl: window.location.origin
         }
       })
 
@@ -129,7 +116,7 @@ export function AddClientModal({ open, onOpenChange, onClientAdded }: AddClientM
 
       toast({
         title: "Uspješno",
-        description: `Klijent ${clientName} je uspješno dodan. Privremena lozinka: ${tempPassword}`,
+        description: `Klijent ${clientName} je dodan. Pozivnica za registraciju je poslana na email.`,
       })
 
       // Reset form
