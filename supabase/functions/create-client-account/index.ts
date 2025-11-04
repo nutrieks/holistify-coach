@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: clientEmail,
       password: tempPassword,
-      email_confirm: true, // Auto-confirm email
+      email_confirm: false, // Enable email confirmation flow to trigger webhook
       user_metadata: {
         full_name: clientName,
         role: 'client'
