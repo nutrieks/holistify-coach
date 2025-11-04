@@ -5,11 +5,13 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { useMicronutrientSubmission, useMicronutrientQuestions, useMicronutrientAnswers } from "@/hooks/useMicronutrientSubmission";
+import { useDraftSaving } from "@/hooks/useDraftSaving";
 import { LoadingCard } from "@/components/LoadingCard";
 import { FrequencyQuestion } from "./questions/FrequencyQuestion";
 import { PortionQuestion } from "./questions/PortionQuestion";
 import { SelectOneQuestion } from "./questions/SelectOneQuestion";
 import { YesNoQuestion } from "./questions/YesNoQuestion";
+import { MultiSelectQuestion } from "./questions/MultiSelectQuestion";
 import { Input } from "@/components/ui/input";
 
 interface MicronutrientQuestionnaireFormProps {
@@ -21,10 +23,15 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
   const { submission, isLoading: submissionLoading, saveAnswer, submitFinal } = useMicronutrientSubmission(clientId);
   const { data: questions, isLoading: questionsLoading } = useMicronutrientQuestions(submission?.questionnaire_id);
   const { data: savedAnswers } = useMicronutrientAnswers(submission?.id);
+  const { draftData, autoSave: saveDraftProgress, isLoadingDraft } = useDraftSaving(
+    submission?.questionnaire_id || '', 
+    clientId
+  );
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
 
+  // Load saved answers
   useEffect(() => {
     if (savedAnswers) {
       const answersMap: Record<string, any> = {};
@@ -35,33 +42,70 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
     }
   }, [savedAnswers]);
 
-  if (submissionLoading || questionsLoading) return <LoadingCard />;
+  // Load draft progress (current question index)
+  useEffect(() => {
+    if (draftData?.current_question_index !== undefined && draftData.current_question_index !== null) {
+      setCurrentIndex(draftData.current_question_index);
+    }
+  }, [draftData]);
+
+  if (submissionLoading || questionsLoading || isLoadingDraft) return <LoadingCard />;
   if (!questions || questions.length === 0) return null;
 
-  const currentQuestion = questions[currentIndex];
-  const progress = ((currentIndex + 1) / questions.length) * 100;
+  // Skip logic: determine if a question should be shown
+  const shouldShowQuestion = (question: any): boolean => {
+    if (!question.skip_logic || !question.skip_logic.skip_if) return true;
+    
+    // Find parent question (usually previous question by order_index)
+    const parentQuestion = questions.find(q => q.order_index === question.order_index - 1);
+    if (!parentQuestion) return true;
+    
+    const parentAnswer = answers[parentQuestion.id];
+    
+    // If parent answer matches skip_if value, skip this question
+    if (parentAnswer === question.skip_logic.skip_if) {
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Filter visible questions based on skip logic
+  const visibleQuestions = questions.filter(shouldShowQuestion);
+  
+  if (visibleQuestions.length === 0) return null;
+  
+  const currentQuestion = visibleQuestions[currentIndex];
+  const progress = ((currentIndex + 1) / visibleQuestions.length) * 100;
   const currentAnswer = answers[currentQuestion.id];
 
   const handleAnswer = async (value: any) => {
     const newAnswers = { ...answers, [currentQuestion.id]: value };
     setAnswers(newAnswers);
 
-    // Auto-save
+    // Auto-save answer
     await saveAnswer.mutateAsync({
       questionId: currentQuestion.id,
       answerValue: value
     });
+
+    // Save draft progress (current question index)
+    await saveDraftProgress(newAnswers, currentIndex);
   };
 
   const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+    if (currentIndex < visibleQuestions.length - 1) {
+      const newIndex = currentIndex + 1;
+      setCurrentIndex(newIndex);
+      saveDraftProgress(answers, newIndex);
     }
   };
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+      const newIndex = currentIndex - 1;
+      setCurrentIndex(newIndex);
+      saveDraftProgress(answers, newIndex);
     }
   };
 
@@ -70,11 +114,12 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
     onComplete?.();
   };
 
-  const isAnswered = currentAnswer !== undefined && currentAnswer !== null;
-  const isLastQuestion = currentIndex === questions.length - 1;
+  const isAnswered = currentAnswer !== undefined && currentAnswer !== null && 
+    (Array.isArray(currentAnswer) ? currentAnswer.length > 0 : true);
+  const isLastQuestion = currentIndex === visibleQuestions.length - 1;
 
   // Group questions by section for navigation
-  const sections = Array.from(new Set(questions.map(q => q.section)));
+  const sections = Array.from(new Set(visibleQuestions.map(q => q.section)));
   const currentSection = currentQuestion.section;
 
   const renderQuestion = () => {
@@ -93,6 +138,8 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
         return <SelectOneQuestion {...props} />;
       case 'yes_no':
         return <YesNoQuestion {...props} />;
+      case 'multi_select':
+        return <MultiSelectQuestion {...props} />;
       case 'text':
         return (
           <Input
@@ -116,7 +163,7 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
             <div>
               <CardTitle>Mikronutritivna Dijagnostika</CardTitle>
               <CardDescription>
-                Pitanje {currentIndex + 1} od {questions.length}
+                Pitanje {currentIndex + 1} od {visibleQuestions.length}
               </CardDescription>
             </div>
             <Badge variant="outline">{currentSection}</Badge>
@@ -127,7 +174,7 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
 
           <div className="flex gap-1 flex-wrap">
             {sections.map((section) => {
-              const sectionQuestions = questions.filter(q => q.section === section);
+              const sectionQuestions = visibleQuestions.filter(q => q.section === section);
               const answeredInSection = sectionQuestions.filter(q => answers[q.id] !== undefined).length;
               return (
                 <Badge
@@ -173,7 +220,7 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
             </Button>
 
             <div className="text-sm text-muted-foreground">
-              {Object.keys(answers).length} / {questions.length} odgovoreno
+              {Object.keys(answers).length} / {visibleQuestions.length} odgovoreno
             </div>
 
             {isLastQuestion ? (
