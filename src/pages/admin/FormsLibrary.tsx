@@ -61,6 +61,7 @@ export default function FormsLibrary() {
   const [isQuestionsOpen, setIsQuestionsOpen] = useState(false)
   const [isEditQuestionOpen, setIsEditQuestionOpen] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [isMicronutrientQuestionsOpen, setIsMicronutrientQuestionsOpen] = useState(false)
   const [newQuestionnaire, setNewQuestionnaire] = useState({ title: "", description: "" })
   const [newQuestion, setNewQuestion] = useState({ 
     question_text: "", 
@@ -92,6 +93,39 @@ export default function FormsLibrary() {
       }))
     },
     enabled: !!profile?.id
+  })
+
+  // Fetch micronutrient questionnaire
+  const { data: micronutrientQuestionnaire } = useQuery({
+    queryKey: ['micronutrient-questionnaire'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('micronutrient_questionnaires')
+        .select('*')
+        .eq('is_active', true)
+        .maybeSingle()
+
+      if (error) throw error
+      return data
+    },
+    enabled: !!profile?.id
+  })
+
+  // Fetch micronutrient questions count
+  const { data: micronutrientQuestionsData = [] } = useQuery({
+    queryKey: ['micronutrient-questions', micronutrientQuestionnaire?.id],
+    queryFn: async () => {
+      if (!micronutrientQuestionnaire?.id) return []
+      const { data, error } = await supabase
+        .from('micronutrient_questions')
+        .select('*')
+        .eq('questionnaire_id', micronutrientQuestionnaire.id)
+        .order('order_index', { ascending: true })
+
+      if (error) throw error
+      return data
+    },
+    enabled: !!micronutrientQuestionnaire?.id
   })
 
   // Fetch questions for selected questionnaire
@@ -278,6 +312,25 @@ export default function FormsLibrary() {
     }
   })
 
+  // Toggle micronutrient questionnaire active status
+  const toggleMicronutrientActive = useMutation({
+    mutationFn: async (data: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from('micronutrient_questionnaires')
+        .update({ is_active: data.is_active })
+        .eq('id', data.id)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['micronutrient-questionnaire'] })
+      toast({ title: "Status upitnika ažuriran" })
+    },
+    onError: () => {
+      toast({ title: "Greška pri ažuriranju statusa", variant: "destructive" })
+    }
+  })
+
   const handleCreateQuestionnaire = () => {
     if (!newQuestionnaire.title.trim()) return
     createQuestionnaire.mutate(newQuestionnaire)
@@ -348,13 +401,29 @@ export default function FormsLibrary() {
     reorderQuestions.mutate(newQuestions as Question[])
   }
 
+  const handleViewMicronutrientQuestions = () => {
+    setIsMicronutrientQuestionsOpen(true)
+  }
+
+  const handleToggleMicronutrientActive = () => {
+    if (!micronutrientQuestionnaire) return
+    toggleMicronutrientActive.mutate({
+      id: micronutrientQuestionnaire.id,
+      is_active: !micronutrientQuestionnaire.is_active
+    })
+  }
+
   const getQuestionTypeLabel = (type: string) => {
     const types = {
       'short_text': 'Kratki tekst',
       'long_text': 'Dugi tekst', 
       'multiple_choice': 'Višestruki izbor',
       'checkbox': 'Potvrdni okviri',
-      'scale_1_10': 'Skala 1-10'
+      'scale_1_10': 'Skala 1-10',
+      'text': 'Tekst',
+      'yes_no': 'Da/Ne',
+      'frequency': 'Učestalost',
+      'portion': 'Porcija'
     }
     return types[type as keyof typeof types] || type
   }
@@ -372,6 +441,64 @@ export default function FormsLibrary() {
   return (
     <AdminLayout title="Biblioteka Upitnika">
       <div className="space-y-6">
+        {/* Sistemski Upitnici Sekcija */}
+        {micronutrientQuestionnaire && (
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    {micronutrientQuestionnaire.title}
+                    <Badge variant={micronutrientQuestionnaire.is_active ? "default" : "secondary"}>
+                      {micronutrientQuestionnaire.is_active ? "Aktivan" : "Neaktivan"}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="mt-2">
+                    {micronutrientQuestionnaire.description}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleViewMicronutrientQuestions}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Pregled Pitanja
+                  </Button>
+                  <Button
+                    variant={micronutrientQuestionnaire.is_active ? "secondary" : "default"}
+                    size="sm"
+                    onClick={handleToggleMicronutrientActive}
+                  >
+                    {micronutrientQuestionnaire.is_active ? "Deaktiviraj" : "Aktiviraj"}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-6">
+                <div>
+                  <p className="text-sm text-muted-foreground">Ukupno pitanja</p>
+                  <p className="text-2xl font-bold">{micronutrientQuestionsData.length}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Sekcije</p>
+                  <p className="text-2xl font-bold">
+                    {new Set(micronutrientQuestionsData.map(q => q.section)).size}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Kategorije</p>
+                  <p className="text-2xl font-bold">
+                    {new Set(micronutrientQuestionsData.map(q => q.category)).size}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Ostali Upitnici</h2>
@@ -909,6 +1036,83 @@ export default function FormsLibrary() {
                   Nema pitanja za prikaz. Dodajte pitanja za pregled.
                 </p>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Micronutrient Questions Dialog */}
+        <Dialog open={isMicronutrientQuestionsOpen} onOpenChange={setIsMicronutrientQuestionsOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Mikronutritivni Upitnik - Pitanja</DialogTitle>
+              <DialogDescription>
+                Pregled svih {micronutrientQuestionsData.length} pitanja iz mikronutritivnog upitnika
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 mb-4 p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium">Ukupno pitanja</p>
+                  <p className="text-2xl font-bold">{micronutrientQuestionsData.length}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Sekcije</p>
+                  <p className="text-2xl font-bold">
+                    {new Set(micronutrientQuestionsData.map(q => q.section)).size}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Kategorije</p>
+                  <p className="text-2xl font-bold">
+                    {new Set(micronutrientQuestionsData.map(q => q.category)).size}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {Array.from(new Set(micronutrientQuestionsData.map(q => q.section))).map(section => (
+                  <div key={section} className="border rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      Sekcija {section}
+                      <Badge variant="outline">
+                        {micronutrientQuestionsData.filter(q => q.section === section).length} pitanja
+                      </Badge>
+                    </h3>
+                    
+                    {Array.from(new Set(micronutrientQuestionsData.filter(q => q.section === section).map(q => q.category))).map(category => (
+                      <div key={category} className="mb-6 last:mb-0">
+                        <h4 className="text-md font-medium mb-3 text-primary">{category}</h4>
+                        <div className="space-y-3">
+                          {micronutrientQuestionsData
+                            .filter(q => q.section === section && q.category === category)
+                            .map((question) => (
+                              <div key={question.id} className="p-3 bg-muted/30 rounded-md space-y-2">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Badge variant="secondary" className="text-xs">
+                                        {question.question_code}
+                                      </Badge>
+                                      <Badge variant="outline" className="text-xs">
+                                        {getQuestionTypeLabel(question.question_type)}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm">{question.question_text}</p>
+                                  </div>
+                                </div>
+                                {question.options && (
+                                  <div className="text-xs text-muted-foreground pl-2 border-l-2 border-muted">
+                                    Opcije: {typeof question.options === 'string' ? JSON.parse(question.options).join(', ') : ''}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </DialogContent>
         </Dialog>
