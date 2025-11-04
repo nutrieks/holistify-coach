@@ -10,6 +10,7 @@ import { FrequencyQuestion } from "./questions/FrequencyQuestion";
 import { PortionQuestion } from "./questions/PortionQuestion";
 import { SelectOneQuestion } from "./questions/SelectOneQuestion";
 import { YesNoQuestion } from "./questions/YesNoQuestion";
+import { Input } from "@/components/ui/input";
 
 interface MicronutrientQuestionnaireFormProps {
   clientId: string;
@@ -92,6 +93,16 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
         return <SelectOneQuestion {...props} />;
       case 'yes_no':
         return <YesNoQuestion {...props} />;
+      case 'text':
+        return (
+          <Input
+            type="text"
+            value={currentAnswer || ''}
+            onChange={(e) => handleAnswer(e.target.value)}
+            placeholder="Unesite nazive dodataka odvojene zarezom"
+            className="w-full"
+          />
+        );
       default:
         return <div>Nepoznat tip pitanja: {currentQuestion.question_type}</div>;
     }

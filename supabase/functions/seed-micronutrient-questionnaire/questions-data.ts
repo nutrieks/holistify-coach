@@ -735,6 +735,15 @@ export const MICRONUTRIENT_QUESTIONS = [
     nutrient_relevance: {}
   },
   {
+    section: 'A', category: 'Suplementi', question_code: 'A.15.2b',
+    question_text: 'Navedite nazive dodatnih dodataka prehrani koje uzimate (odvojite zarezom):',
+    question_type: 'text',
+    options: null,
+    order_index: 82.5,
+    skip_logic: null,
+    nutrient_relevance: {}
+  },
+  {
     section: 'A', category: 'Suplementi', question_code: 'A.15.3',
     question_text: 'Ako uzimate Vitamin D, koja je doza navedena na proizvodu?',
     question_type: 'select_one',
