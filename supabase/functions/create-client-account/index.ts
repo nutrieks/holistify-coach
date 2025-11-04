@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
     
     try {
       const { error: emailError } = await resend.emails.send({
-        from: 'Nutri Ekspert <nikola@nutriekspert.com>',
+        from: 'Nutri Ekspert <noreply@notifications.nutriekspert.com>',
         to: [clientEmail],
         subject: 'Dobrodošli - Dovršite registraciju',
         html: `
