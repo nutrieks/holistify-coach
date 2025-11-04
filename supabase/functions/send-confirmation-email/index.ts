@@ -419,7 +419,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
-      from: "Holistic Health Coach <onboarding@resend.dev>",
+      from: "NutriEkspert <noreply@notifications.nutriekspert.com>",
       to: [user.email],
       subject: getEmailSubject(email_action_type),
       html: htmlContent,
