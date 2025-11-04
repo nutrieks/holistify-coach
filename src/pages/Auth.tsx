@@ -46,9 +46,11 @@ const Auth = () => {
       }
     } else {
       toast({
-        title: "Uspješna registracija",
-        description: "Provjerite email za potvrdu registracije."
+        title: "Registracija uspješna! 📧",
+        description: "Provjerite svoj email za link za potvrdu registracije. Email može biti u spam folderu.",
+        duration: 8000,
       });
+      // Ne navigiramo nigdje - korisnik mora potvrditi email
     }
 
     setIsLoading(false);
@@ -194,6 +196,12 @@ const Auth = () => {
             </TabsContent>
             
             <TabsContent value="signup" className="space-y-4">
+              <Alert className="mb-4 bg-blue-50 border-blue-200">
+                <AlertDescription className="text-sm">
+                  📧 Nakon registracije primit ćete email s linkom za potvrdu. Provjerite spam folder ako email ne stigne za nekoliko minuta.
+                </AlertDescription>
+              </Alert>
+              
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-fullname">Puno ime</Label>

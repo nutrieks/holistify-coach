@@ -1,5 +1,8 @@
 project_id = "yoeisnlqclkdhxutfguq"
 
+[functions.send-confirmation-email]
+verify_jwt = false
+
 [functions.create-naq-questionnaire]
 verify_jwt = true
 
