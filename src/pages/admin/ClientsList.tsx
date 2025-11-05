@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { supabase } from "@/integrations/supabase/client"
@@ -13,6 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { AddClientModal } from "@/components/AddClientModal"
 import { TableSkeleton } from "@/components/TableSkeleton"
 import { ContractProgressBar } from "@/components/ContractProgressBar"
+import { ClientActionsMenu } from "@/components/ClientActionsMenu"
 
 interface Client {
   id: string
@@ -28,6 +31,8 @@ interface Client {
   contract_start_date: string | null
   contract_end_date: string | null
   sessions_remaining: number | null
+  is_archived: boolean | null
+  archived_at: string | null
   created_at: string
   updated_at: string
 }
@@ -36,6 +41,7 @@ export default function ClientsList() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  const [showArchived, setShowArchived] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -64,16 +70,17 @@ export default function ClientsList() {
     fetchClients()
   }, [])
 
-  const filteredClients = clients.filter(client =>
-    client.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = client.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesArchived = showArchived ? true : !client.is_archived
+    return matchesSearch && matchesArchived
+  })
 
-  const getStatusBadge = () => {
-    return (
-      <Badge variant="default">
-        Aktivan
-      </Badge>
-    )
+  const getStatusBadge = (client: Client) => {
+    if (client.is_archived) {
+      return <Badge variant="secondary">Arhiviran</Badge>
+    }
+    return <Badge variant="default">Aktivan</Badge>
   }
 
   if (loading) {
@@ -89,14 +96,26 @@ export default function ClientsList() {
       <div className="space-y-6">
         {/* Header Actions */}
         <div className="flex justify-between items-center">
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Pretraži klijente..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex items-center gap-4">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Pretraži klijente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch 
+                checked={showArchived}
+                onCheckedChange={setShowArchived}
+                id="show-archived"
+              />
+              <Label htmlFor="show-archived" className="cursor-pointer">
+                Prikaži arhivirane
+              </Label>
+            </div>
           </div>
           <Button onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -111,21 +130,23 @@ export default function ClientsList() {
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-b">
                   <TableHead className="w-[300px] pl-6">Klijent</TableHead>
-                  <TableHead>Tag</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Status Ugovora</TableHead>
                   <TableHead>Zadnja aktivnost</TableHead>
                   <TableHead>Trajanje</TableHead>
-                  <TableHead className="w-[100px]"></TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredClients.map((client) => (
                   <TableRow 
                     key={client.id}
-                    className="cursor-pointer hover:bg-muted/50 border-b"
-                    onClick={() => navigate(`/admin/clients/${client.user_id}`)}
+                    className="border-b"
                   >
-                    <TableCell className="pl-6">
+                    <TableCell 
+                      className="pl-6 cursor-pointer"
+                      onClick={() => navigate(`/admin/clients/${client.user_id}`)}
+                    >
                       <div className="flex items-center gap-3">
                         <Avatar className="w-10 h-10">
                           <AvatarFallback className="bg-primary/10 text-primary font-medium">
@@ -142,19 +163,19 @@ export default function ClientsList() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {getStatusBadge()}
+                    <TableCell onClick={() => navigate(`/admin/clients/${client.user_id}`)} className="cursor-pointer">
+                      {getStatusBadge(client)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => navigate(`/admin/clients/${client.user_id}`)} className="cursor-pointer">
                       <ContractProgressBar clientId={client.user_id} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => navigate(`/admin/clients/${client.user_id}`)} className="cursor-pointer">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Activity className="h-3 w-3" />
                         {new Date(client.created_at).toLocaleDateString('hr-HR')}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => navigate(`/admin/clients/${client.user_id}`)} className="cursor-pointer">
                       <div className="text-sm text-muted-foreground">
                         {client.contract_start_date ? 
                           Math.floor((new Date().getTime() - new Date(client.contract_start_date).getTime()) / (1000 * 60 * 60 * 24)) + ' dana'
@@ -162,10 +183,13 @@ export default function ClientsList() {
                         }
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Calendar className="h-4 w-4" />
-                      </Button>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <ClientActionsMenu
+                        clientUserId={client.user_id}
+                        clientName={client.full_name}
+                        isArchived={client.is_archived || false}
+                        onActionComplete={fetchClients}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

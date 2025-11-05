@@ -673,6 +673,8 @@ export type Database = {
         Row: {
           alcohol_consumption: string | null
           alcohol_details: string | null
+          archived_at: string | null
+          archived_by: string | null
           best_contact_time: string | null
           blood_type: string | null
           contract_end_date: string | null
@@ -686,6 +688,7 @@ export type Database = {
           gender: string | null
           height: number | null
           id: string
+          is_archived: boolean | null
           notes: string | null
           number_of_children: number | null
           occupation: string | null
@@ -705,6 +708,8 @@ export type Database = {
         Insert: {
           alcohol_consumption?: string | null
           alcohol_details?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           best_contact_time?: string | null
           blood_type?: string | null
           contract_end_date?: string | null
@@ -718,6 +723,7 @@ export type Database = {
           gender?: string | null
           height?: number | null
           id?: string
+          is_archived?: boolean | null
           notes?: string | null
           number_of_children?: number | null
           occupation?: string | null
@@ -737,6 +743,8 @@ export type Database = {
         Update: {
           alcohol_consumption?: string | null
           alcohol_details?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           best_contact_time?: string | null
           blood_type?: string | null
           contract_end_date?: string | null
@@ -750,6 +758,7 @@ export type Database = {
           gender?: string | null
           height?: number | null
           id?: string
+          is_archived?: boolean | null
           notes?: string | null
           number_of_children?: number | null
           occupation?: string | null

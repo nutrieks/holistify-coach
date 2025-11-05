@@ -12,6 +12,7 @@ import { ArrowLeft, Calendar, Mail, Phone, User, Activity, TrendingUp, Clock, Pl
 import { useToast } from "@/hooks/use-toast"
 import { EnhancedAssignTrainingPlanModal } from "@/components/EnhancedAssignTrainingPlanModal"
 import { EnhancedAssignNutritionPlanModal } from "@/components/EnhancedAssignNutritionPlanModal"
+import { ClientActionsMenu } from "@/components/ClientActionsMenu"
 import { TrainingPlanView } from "@/components/TrainingPlanView"
 import { NutritionPlanViewer } from "@/components/nutrition-plan/NutritionPlanViewer"
 import { ProgressTab } from "@/components/progress/ProgressTab"
@@ -58,6 +59,8 @@ interface ClientProfile {
   contract_start_date: string | null
   contract_end_date: string | null
   sessions_remaining: number | null
+  is_archived: boolean | null
+  archived_at: string | null
   created_at: string
   updated_at: string
 }
@@ -136,11 +139,10 @@ export default function ClientDetail() {
   }, [id])
 
   const getStatusBadge = () => {
-    return (
-      <Badge variant="default">
-        Aktivan
-      </Badge>
-    )
+    if (client?.is_archived) {
+      return <Badge variant="secondary">Arhiviran</Badge>
+    }
+    return <Badge variant="default">Aktivan</Badge>
   }
 
   const calculateAge = (dateOfBirth: string | null): number | null => {
@@ -222,6 +224,12 @@ export default function ClientDetail() {
               <Mail className="h-4 w-4 mr-2" />
               Poruka
             </Button>
+            <ClientActionsMenu
+              clientUserId={client.user_id}
+              clientName={client.full_name}
+              isArchived={client.is_archived || false}
+              onActionComplete={fetchClient}
+            />
           </div>
         </div>
 
