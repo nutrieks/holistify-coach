@@ -73,34 +73,50 @@ Deno.serve(async (req) => {
     const origin = req.headers.get('origin') || redirectUrl || Deno.env.get('SUPABASE_URL')
     const redirectTo = `${origin}/auth`
 
-    console.log('Generating invitation link with redirectTo:', redirectTo)
+    console.log('Creating user account with redirectTo:', redirectTo)
 
-    // Generate invitation link using admin API
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'invite',
+    // Create user directly with confirmed email
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
+      email: clientEmail,
+      email_confirm: true,
+      user_metadata: {
+        full_name: clientName,
+        role: 'client'
+      }
+    })
+
+    if (userError) {
+      console.error('Error creating user:', userError)
+      throw userError
+    }
+
+    if (!userData.user) {
+      throw new Error('Failed to create user')
+    }
+
+    const invitedUserId = userData.user.id
+    console.log('User created successfully:', invitedUserId)
+
+    // Generate password reset link for the new user
+    const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
       email: clientEmail,
       options: {
-        data: {
-          full_name: clientName,
-          role: 'client'
-        },
         redirectTo
       }
     })
 
-    if (linkError) {
-      console.error('Error generating invitation link:', linkError)
-      throw linkError
+    if (resetError) {
+      console.error('Error generating password reset link:', resetError)
+      throw resetError
     }
 
-    if (!linkData.user || !linkData.properties?.action_link) {
-      throw new Error('Failed to generate invitation link')
+    if (!resetData.properties?.action_link) {
+      throw new Error('Failed to generate password reset link')
     }
 
-    const invitedUserId = linkData.user.id
-    const actionLink = linkData.properties.action_link
-
-    console.log('Invitation link generated for user:', invitedUserId)
+    const actionLink = resetData.properties.action_link
+    console.log('Password reset link generated for user:', invitedUserId)
 
     // Send invitation email using Resend
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
@@ -109,17 +125,17 @@ Deno.serve(async (req) => {
       const { error: emailError } = await resend.emails.send({
         from: 'Nutri Ekspert <noreply@notifications.nutriekspert.com>',
         to: [clientEmail],
-        subject: 'Dobrodošli - Dovršite registraciju',
+        subject: 'Dobrodošli - Postavite Vašu Lozinku',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333;">Pozdrav ${clientName},</h2>
             <p style="color: #555; line-height: 1.6;">
-              Dobrodošli u našu aplikaciju za coaching! Pozivamo Vas da dovršite registraciju i postavite svoju lozinku.
+              Dobrodošli u našu aplikaciju za coaching! Vaš coach je kreirao račun za Vas. Kliknite na dugme ispod da biste postavili svoju lozinku i pristupili aplikaciji.
             </p>
             <p style="margin: 30px 0;">
               <a href="${actionLink}" 
                  style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                Dovršite registraciju
+                Postavite Vašu Lozinku
               </a>
             </p>
             <p style="color: #666; font-size: 14px; line-height: 1.6;">
@@ -130,18 +146,18 @@ Deno.serve(async (req) => {
             </p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
             <p style="color: #999; font-size: 12px;">
-              Ako niste tražili registraciju, možete ignorirati ovaj email.
+              Ako niste očekivali ovaj email, možete ga ignorirati.
             </p>
           </div>
         `
       })
 
       if (emailError) {
-        console.error('Error sending invitation email:', emailError)
-        throw new Error('Failed to send invitation email')
+        console.error('Error sending password setup email:', emailError)
+        throw new Error('Failed to send password setup email')
       }
 
-      console.log('Invitation email sent successfully to:', clientEmail)
+      console.log('Password setup email sent successfully to:', clientEmail)
     } catch (emailError) {
       console.error('Resend error:', emailError)
       throw new Error('Failed to send invitation email')
@@ -190,7 +206,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         userId: invitedUserId,
-        message: 'Client account created and invitation email sent successfully'
+        message: 'Client account created and password setup email sent successfully'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
