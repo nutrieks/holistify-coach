@@ -227,22 +227,22 @@ export default function ClientDetail() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-14 overflow-x-auto">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="anthropometry">Antropometrija</TabsTrigger>
-            <TabsTrigger value="biochemical">Biokemija</TabsTrigger>
-            <TabsTrigger value="energy">Energija</TabsTrigger>
-            <TabsTrigger value="diagnostics">NAQ</TabsTrigger>
-            <TabsTrigger value="nutritional">NAQ (stara)</TabsTrigger>
-            <TabsTrigger value="micronutrient">Mikronutrijenti</TabsTrigger>
-            <TabsTrigger value="progress">Napredak</TabsTrigger>
-            <TabsTrigger value="retrospective">Retrospektiva</TabsTrigger>
-            <TabsTrigger value="training">Trening</TabsTrigger>
-            <TabsTrigger value="nutrition">Prehrana</TabsTrigger>
-            <TabsTrigger value="checkins">Check Ins</TabsTrigger>
-            <TabsTrigger value="forms">Obrasci</TabsTrigger>
-            <TabsTrigger value="notes">Bilješke</TabsTrigger>
-            <TabsTrigger value="chat">Chat</TabsTrigger>
+          <TabsList className="flex w-full overflow-x-auto gap-1 p-1">
+            <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
+            <TabsTrigger value="anthropometry" className="whitespace-nowrap">Antropometrija</TabsTrigger>
+            <TabsTrigger value="biochemical" className="whitespace-nowrap">Biokemija</TabsTrigger>
+            <TabsTrigger value="energy" className="whitespace-nowrap">Energija</TabsTrigger>
+            <TabsTrigger value="diagnostics" className="whitespace-nowrap">NAQ</TabsTrigger>
+            <TabsTrigger value="nutritional" className="whitespace-nowrap">NAQ (stara)</TabsTrigger>
+            <TabsTrigger value="micronutrient" className="whitespace-nowrap">Mikronutrijenti</TabsTrigger>
+            <TabsTrigger value="progress" className="whitespace-nowrap">Napredak</TabsTrigger>
+            <TabsTrigger value="retrospective" className="whitespace-nowrap">Retrospektiva</TabsTrigger>
+            <TabsTrigger value="training" className="whitespace-nowrap">Trening</TabsTrigger>
+            <TabsTrigger value="nutrition" className="whitespace-nowrap">Prehrana</TabsTrigger>
+            <TabsTrigger value="checkins" className="whitespace-nowrap">Check Ins</TabsTrigger>
+            <TabsTrigger value="forms" className="whitespace-nowrap">Obrasci</TabsTrigger>
+            <TabsTrigger value="notes" className="whitespace-nowrap">Bilješke</TabsTrigger>
+            <TabsTrigger value="chat" className="whitespace-nowrap">Chat</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
