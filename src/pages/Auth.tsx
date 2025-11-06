@@ -153,7 +153,7 @@ const Auth = () => {
             </TabsContent>
             
             <TabsContent value="signup" className="space-y-4">
-              <Alert className="mb-4 bg-blue-50 border-blue-200">
+              <Alert className="mb-4 border-blue-200 bg-slate-950">
                 <AlertDescription className="text-sm">
                   📧 Nakon registracije primit ćete email s linkom za potvrdu. Provjerite spam folder ako email ne stigne za nekoliko minuta.
                 </AlertDescription>
