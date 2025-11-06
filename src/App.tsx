@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { AdminLayout } from "@/components/AdminLayout";
+import { ClientLayout } from "@/components/ClientLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -185,62 +187,16 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route
-              path="/client" 
-              element={
-                <ProtectedRoute requiredRole="client">
-                  <ClientDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route
-              path="/my-plans" 
-              element={
-                <ProtectedRoute requiredRole="client">
-                  <MyPlans />
-                </ProtectedRoute>
-              } 
-            />
-            <Route
-              path="/check-in" 
-              element={
-                <ProtectedRoute requiredRole="client">
-                  <CheckIn />
-                </ProtectedRoute>
-              } 
-            />
-            <Route
-              path="/my-progress" 
-              element={
-                <ProtectedRoute requiredRole="client">
-                  <MyProgress />
-                </ProtectedRoute>
-              } 
-            />
-            <Route
-              path="/messages" 
-              element={
-                <ProtectedRoute requiredRole="client">
-                  <Messages />
-                </ProtectedRoute>
-              } 
-            />
-            <Route
-              path="/questionnaire/:id" 
-              element={
-                <ProtectedRoute requiredRole="client">
-                  <QuestionnaireForm />
-                </ProtectedRoute>
-              } 
-            />
-            <Route
-              path="/micronutrient-questionnaire" 
-              element={
-                <ProtectedRoute requiredRole="client">
-                  <MicronutrientQuestionnaire />
-                </ProtectedRoute>
-              } 
-            />
+            {/* Client Routes */}
+            <Route element={<ProtectedRoute requiredRole="client"><div /></ProtectedRoute>}>
+              <Route path="/client" element={<ClientLayout><ClientDashboard /></ClientLayout>} />
+              <Route path="/my-plans" element={<ClientLayout><MyPlans /></ClientLayout>} />
+              <Route path="/check-in" element={<ClientLayout><CheckIn /></ClientLayout>} />
+              <Route path="/my-progress" element={<ClientLayout><MyProgress /></ClientLayout>} />
+              <Route path="/messages" element={<ClientLayout><Messages /></ClientLayout>} />
+              <Route path="/questionnaire/:id" element={<ClientLayout><QuestionnaireForm /></ClientLayout>} />
+              <Route path="/micronutrient-questionnaire" element={<ClientLayout><MicronutrientQuestionnaire /></ClientLayout>} />
+            </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

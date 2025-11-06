@@ -18,7 +18,7 @@ import { useMicronutrientResults } from '@/hooks/useMicronutrientResults';
 import { useToast } from '@/hooks/use-toast';
 
 const ClientDashboard = () => {
-  const { profile, signOut } = useAuth();
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const {
@@ -154,100 +154,73 @@ const ClientDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b bg-card">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="h-8 w-48 bg-muted animate-pulse rounded"></div>
-                <div className="h-4 w-32 bg-muted animate-pulse rounded mt-2"></div>
-              </div>
-              <div className="h-10 w-20 bg-muted animate-pulse rounded"></div>
-            </div>
-          </div>
-        </header>
-        <div className="container mx-auto px-4 py-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <LoadingCard />
-            <LoadingCard />
-            <LoadingCard />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <LoadingCard lines={6} />
-            <LoadingCard lines={4} />
-          </div>
-          <LoadingCard lines={4} />
-          <LoadingCard lines={2} />
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <LoadingCard />
+          <LoadingCard />
+          <LoadingCard />
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <LoadingCard lines={6} />
+          <LoadingCard lines={4} />
+        </div>
+        <LoadingCard lines={4} />
+        <LoadingCard lines={2} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">Moj Dashboard</h1>
-            <p className="text-muted-foreground">Dobrodošli, {profile?.full_name}!</p>
-          </div>
-          <Button variant="outline" onClick={() => signOut()}>
-            Odjava
-          </Button>
-        </div>
-      </header>
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      {/* Contract Progress Bar */}
+      {profile?.id && (
+        <Card className="card-neon">
+          <CardHeader>
+            <CardTitle>Trajanje suradnje</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ContractProgressBar clientId={profile.id} showLabel={true} />
+          </CardContent>
+        </Card>
+      )}
 
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Contract Progress Bar */}
-        {profile?.id && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Trajanje suradnje</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ContractProgressBar clientId={profile.id} showLabel={true} />
-            </CardContent>
-          </Card>
-        )}
+      {/* Pending Questionnaire Alert */}
+      {pendingQuestionnaire && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <AlertCircle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="flex items-center justify-between">
+            <div>
+              <span className="font-medium">Novi upitnik čeka ispunjavanje: </span>
+              <span>{pendingQuestionnaire.title}</span>
+              {pendingQuestionnaire.description && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {pendingQuestionnaire.description}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2 ml-4 shrink-0">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => handleSkipQuestionnaire(pendingQuestionnaire.id)}
+              >
+                Preskoči za sada
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={() => navigate(`/questionnaire/${pendingQuestionnaire.id}`)}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Ispuni sada
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
-        {/* Pending Questionnaire Alert */}
-        {pendingQuestionnaire && (
-          <Alert className="border-orange-200 bg-orange-50">
-            <AlertCircle className="h-4 w-4 text-orange-600" />
-            <AlertDescription className="flex items-center justify-between">
-              <div>
-                <span className="font-medium">Novi upitnik čeka ispunjavanje: </span>
-                <span>{pendingQuestionnaire.title}</span>
-                {pendingQuestionnaire.description && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {pendingQuestionnaire.description}
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2 ml-4 shrink-0">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleSkipQuestionnaire(pendingQuestionnaire.id)}
-                >
-                  Preskoči za sada
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={() => navigate(`/questionnaire/${pendingQuestionnaire.id}`)}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  Ispuni sada
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Today's Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
+      {/* Today's Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="card-neon">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Današnji kalorije</CardTitle>
               <Apple className="h-4 w-4 text-green-600" />
@@ -262,9 +235,9 @@ const ClientDashboard = () => {
                 }
               </p>
             </CardContent>
-          </Card>
+        </Card>
 
-          <Card>
+        <Card className="card-neon">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Današnji trening</CardTitle>
               <Dumbbell className="h-4 w-4 text-blue-600" />
@@ -290,9 +263,9 @@ const ClientDashboard = () => {
                 </>
               )}
             </CardContent>
-          </Card>
+        </Card>
 
-          <Card>
+        <Card className="card-neon">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Nove poruke</CardTitle>
               <MessageSquare className="h-4 w-4 text-orange-600" />
@@ -306,9 +279,9 @@ const ClientDashboard = () => {
                 {unreadCount ? 'Pogledaj' : 'Otvori chat'}
               </Button>
             </CardContent>
-          </Card>
+        </Card>
 
-          <Card>
+        <Card className="card-neon">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -317,13 +290,13 @@ const ClientDashboard = () => {
                 </div>
                 <Clock className="h-8 w-8 text-primary" />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Today's Meals */}
-          <Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Today's Meals */}
+        <Card className="card-neon">
             <CardHeader>
               <CardTitle>Današnji obroci</CardTitle>
               <CardDescription>Vaš plan prehrane za danas</CardDescription>
@@ -363,10 +336,10 @@ const ClientDashboard = () => {
                 </div>
               )}
             </CardContent>
-          </Card>
+        </Card>
 
-          {/* Daily Habits */}
-          <Card>
+        {/* Daily Habits */}
+        <Card className="card-neon">
             <CardHeader>
               <CardTitle>Današnje navike</CardTitle>
               <CardDescription>Vaše dnevne aktivnosti</CardDescription>
@@ -404,52 +377,52 @@ const ClientDashboard = () => {
                 </div>
               )}
             </CardContent>
-          </Card>
-        </div>
-
-        {/* Weekly Progress */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tjedni napredak</CardTitle>
-            <CardDescription>Pregled vaših rezultata ovog tjedna</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {progressData?.weight || '--'} kg
-                </div>
-                <p className="text-sm text-muted-foreground">Trenutna težina</p>
-                <p className="text-xs text-muted-foreground">
-                  {progressData?.weight ? 'Zadnje ažuriranje ovog tjedna' : 'Nema podataka'}
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {progressData?.workouts_completed || 0}
-                </div>
-                <p className="text-sm text-muted-foreground">Treninzi završeni ovog tjedna</p>
-                <Progress 
-                  value={((progressData?.workouts_completed || 0) / 4) * 100} 
-                  className="mt-2"
-                />
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {progressData?.habits_completed || 0}
-                </div>
-                <p className="text-sm text-muted-foreground">Navike završene ovog tjedna</p>
-                <Progress 
-                  value={((progressData?.habits_completed || 0) / 7) * 100} 
-                  className="mt-2"
-                />
-              </div>
-            </div>
-          </CardContent>
         </Card>
+      </div>
 
-        {/* My Questionnaires Section */}
-        <Card>
+      {/* Weekly Progress */}
+      <Card className="card-neon">
+        <CardHeader>
+          <CardTitle>Tjedni napredak</CardTitle>
+          <CardDescription>Pregled vaših rezultata ovog tjedna</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {progressData?.weight || '--'} kg
+              </div>
+              <p className="text-sm text-muted-foreground">Trenutna težina</p>
+              <p className="text-xs text-muted-foreground">
+                {progressData?.weight ? 'Zadnje ažuriranje ovog tjedna' : 'Nema podataka'}
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {progressData?.workouts_completed || 0}
+              </div>
+              <p className="text-sm text-muted-foreground">Treninzi završeni ovog tjedna</p>
+              <Progress 
+                value={((progressData?.workouts_completed || 0) / 4) * 100} 
+                className="mt-2"
+              />
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                {progressData?.habits_completed || 0}
+              </div>
+              <p className="text-sm text-muted-foreground">Navike završene ovog tjedna</p>
+              <Progress 
+                value={((progressData?.habits_completed || 0) / 7) * 100} 
+                className="mt-2"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* My Questionnaires Section */}
+      <Card className="card-neon">
           <CardHeader>
             <CardTitle>Moji Upitnici</CardTitle>
             <CardDescription>Dostupni upitnici i rezultati</CardDescription>
@@ -504,8 +477,8 @@ const ClientDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Micronutrient Analysis Card */}
-        <Card>
+      {/* Micronutrient Analysis Card */}
+      <Card className="card-neon">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-purple-600" />
@@ -564,13 +537,13 @@ const ClientDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* NAQ Dashboard */}
-        {profile?.id && (
-          <ClientNAQDashboard clientId={profile.id} />
-        )}
+      {/* NAQ Dashboard */}
+      {profile?.id && (
+        <ClientNAQDashboard clientId={profile.id} />
+      )}
 
-        {/* Quick Actions */}
-        <Card>
+      {/* Quick Actions */}
+      <Card className="card-neon">
           <CardHeader>
             <CardTitle>Brze akcije</CardTitle>
           </CardHeader>
@@ -655,10 +628,9 @@ const ClientDashboard = () => {
                 <BarChart3 className="h-6 w-6" />
                 <span className="text-sm">NAQ Upitnik</span>
               </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

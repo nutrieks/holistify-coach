@@ -18,8 +18,8 @@ All colors MUST be HSL.
     --popover: 220 15% 10%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 180 84% 40%;
+    --primary-foreground: 180 100% 95%;
 
     --secondary: 220 15% 18%;
     --secondary-foreground: 210 40% 98%;
@@ -27,26 +27,31 @@ All colors MUST be HSL.
     --muted: 220 15% 15%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 180 84% 40%;
+    --accent-foreground: 180 100% 95%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 220 15% 20%;
     --input: 220 15% 18%;
-    --ring: 217 91% 60%;
+    --ring: 180 84% 40%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 220 15% 10%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-primary: 180 84% 40%;
+    --sidebar-primary-foreground: 180 100% 95%;
     --sidebar-accent: 220 15% 15%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-ring: 180 84% 40%;
+
+    /* Neon Glow Colors */
+    --neon-teal: 180 84% 40%;
+    --neon-teal-bright: 180 100% 50%;
+    --neon-teal-glow: 180 100% 40%;
 
     /* Meal gradient colors */
     --gradient-breakfast-start: 151 55% 42%;
@@ -55,8 +60,8 @@ All colors MUST be HSL.
     --gradient-lunch-start: 25 95% 53%;
     --gradient-lunch-end: 33 100% 50%;
     
-    --gradient-dinner-start: 199 89% 48%;
-    --gradient-dinner-end: 217 91% 60%;
+    --gradient-dinner-start: 180 84% 40%;
+    --gradient-dinner-end: 180 100% 50%;
     
     --gradient-snack-rose-start: 330 81% 60%;
     --gradient-snack-rose-end: 346 77% 50%;
@@ -67,8 +72,8 @@ All colors MUST be HSL.
     --gradient-preworkout-start: 25 95% 53%;
     --gradient-preworkout-end: 33 100% 50%;
     
-    --gradient-postworkout-start: 189 94% 43%;
-    --gradient-postworkout-end: 180 100% 80%;
+    --gradient-postworkout-start: 180 94% 43%;
+    --gradient-postworkout-end: 180 100% 60%;
     
     --gradient-training-start: 220 15% 25%;
     --gradient-training-end: 220 15% 35%;
@@ -99,6 +104,47 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
+  /* Neon Glow Utilities */
+  .neon-glow {
+    box-shadow: 
+      0 0 10px hsla(var(--neon-teal-glow), 0.5),
+      0 0 20px hsla(var(--neon-teal-glow), 0.3),
+      0 0 30px hsla(var(--neon-teal-glow), 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .neon-glow-text {
+    text-shadow: 
+      0 0 10px hsla(var(--neon-teal-bright), 0.8),
+      0 0 20px hsla(var(--neon-teal-glow), 0.6);
+  }
+  
+  .neon-border {
+    border-color: hsl(var(--neon-teal));
+    box-shadow: 
+      0 0 5px hsla(var(--neon-teal-glow), 0.4),
+      inset 0 0 5px hsla(var(--neon-teal-glow), 0.2);
+  }
+  
+  .card-neon {
+    background: linear-gradient(
+      135deg,
+      hsla(var(--card), 1),
+      hsla(var(--card), 0.95)
+    );
+    border: 1px solid hsla(var(--neon-teal), 0.3);
+    box-shadow: 
+      0 4px 20px hsla(var(--neon-teal-glow), 0.1),
+      0 0 40px hsla(var(--neon-teal-glow), 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .card-neon:hover {
+    box-shadow: 
+      0 8px 30px hsla(var(--neon-teal-glow), 0.15),
+      0 0 50px hsla(var(--neon-teal-glow), 0.1);
+  }
+
   /* Meal Gradient Classes with Neon Glow Effects */
   .gradient-breakfast {
     background: linear-gradient(135deg, hsl(var(--gradient-breakfast-start)) 0%, hsl(var(--gradient-breakfast-end)) 100%);

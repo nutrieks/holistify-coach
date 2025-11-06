@@ -69,6 +69,10 @@ Deno.serve(async (req) => {
       throw new Error('Missing required fields: clientName or clientEmail')
     }
 
+    if (!coachId) {
+      throw new Error('Missing required field: coachId')
+    }
+
     // Get origin for redirect URL
     const origin = req.headers.get('origin') || redirectUrl || Deno.env.get('SUPABASE_URL')
     const redirectTo = `${origin}/set-password`
@@ -188,6 +192,7 @@ Deno.serve(async (req) => {
       .from('clients')
       .insert({
         user_id: invitedUserId,
+        coach_id: coachId,
         full_name: clientName,
         email: clientEmail,
         contract_start_date: contractStartDate || null,
