@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -11,16 +10,6 @@ const Index = () => {
   } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect authenticated users to their dashboard
-  useEffect(() => {
-    if (user && profile) {
-      if (profile.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/client');
-      }
-    }
-  }, [user, profile, navigate]);
   const features = [{
     icon: Heart,
     title: "Holistički pristup",

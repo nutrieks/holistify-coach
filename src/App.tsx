@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -33,6 +33,7 @@ import NotFound from "./pages/NotFound";
 import QuestionnaireForm from "./pages/QuestionnaireForm";
 import MicronutrientQuestionnaire from "./pages/MicronutrientQuestionnaire";
 import SetPassword from "./pages/SetPassword";
+import ClientForms from "./pages/ClientForms";
 
 const queryClient = new QueryClient();
 
@@ -188,9 +189,10 @@ const App = () => (
               } 
             />
             {/* Client Routes */}
-            <Route element={<ProtectedRoute requiredRole="client"><div /></ProtectedRoute>}>
+            <Route element={<ProtectedRoute requiredRole="client"><Outlet /></ProtectedRoute>}>
               <Route path="/client" element={<ClientLayout><ClientDashboard /></ClientLayout>} />
               <Route path="/my-plans" element={<ClientLayout><MyPlans /></ClientLayout>} />
+              <Route path="/forms" element={<ClientLayout><ClientForms /></ClientLayout>} />
               <Route path="/check-in" element={<ClientLayout><CheckIn /></ClientLayout>} />
               <Route path="/my-progress" element={<ClientLayout><MyProgress /></ClientLayout>} />
               <Route path="/messages" element={<ClientLayout><Messages /></ClientLayout>} />

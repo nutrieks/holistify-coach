@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const mainNavItems = [
-  { title: "Dashboard", url: "/client-dashboard", icon: Home },
+  { title: "Dashboard", url: "/client", icon: Home },
   { title: "Moji Planovi", url: "/my-plans", icon: Calendar },
   { title: "Upitnici", url: "/forms", icon: FileText },
   { title: "Napredak", url: "/my-progress", icon: TrendingUp },
