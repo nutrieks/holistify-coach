@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      assigned_micronutrient_questionnaires: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          client_id: string
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          questionnaire_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          client_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          questionnaire_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          questionnaire_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assigned_micronutrient_questionnaires_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "micronutrient_questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assigned_questionnaires: {
         Row: {
           assigned_at: string
@@ -1165,6 +1212,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          requires_assignment: boolean | null
           title: string
           updated_at: string | null
         }
@@ -1174,6 +1222,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          requires_assignment?: boolean | null
           title?: string
           updated_at?: string | null
         }
@@ -1183,6 +1232,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          requires_assignment?: boolean | null
           title?: string
           updated_at?: string | null
         }

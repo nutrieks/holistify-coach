@@ -12,6 +12,7 @@ import { useNAQResults, useClientNAQHistory } from "@/hooks/useNAQScoring"
 import { useMicronutrientResults } from "@/hooks/useMicronutrientResults"
 import { useSeedNAQQuestions } from "@/hooks/useSeedNAQQuestions"
 import { AssignQuestionnaireModal } from "@/components/AssignQuestionnaireModal"
+import { AssignMicronutrientModal } from "@/components/AssignMicronutrientModal"
 import { FileText, TrendingUp, Calendar, AlertTriangle, Plus, Send, Eye, CheckCircle, Activity } from "lucide-react"
 import { format } from "date-fns"
 import { useNavigate } from "react-router-dom"
@@ -25,10 +26,39 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
   const navigate = useNavigate()
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null)
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [showAssignMicronutrientModal, setShowAssignMicronutrientModal] = useState(false)
   const seedNAQMutation = useSeedNAQQuestions()
 
   // Get micronutrient results
   const { data: micronutrientData } = useMicronutrientResults(clientId)
+
+  // Get assigned micronutrient questionnaires
+  const { data: assignedMicronutrient, refetch: refetchMicronutrient } = useQuery({
+    queryKey: ['assigned-micronutrient', clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('assigned_micronutrient_questionnaires')
+        .select(`
+          id,
+          status,
+          assigned_at,
+          completed_at,
+          notes,
+          micronutrient_questionnaires (
+            id,
+            title,
+            description
+          )
+        `)
+        .eq('client_id', clientId)
+        .order('assigned_at', { ascending: false })
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId
+  })
 
   // Get assigned questionnaires (excluding NAQ)
   const { data: assignedQuestionnaires, refetch: refetchAssigned } = useQuery({
@@ -148,9 +178,8 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="assigned" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="assigned">Dodijeljeni upitnici</TabsTrigger>
-              <TabsTrigger value="micronutrient">Mikronutritivna Analiza</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="assigned">Dodijeljeni</TabsTrigger>
               <TabsTrigger value="naq">NAQ Rezultati</TabsTrigger>
               <TabsTrigger value="analytics">NAQ Analitika</TabsTrigger>
               <TabsTrigger value="history">História NAQ</TabsTrigger>
@@ -158,9 +187,65 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
             </TabsList>
 
             <TabsContent value="assigned" className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Dodijeljeni upitnici</h3>
+                <div className="flex gap-2">
+                  <Button onClick={() => setShowAssignModal(true)} size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Standardni upitnik
+                  </Button>
+                  <Button onClick={() => setShowAssignMicronutrientModal(true)} size="sm">
+                    <Activity className="h-4 w-4 mr-2" />
+                    Mikronutritivna analiza
+                  </Button>
+                </div>
+              </div>
+
+              {/* Micronutrient Assignment */}
+              {assignedMicronutrient && (
+                <Card className="p-4 border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Activity className="h-4 w-4 text-primary" />
+                        {getStatusBadge(assignedMicronutrient.status)}
+                        <h4 className="font-medium">{assignedMicronutrient.micronutrient_questionnaires?.title}</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {assignedMicronutrient.micronutrient_questionnaires?.description}
+                      </p>
+                      {assignedMicronutrient.notes && (
+                        <p className="text-sm text-muted-foreground italic mt-1">
+                          Napomena: {assignedMicronutrient.notes}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                        <span>
+                          <Calendar className="h-3 w-3 inline mr-1" />
+                          Dodijeljeno: {format(new Date(assignedMicronutrient.assigned_at), 'dd.MM.yyyy')}
+                        </span>
+                        {assignedMicronutrient.completed_at && (
+                          <span>
+                            <CheckCircle className="h-3 w-3 inline mr-1" />
+                            Završeno: {format(new Date(assignedMicronutrient.completed_at), 'dd.MM.yyyy')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {assignedMicronutrient.status === 'completed' && micronutrientData && (
+                        <Button size="sm" variant="outline">
+                          Pregled rezultata
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* Regular Questionnaires */}
               {assignedQuestionnaires && assignedQuestionnaires.length > 0 ? (
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold mb-4">Dodijeljeni upitnici</h3>
                   {assignedQuestionnaires.map((assigned) => (
                     <Card key={assigned.id} className="p-4">
                       <div className="flex items-center justify-between">
@@ -199,52 +284,13 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
                     </Card>
                   ))}
                 </div>
-              ) : (
+              ) : !assignedMicronutrient ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Nema dodijeljenih upitnika</p>
-                  <p className="text-sm">Kliknite "Dodijeli upitnik" da biste dodijelili novi upitnik</p>
+                  <p className="text-sm">Dodijelite upitnike koristeći dugmad iznad</p>
                 </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="micronutrient" className="space-y-4">
-              {micronutrientData?.results && micronutrientData.results.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold">Mikronutritivna Analiza</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Završeno: {micronutrientData.submission?.completed_at 
-                          ? format(new Date(micronutrientData.submission.completed_at), 'dd.MM.yyyy HH:mm')
-                          : 'N/A'}
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => navigate('/micronutrient-questionnaire')}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <Activity className="h-4 w-4 mr-2" />
-                      Ponovi analizu
-                    </Button>
-                  </div>
-                  <MicronutrientResultsView clientId={clientId} />
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Activity className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                  <h3 className="text-lg font-semibold mb-2">Nema mikronutritivne analize</h3>
-                  <p className="mb-4">Klijent još nije ispunio mikronutritivni upitnik</p>
-                  <Button 
-                    onClick={() => navigate('/micronutrient-questionnaire')}
-                    size="sm"
-                  >
-                    <Activity className="h-4 w-4 mr-2" />
-                    Započni analizu
-                  </Button>
-                </div>
-              )}
+              ) : null}
             </TabsContent>
 
             <TabsContent value="naq" className="space-y-4">
@@ -400,6 +446,16 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
         onQuestionnaireAssigned={() => {
           refetchAssigned()
           setShowAssignModal(false)
+        }}
+      />
+
+      <AssignMicronutrientModal
+        open={showAssignMicronutrientModal}
+        onOpenChange={setShowAssignMicronutrientModal}
+        clientId={clientId}
+        onAssigned={() => {
+          refetchMicronutrient()
+          setShowAssignMicronutrientModal(false)
         }}
       />
     </div>
