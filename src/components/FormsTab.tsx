@@ -182,7 +182,7 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
               <TabsTrigger value="assigned">Dodijeljeni</TabsTrigger>
               <TabsTrigger value="naq">NAQ Rezultati</TabsTrigger>
               <TabsTrigger value="analytics">NAQ Analitika</TabsTrigger>
-              <TabsTrigger value="history">História NAQ</TabsTrigger>
+              <TabsTrigger value="history">Povijest NAQ</TabsTrigger>
               <TabsTrigger value="other">Ostale forme</TabsTrigger>
             </TabsList>
 
@@ -359,7 +359,7 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
                 </div>
               ) : naqHistory && naqHistory.length > 0 ? (
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold mb-4">NAQ História</h3>
+                  <h3 className="text-lg font-semibold mb-4">Povijest NAQ</h3>
                   {naqHistory.map((entry, index) => (
                     <Card key={entry.submissionId} className="p-4">
                       <div className="flex items-center justify-between">
