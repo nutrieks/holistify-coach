@@ -42,9 +42,7 @@ const Index = () => {
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Holistic Health Coach
-          </h1>
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">NutriEkspert System</h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-8">
             Vaša platforma za cjelovito zdravlje i wellness
           </p>
