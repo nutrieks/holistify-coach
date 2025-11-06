@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
 
     // Get origin for redirect URL
     const origin = req.headers.get('origin') || redirectUrl || Deno.env.get('SUPABASE_URL')
-    const redirectTo = `${origin}/auth`
+    const redirectTo = `${origin}/set-password`
 
     console.log('Creating user account with redirectTo:', redirectTo)
 

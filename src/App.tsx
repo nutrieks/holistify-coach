@@ -30,6 +30,7 @@ import MyProgress from "./pages/MyProgress";
 import NotFound from "./pages/NotFound";
 import QuestionnaireForm from "./pages/QuestionnaireForm";
 import MicronutrientQuestionnaire from "./pages/MicronutrientQuestionnaire";
+import SetPassword from "./pages/SetPassword";
 
 const queryClient = new QueryClient();
 
@@ -63,7 +64,8 @@ const App = () => (
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route 
+            <Route path="/set-password" element={<SetPassword />} />
+            <Route
               path="/dashboard" 
               element={
                 <ProtectedRoute>
