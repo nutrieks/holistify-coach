@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     console.log('Creating user account with redirectTo:', redirectTo)
 
     // Create user directly with confirmed email
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: userData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email: clientEmail,
       email_confirm: true,
       user_metadata: {
@@ -85,9 +85,9 @@ Deno.serve(async (req) => {
       }
     })
 
-    if (userError) {
-      console.error('Error creating user:', userError)
-      throw userError
+    if (createUserError) {
+      console.error('Error creating user:', createUserError)
+      throw createUserError
     }
 
     if (!userData.user) {
