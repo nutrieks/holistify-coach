@@ -25,6 +25,10 @@ export const MicronutrientResultsView = ({ clientId }: MicronutrientResultsViewP
     );
   }
 
+  // Separate total average from individual nutrients
+  const totalAverage = data.results.find(r => r.nutrient_code === 'TOTAL_AVG');
+  const individualResults = data.results.filter(r => r.nutrient_code !== 'TOTAL_AVG');
+
   const getRiskIcon = (category: string) => {
     switch (category) {
       case 'none': return <CheckCircle2 className="h-4 w-4 text-green-600" />;
@@ -55,19 +59,43 @@ export const MicronutrientResultsView = ({ clientId }: MicronutrientResultsViewP
     }
   };
 
-  // Categorize results
-  const highRisk = data.results.filter(r => r.risk_category === 'high');
-  const moderateRisk = data.results.filter(r => r.risk_category === 'moderate');
-  const lowRisk = data.results.filter(r => r.risk_category === 'low');
-  const noRisk = data.results.filter(r => r.risk_category === 'none');
+  // Categorize individual nutrient results
+  const highRisk = individualResults.filter(r => r.risk_category === 'high');
+  const moderateRisk = individualResults.filter(r => r.risk_category === 'moderate');
+  const lowRisk = individualResults.filter(r => r.risk_category === 'low');
+  const noRisk = individualResults.filter(r => r.risk_category === 'none');
 
   return (
     <div className="space-y-6">
+      {totalAverage && (
+        <Card className="border-2 border-primary">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-2xl">Ukupni Prosjek</CardTitle>
+            <CardDescription>
+              Prosjek svih 27 mikronutrijenata
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {getRiskIcon(totalAverage.risk_category)}
+                <div>
+                  <p className="text-3xl font-bold">{totalAverage.final_weighted_score.toFixed(1)}%</p>
+                  <p className={`text-sm font-medium ${getRiskLabel(totalAverage.risk_category)}`}>
+                    {getRiskLabel(totalAverage.risk_category)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Sažetak Mikronutritivne Dijagnostike</CardTitle>
           <CardDescription>
-            Analizirano: {data.results.length} nutrijenata
+            Analizirano: {individualResults.length} nutrijenata
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -98,7 +126,7 @@ export const MicronutrientResultsView = ({ clientId }: MicronutrientResultsViewP
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {data.results.map((result) => (
+            {individualResults.map((result) => (
               <div key={result.id} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">

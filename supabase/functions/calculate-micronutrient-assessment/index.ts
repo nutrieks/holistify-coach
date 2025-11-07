@@ -64,17 +64,36 @@ serve(async (req) => {
       console.log(`Calculated ${nutrientCode}: FPS=${score.final_weighted_score.toFixed(2)}%, Category=${score.risk_category}`);
     }
 
-    // 3. Store all results
+    // 3. Calculate total average score
+    const totalScore = results.reduce((sum, r) => sum + r.final_weighted_score, 0);
+    const averageScore = Math.min(100, totalScore / results.length);
+
+    // Add average score as a special "nutrient"
+    const averageResult = {
+      submission_id,
+      client_id: submission.client_id,
+      nutrient_code: 'TOTAL_AVG',
+      nutrient_name: 'UKUPNI PROSJEK',
+      intake_score_percentage: null,
+      symptom_score_percentage: null,
+      risk_score_percentage: null,
+      final_weighted_score: averageScore,
+      risk_category: averageScore > 85 ? 'none' : averageScore > 60 ? 'low' : averageScore > 35 ? 'moderate' : 'high',
+      contributing_factors: [],
+      calculated_at: new Date().toISOString()
+    };
+
+    // 4. Store all results including average
     const { error: insertError } = await supabase
       .from('client_micronutrient_results')
-      .insert(results);
+      .insert([...results, averageResult]);
 
     if (insertError) {
       console.error('Error inserting results:', insertError);
       throw insertError;
     }
 
-    console.log(`Successfully stored ${results.length} nutrient assessments`);
+    console.log(`Successfully stored ${results.length} nutrient assessments + total average`);
 
     return new Response(
       JSON.stringify({ 
