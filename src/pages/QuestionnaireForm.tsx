@@ -26,6 +26,7 @@ interface Question {
   options?: string | null
   section?: string | null
   category?: string | null
+  is_required?: boolean
   conditional?: {
     show_if: string
     answer_equals?: string
@@ -315,6 +316,14 @@ export default function QuestionnaireForm() {
     ? (answeredCount / visibleQuestions.length) * 100 
     : 0
 
+  // Helper to check if a question is answered
+  const isAnswered = (question: Question, value: any): boolean => {
+    if (question.question_type === 'checkbox') {
+      return Array.isArray(value) && value.length > 0;
+    }
+    return value !== undefined && value !== null && value !== '';
+  };
+
   const handleAnswerChange = (questionId: string, value: any) => {
     setAnswers(prev => ({
       ...prev,
@@ -323,6 +332,20 @@ export default function QuestionnaireForm() {
   }
 
   const goToNextPage = () => {
+    // Check if all required questions on current page are answered
+    const unansweredRequired = pageQuestions.filter(q => 
+      q.is_required && !isAnswered(q, answers[q.id])
+    );
+    
+    if (unansweredRequired.length > 0) {
+      toast({
+        title: "Nepotpuni odgovori",
+        description: "Molimo odgovorite na sva obavezna pitanja na ovoj stranici prije nego nastavite.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (currentPage < totalPages - 1) {
       const newPage = currentPage + 1
       setCurrentPage(newPage)
@@ -339,6 +362,20 @@ export default function QuestionnaireForm() {
   }
 
   const handleSubmit = async () => {
+    // Check if all required questions are answered
+    const unansweredRequired = visibleQuestions.filter(q => 
+      q.is_required && !isAnswered(q, answers[q.id])
+    );
+    
+    if (unansweredRequired.length > 0) {
+      toast({
+        title: "Nepotpuni odgovori",
+        description: `Molimo odgovorite na sva obavezna pitanja prije predaje. Preostalo pitanja: ${unansweredRequired.length}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true)
     try {
       // Clear draft when submitting

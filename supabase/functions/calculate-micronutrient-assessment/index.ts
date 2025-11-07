@@ -92,8 +92,7 @@ serve(async (req) => {
     console.error('Calculation error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        details: error.stack
+        error: error.message
       }),
       { 
         status: 500, 
@@ -184,7 +183,7 @@ function calculateNutrientScore(nutrientCode: string, config: any, answers: any[
     risk_score_percentage: Math.round(KSR * 100) / 100,
     final_weighted_score: Math.round(FPS * 100) / 100,
     risk_category,
-    contributing_factors,
+    contributing_factors: contributingFactors,
     calculated_at: new Date().toISOString()
   };
 }

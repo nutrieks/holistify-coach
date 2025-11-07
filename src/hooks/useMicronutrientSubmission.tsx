@@ -133,12 +133,15 @@ export const useMicronutrientSubmission = (clientId: string) => {
       }
 
       // Trigger calculation
-      const { error: calcError } = await supabase.functions.invoke(
+      const { data: calcData, error: calcError } = await supabase.functions.invoke(
         'calculate-micronutrient-assessment',
         { body: { submission_id: submission.id } }
       );
 
-      if (calcError) throw calcError;
+      if (calcError) {
+        console.error('Calculation error:', calcError);
+        throw new Error(calcData?.error || calcError.message || 'Greška pri izračunu rezultata');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['micronutrient-submission', clientId] });

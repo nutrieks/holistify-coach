@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { useMicronutrientSubmission, useMicronutrientQuestions, useMicronutrientAnswers } from "@/hooks/useMicronutrientSubmission";
 import { useDraftSaving } from "@/hooks/useDraftSaving";
 import { LoadingCard } from "@/components/LoadingCard";
+import { useToast } from "@/hooks/use-toast";
 import { FrequencyQuestion } from "./questions/FrequencyQuestion";
 import { PortionQuestion } from "./questions/PortionQuestion";
 import { SelectOneQuestion } from "./questions/SelectOneQuestion";
@@ -20,6 +21,7 @@ interface MicronutrientQuestionnaireFormProps {
 }
 
 export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: MicronutrientQuestionnaireFormProps) => {
+  const { toast } = useToast();
   const { submission, isLoading: submissionLoading, saveAnswer, submitFinal } = useMicronutrientSubmission(clientId);
   const { data: questions, isLoading: questionsLoading } = useMicronutrientQuestions(submission?.questionnaire_id);
   const { data: savedAnswers } = useMicronutrientAnswers(submission?.id);
@@ -99,6 +101,20 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
   ).length;
   const progress = (answeredCount / visibleQuestions.length) * 100;
 
+  // Helper to check if answer is provided
+  const isAnswered = (value: any, questionType: string): boolean => {
+    if (questionType === 'yes_no' || questionType === 'select_one' || questionType === 'frequency' || questionType === 'portion') {
+      return value?.selected !== undefined && value?.selected !== null && value?.selected !== '';
+    }
+    if (questionType === 'multi_select') {
+      return Array.isArray(value) && value.length > 0;
+    }
+    if (questionType === 'text') {
+      return typeof value === 'string' && value.trim().length > 0;
+    }
+    return value !== undefined && value !== null && value !== '';
+  };
+
   const handleAnswer = async (questionId: string, value: any) => {
     const newAnswers = { ...answers, [questionId]: value };
     setAnswers(newAnswers);
@@ -114,6 +130,18 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
   };
 
   const handleNextPage = () => {
+    // Check if all questions on current page are answered
+    const unansweredQuestions = pageQuestions.filter(q => !isAnswered(answers[q.id], q.question_type));
+    
+    if (unansweredQuestions.length > 0) {
+      toast({
+        title: "Nepotpuni odgovori",
+        description: "Molimo odgovorite na sva pitanja na ovoj stranici prije nego nastavite.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (currentPage < totalPages - 1) {
       const newPage = currentPage + 1;
       setCurrentPage(newPage);
@@ -130,6 +158,18 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
   };
 
   const handleSubmit = async () => {
+    // Check if all visible questions are answered
+    const unansweredQuestions = visibleQuestions.filter(q => !isAnswered(answers[q.id], q.question_type));
+    
+    if (unansweredQuestions.length > 0) {
+      toast({
+        title: "Nepotpuni odgovori",
+        description: `Molimo odgovorite na sva pitanja prije predaje. Preostalo pitanja: ${unansweredQuestions.length}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     await submitFinal.mutateAsync();
     onComplete?.();
   };
