@@ -52,7 +52,19 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
   }, [draftData]);
 
   if (submissionLoading || questionsLoading || isLoadingDraft) return <LoadingCard />;
-  if (!questions || questions.length === 0) return null;
+  
+  if (!questions || questions.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Nema dostupnih pitanja</CardTitle>
+          <CardDescription>
+            Ovaj upitnik nema definirana pitanja. Molimo kontaktirajte svog savjetnika.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   // Skip logic: determine if a question should be shown
   const shouldShowQuestion = (question: any): boolean => {

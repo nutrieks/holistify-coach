@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -27,28 +27,62 @@ export function AssignMicronutrientModal({
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
-  // Fetch active micronutrient questionnaires (get only the latest one)
+  // Fetch active questionnaires AND verify which ones have questions
   const { data: questionnaires, isLoading } = useQuery({
-    queryKey: ['micronutrient-questionnaires-active'],
+    queryKey: ['micronutrient-questionnaires-with-questions'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get all active questionnaires
+      const { data: allQuestionnaires, error } = await supabase
         .from('micronutrient_questionnaires')
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false })
-        .limit(1)
 
       if (error) throw error
-      return data
+
+      // For each questionnaire, check if it has questions
+      const questionnairesWithQuestions = await Promise.all(
+        (allQuestionnaires || []).map(async (q) => {
+          const { count } = await supabase
+            .from('micronutrient_questions')
+            .select('*', { count: 'exact', head: true })
+            .eq('questionnaire_id', q.id)
+          
+          return { ...q, questionCount: count || 0 }
+        })
+      )
+
+      return questionnairesWithQuestions
     },
     enabled: open
   })
+
+  // Auto-select the first questionnaire with questions
+  useEffect(() => {
+    if (questionnaires && questionnaires.length > 0 && !selectedQuestionnaire) {
+      const firstWithQuestions = questionnaires.find(q => q.questionCount > 0)
+      if (firstWithQuestions) {
+        setSelectedQuestionnaire(firstWithQuestions.id)
+      }
+    }
+  }, [questionnaires, selectedQuestionnaire])
 
   const handleSubmit = async () => {
     if (!selectedQuestionnaire) {
       toast({
         title: "Greška",
         description: "Molimo odaberite upitnik",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Safety check: verify questionnaire has questions
+    const selectedQ = questionnaires?.find(q => q.id === selectedQuestionnaire)
+    if (selectedQ && selectedQ.questionCount === 0) {
+      toast({
+        title: "Greška",
+        description: "Odabrani upitnik nema pitanja. Ne može se dodijeliti.",
         variant: "destructive",
       })
       return
@@ -122,8 +156,12 @@ export function AssignMicronutrientModal({
                 </SelectTrigger>
                 <SelectContent>
                   {questionnaires?.map((q) => (
-                    <SelectItem key={q.id} value={q.id}>
-                      {q.title}
+                    <SelectItem 
+                      key={q.id} 
+                      value={q.id}
+                      disabled={q.questionCount === 0}
+                    >
+                      {q.title} {q.questionCount === 0 && "(nema pitanja)"}
                     </SelectItem>
                   ))}
                 </SelectContent>

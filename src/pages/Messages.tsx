@@ -30,46 +30,26 @@ export default function Messages() {
     try {
       setIsLoading(true)
 
-      // Step 1: Get client record to find coach_id
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .select('coach_id')
-        .eq('user_id', profile!.id)
-        .maybeSingle()
+      // Call backend function to get coach info (bypasses RLS)
+      const { data, error } = await supabase.functions.invoke('get-assigned-coach')
 
-      if (clientError) {
-        console.error('Error fetching client:', clientError)
-        throw clientError
-      }
-
-      // Step 2: Check if client exists and has coach
-      if (!clientData) {
-        console.log('No client record found for user:', profile!.id)
+      if (error) {
+        console.error('Error calling get-assigned-coach:', error)
+        toast.error("Greška pri dohvaćanju podataka savjetnika")
         setCoachInfo(null)
         return
       }
 
-      if (!clientData.coach_id) {
-        console.log('Client has no coach assigned')
+      // If no data returned (204), no coach assigned
+      if (!data) {
+        console.log('No coach assigned (204 response)')
         setCoachInfo(null)
         return
       }
 
-      // Step 3: Get coach profile separately
-      const { data: coachProfile, error: coachError } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .eq('id', clientData.coach_id)
-        .single()
-
-      if (coachError) {
-        console.error('Error fetching coach profile:', coachError)
-        throw coachError
-      }
-
-      setCoachInfo(coachProfile)
+      setCoachInfo(data)
     } catch (error) {
-      console.error('Error fetching coach:', error)
+      console.error('Unexpected error fetching coach:', error)
       toast.error("Greška pri dohvaćanju podataka savjetnika")
       setCoachInfo(null)
     } finally {

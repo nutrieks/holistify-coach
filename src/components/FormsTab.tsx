@@ -53,6 +53,24 @@ export function FormsTab({ clientId, clientName, isAdminView = false }: FormsTab
     }
   })
 
+  const fixMicronutrientAssignment = useMutation({
+    mutationFn: async (clientId: string) => {
+      const { data, error } = await supabase.functions.invoke('fix-micronutrient-assignment', {
+        body: { client_id: clientId }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assigned-micronutrient', clientId] });
+      toast.success("Dodjela mikronutritivnog upitnika je popravljena");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Neuspješno popravljanje dodjele");
+    },
+  });
+
   const deleteQuestionnaire = useMutation({
     mutationFn: async (assignmentId: string) => {
       const { error } = await supabase
@@ -101,6 +119,22 @@ export function FormsTab({ clientId, clientName, isAdminView = false }: FormsTab
     },
     enabled: !!clientId
   })
+
+  // Check if assigned micronutrient questionnaire has questions
+  const { data: microQuestionsCheck } = useQuery({
+    queryKey: ['micro-questions-check', assignedMicronutrient?.micronutrient_questionnaires?.id],
+    queryFn: async () => {
+      if (!assignedMicronutrient?.micronutrient_questionnaires?.id) return null;
+      
+      const { count } = await supabase
+        .from('micronutrient_questions')
+        .select('*', { count: 'exact', head: true })
+        .eq('questionnaire_id', assignedMicronutrient.micronutrient_questionnaires.id);
+      
+      return { hasQuestions: (count || 0) > 0, count: count || 0 };
+    },
+    enabled: !!assignedMicronutrient?.micronutrient_questionnaires?.id
+  });
 
   // Get assigned questionnaires (excluding NAQ)
   const { data: assignedQuestionnaires, refetch: refetchAssigned } = useQuery({
@@ -264,10 +298,30 @@ export function FormsTab({ clientId, clientName, isAdminView = false }: FormsTab
                         <Button size="sm" variant="outline" onClick={() => setShowMicronutrientForm(true)}>
                           Pregled rezultata
                         </Button>
+                      ) : microQuestionsCheck && !microQuestionsCheck.hasQuestions ? (
+                        <>
+                          {!isAdminView && (
+                            <div className="text-sm text-muted-foreground">
+                              Ovaj upitnik nema pitanja. Kontaktirajte savjetnika.
+                            </div>
+                          )}
+                          {isAdminView && (
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => fixMicronutrientAssignment.mutate(clientId)}
+                              disabled={fixMicronutrientAssignment.isPending}
+                            >
+                              {fixMicronutrientAssignment.isPending ? 'Popravljam...' : 'Popravi dodjelu'}
+                            </Button>
+                          )}
+                        </>
                       ) : (
-                        <Button size="sm" onClick={() => setShowMicronutrientForm(true)}>
-                          Ispuni
-                        </Button>
+                        !isAdminView && (
+                          <Button size="sm" onClick={() => setShowMicronutrientForm(true)}>
+                            Ispuni
+                          </Button>
+                        )
                       )}
                     </div>
                   </div>
