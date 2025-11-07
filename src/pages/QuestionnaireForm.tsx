@@ -169,6 +169,25 @@ export default function QuestionnaireForm() {
     }
   }, [questionnaire, currentPage, answers])
 
+  // Check if questionnaire is assigned to client
+  const { data: assignment, isLoading: assignmentLoading } = useQuery({
+    queryKey: ['assignment', id, profile?.id],
+    queryFn: async () => {
+      if (!id || !profile?.id) return null
+      
+      const { data, error } = await supabase
+        .from('assigned_questionnaires')
+        .select('*')
+        .eq('questionnaire_id', id)
+        .eq('client_id', profile.id)
+        .maybeSingle()
+
+      if (error) throw error
+      return data
+    },
+    enabled: !!id && !!profile?.id
+  })
+
   // Check if already submitted
   const { data: existingSubmission } = useQuery({
     queryKey: ['submission', id, profile?.id],
@@ -341,10 +360,31 @@ export default function QuestionnaireForm() {
 
   const isProcessing = isSubmitting || isCalculating
 
-  if (isLoading || isLoadingDraft) {
+  if (isLoading || isLoadingDraft || assignmentLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-lg">Učitavam upitnik...</div>
+      </div>
+    )
+  }
+
+  // Check if questionnaire is assigned
+  if (!assignment) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-destructive mb-4">Upitnik vam nije dodijeljen.</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Kontaktirajte svog savjetnika za pristup ovom upitniku.
+              </p>
+              <Button onClick={() => navigate('/client')}>
+                Vrati se na početnu
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -356,7 +396,7 @@ export default function QuestionnaireForm() {
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-destructive mb-4">Upitnik nije pronađen ili nemate dozvolu pristupa.</p>
-              <Button onClick={() => navigate('/dashboard')}>
+              <Button onClick={() => navigate('/client')}>
                 Vrati se na početnu
               </Button>
             </div>
@@ -377,7 +417,7 @@ export default function QuestionnaireForm() {
               <p className="text-muted-foreground mb-4">
                 Vaši odgovori su zabilježeni {new Date(existingSubmission.created_at).toLocaleDateString('hr-HR')}
               </p>
-              <Button onClick={() => navigate('/dashboard')}>
+              <Button onClick={() => navigate('/client')}>
                 Vrati se na početnu
               </Button>
             </div>
@@ -394,7 +434,7 @@ export default function QuestionnaireForm() {
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-muted-foreground mb-4">Ovaj upitnik nema pitanja.</p>
-              <Button onClick={() => navigate('/dashboard')}>
+              <Button onClick={() => navigate('/client')}>
                 Vrati se na početnu
               </Button>
             </div>
