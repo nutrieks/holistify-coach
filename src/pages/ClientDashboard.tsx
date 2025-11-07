@@ -12,9 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingCard } from '@/components/LoadingCard';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { ClientNAQDashboard } from '@/components/naq/ClientNAQDashboard';
 import { ContractProgressBar } from '@/components/ContractProgressBar';
-import { useMicronutrientResults } from '@/hooks/useMicronutrientResults';
 import { useToast } from '@/hooks/use-toast';
 
 const ClientDashboard = () => {
@@ -31,114 +29,29 @@ const ClientDashboard = () => {
     toggleHabit,
   } = useClientDashboard();
 
-  // Get micronutrient results
-  const { data: micronutrientData } = useMicronutrientResults(profile?.id);
 
-  // Check for pending questionnaires and NAQ status
-  const { data: pendingQuestionnaire } = useQuery({
-    queryKey: ['pending-questionnaire', profile?.id],
+  // Check for assigned questionnaires count
+  const { data: assignedCount } = useQuery({
+    queryKey: ['assigned-count', profile?.id],
     queryFn: async () => {
-      if (!profile?.id) return null
-
-      // Check if questionnaire was skipped
-      const skippedQuestionnaires = JSON.parse(localStorage.getItem(`skipped-questionnaires-${profile.id}`) || '[]');
-
-      // Try to find a default NAQ or active questionnaire
-      // Note: clients table doesn't have initial_questionnaire_id
-      console.log('No initial questionnaire assigned, checking for default NAQ...')
+      if (!profile?.id) return 0;
       
-      const { data: defaultNAQ, error: naqError } = await supabase
-        .from('questionnaires')
-        .select('id, title, description')
-        .ilike('title', '%NAQ%')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (naqError || !defaultNAQ) {
-        console.log('No default NAQ found')
-        return null
-      }
-
-      // Check if this default NAQ was skipped
-      if (skippedQuestionnaires.includes(defaultNAQ.id)) return null
-
-      // Check if they've already submitted the default NAQ
-      const { data: naqSubmission, error: naqSubmissionError } = await supabase
-        .from('client_submissions')
-        .select('id')
+      const { count: standardCount } = await supabase
+        .from('assigned_questionnaires')
+        .select('*', { count: 'exact', head: true })
         .eq('client_id', profile.id)
-        .eq('questionnaire_id', defaultNAQ.id)
-        .single()
-
-      if (naqSubmissionError && naqSubmissionError.code !== 'PGRST116') throw naqSubmissionError
+        .neq('status', 'completed');
       
-      // If no submission exists, return the default NAQ
-      if (!naqSubmission) {
-        console.log('Found default NAQ for user:', defaultNAQ)
-        return defaultNAQ
-      }
+      const { count: microCount } = await supabase
+        .from('assigned_micronutrient_questionnaires')
+        .select('*', { count: 'exact', head: true })
+        .eq('client_id', profile.id)
+        .neq('status', 'completed');
       
-      return null
+      return (standardCount || 0) + (microCount || 0);
     },
     enabled: !!profile?.id
   });
-
-  // Get all available questionnaires for the client
-  const { data: allQuestionnaires } = useQuery({
-    queryKey: ['client-questionnaires', profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return []
-
-      let questionnaires: any[] = []
-
-      // Get all active questionnaires (clients table doesn't have coach_id)
-      // Just get active questionnaires
-      const { data: activeQuestionnaires, error: questError } = await supabase
-        .from('questionnaires')
-        .select('id, title, description, created_at')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (!questError && activeQuestionnaires) {
-        questionnaires = activeQuestionnaires;
-      }
-
-      // Get submission status for each questionnaire
-      const questionnairesWithStatus = await Promise.all(
-        questionnaires.map(async (q) => {
-          const { data: submission } = await supabase
-            .from('client_submissions')
-            .select('id, created_at')
-            .eq('client_id', profile.id)
-            .eq('questionnaire_id', q.id)
-            .single()
-
-          return {
-            ...q,
-            completed: !!submission,
-            completedAt: submission?.created_at || null
-          }
-        })
-      )
-
-      return questionnairesWithStatus
-    },
-    enabled: !!profile?.id
-  });
-
-  const handleSkipQuestionnaire = (questionnaireId: string) => {
-    if (!profile?.id) return
-    
-    const skippedQuestionnaires = JSON.parse(localStorage.getItem(`skipped-questionnaires-${profile.id}`) || '[]');
-    skippedQuestionnaires.push(questionnaireId);
-    localStorage.setItem(`skipped-questionnaires-${profile.id}`, JSON.stringify(skippedQuestionnaires));
-    
-    toast({
-      title: "Upitnik odgođen",
-      description: "Možete ga ispuniti kasnije kroz 'Moji Upitnici' sekciju."
-    });
-  };
 
   // Calculate total calories from today's meals
   const totalCalories = todaysMeals?.reduce((sum, meal) => sum + (meal.calories || 0), 0) || 0;
@@ -184,39 +97,6 @@ const ClientDashboard = () => {
         </Card>
       )}
 
-      {/* Pending Questionnaire Alert */}
-      {pendingQuestionnaire && (
-        <Alert className="border-orange-200 bg-orange-50">
-          <AlertCircle className="h-4 w-4 text-orange-600" />
-          <AlertDescription className="flex items-center justify-between">
-            <div>
-              <span className="font-medium">Novi upitnik čeka ispunjavanje: </span>
-              <span>{pendingQuestionnaire.title}</span>
-              {pendingQuestionnaire.description && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {pendingQuestionnaire.description}
-                </p>
-              )}
-            </div>
-            <div className="flex gap-2 ml-4 shrink-0">
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => handleSkipQuestionnaire(pendingQuestionnaire.id)}
-              >
-                Preskoči za sada
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={() => navigate(`/questionnaire/${pendingQuestionnaire.id}`)}
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Ispuni sada
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Today's Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -273,7 +153,7 @@ const ClientDashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">{unreadCount || 0}</div>
               <p className="text-xs text-muted-foreground mt-2">
-                {unreadCount ? 'Od vašeg trenera' : 'Nema novih poruka'}
+                {unreadCount ? 'Od vašeg savjetnika' : 'Nema novih poruka'}
               </p>
               <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => navigate('/messages')}>
                 {unreadCount ? 'Pogledaj' : 'Otvori chat'}
@@ -421,215 +301,53 @@ const ClientDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* My Questionnaires Section */}
+      {/* Questionnaires CTA */}
       <Card className="card-neon">
           <CardHeader>
-            <CardTitle>Moji Upitnici</CardTitle>
-            <CardDescription>Dostupni upitnici i rezultati</CardDescription>
+            <CardTitle>Upitnici</CardTitle>
+            <CardDescription>Pristupite dodijeljenim upitnicima</CardDescription>
           </CardHeader>
           <CardContent>
-            {allQuestionnaires && allQuestionnaires.length > 0 ? (
-              <div className="space-y-3">
-                {allQuestionnaires.map((questionnaire) => (
-                  <div key={questionnaire.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{questionnaire.title}</p>
-                      {questionnaire.description && (
-                        <p className="text-sm text-muted-foreground">{questionnaire.description}</p>
-                      )}
-                      {questionnaire.completed && questionnaire.completedAt && (
-                        <p className="text-xs text-green-600">
-                          Završeno {new Date(questionnaire.completedAt).toLocaleDateString('hr-HR')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {questionnaire.completed ? (
-                        <div className="flex gap-2">
-                          <Badge variant="secondary">Završeno</Badge>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => navigate(`/questionnaire/${questionnaire.id}`)}
-                          >
-                            Ispuni ponovo
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button 
-                          size="sm"
-                          onClick={() => navigate(`/questionnaire/${questionnaire.id}`)}
-                        >
-                          <FileText className="mr-2 h-4 w-4" />
-                          Ispuni
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-4">
-                <ClipboardCheck className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Nema dostupnih upitnika</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-      {/* Micronutrient Analysis Card */}
-      <Card className="card-neon">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-purple-600" />
-              Mikronutritivna Dijagnostika
-            </CardTitle>
-            <CardDescription>Procjena rizika deficita mikronutrijenata</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {micronutrientData?.results && micronutrientData.results.length > 0 ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
-                  <div>
-                    <p className="font-medium">Analiza završena</p>
-                    <p className="text-sm text-muted-foreground">
-                      {micronutrientData.submission?.completed_at 
-                        ? `Datum: ${new Date(micronutrientData.submission.completed_at).toLocaleDateString('hr-HR')}`
-                        : 'N/A'}
-                    </p>
-                    <div className="flex gap-2 mt-2">
-                      <Badge variant="destructive">
-                        {micronutrientData.results.filter(r => r.risk_category === 'high').length} Visok rizik
-                      </Badge>
-                      <Badge variant="secondary">
-                        {micronutrientData.results.filter(r => r.risk_category === 'moderate').length} Umjeren rizik
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate('/micronutrient-questionnaire')}
-                    >
-                      Pregled rezultata
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <Activity className="h-12 w-12 mx-auto mb-3 opacity-30 text-purple-600" />
-                <p className="font-medium mb-2">Nema mikronutritivne analize</p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Ispunite upitnik za procjenu rizika deficita mikronutrijenata
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {assignedCount && assignedCount > 0 ? (
+                    <>Imate <span className="font-semibold text-primary">{assignedCount}</span> {assignedCount === 1 ? 'upitnik' : 'upitnika'} za ispunjavanje</>
+                  ) : (
+                    'Trenutno nemate dodijeljenih upitnika'
+                  )}
                 </p>
-                <Button 
-                  size="sm"
-                  onClick={() => navigate('/micronutrient-questionnaire')}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  <Activity className="mr-2 h-4 w-4" />
-                  Započni analizu
-                </Button>
               </div>
-            )}
+              <Button onClick={() => navigate('/forms')}>
+                <FileText className="mr-2 h-4 w-4" />
+                Moji Upitnici
+              </Button>
+            </div>
           </CardContent>
-        </Card>
-
-      {/* NAQ Dashboard */}
-      {profile?.id && (
-        <ClientNAQDashboard clientId={profile.id} />
-      )}
+      </Card>
 
       {/* Quick Actions */}
       <Card className="card-neon">
           <CardHeader>
             <CardTitle>Brze akcije</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <Button 
-                variant="outline" 
-                className="h-20 flex flex-col items-center justify-center space-y-2"
-                onClick={() => navigate('/check-in')}
-              >
-                <TrendingUp className="h-6 w-6" />
-                <span className="text-sm">Check-in</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex flex-col items-center justify-center space-y-2"
-                onClick={() => navigate('/my-plans')}
-              >
-                <Calendar className="h-6 w-6" />
-                <span className="text-sm">Moji Planovi</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex flex-col items-center justify-center space-y-2"
-                onClick={() => navigate('/messages')}
-              >
-                <MessageSquare className="h-6 w-6" />
-                <span className="text-sm">Poruke</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex flex-col items-center justify-center space-y-2"
-                onClick={() => navigate('/my-progress')}
-              >
-                <Users className="h-6 w-6" />
-                <span className="text-sm">Moj napredak</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex flex-col items-center justify-center space-y-2"
-                onClick={() => {
-                  console.log('All questionnaires:', allQuestionnaires);
-                  console.log('Pending questionnaire:', pendingQuestionnaire);
-                  
-                  // First try to find NAQ questionnaire in allQuestionnaires
-                  let naqQuestionnaire = allQuestionnaires?.find(q => 
-                    q.title.toLowerCase().includes('naq') || 
-                    q.title.toLowerCase().startsWith('naq')
-                  );
-                  
-                  // If found, use it
-                  if (naqQuestionnaire) {
-                    navigate(`/questionnaire/${naqQuestionnaire.id}`);
-                    return;
-                  }
-                  
-                  // If not found in allQuestionnaires, check pendingQuestionnaire
-                  if (pendingQuestionnaire) {
-                    const pendingTitle = pendingQuestionnaire.title.toLowerCase();
-                    if (pendingTitle.includes('naq') || pendingTitle.startsWith('naq')) {
-                      navigate(`/questionnaire/${pendingQuestionnaire.id}`);
-                      return;
-                    }
-                  }
-                  
-                  // If still not found, use the first available questionnaire as fallback
-                  if (allQuestionnaires && allQuestionnaires.length > 0) {
-                    console.log('Using first available questionnaire as fallback:', allQuestionnaires[0]);
-                    navigate(`/questionnaire/${allQuestionnaires[0].id}`);
-                  } else {
-                    console.log('No questionnaires found. Available questionnaires:', allQuestionnaires);
-                    toast({
-                      title: "NAQ nedostupan",
-                      description: allQuestionnaires?.length === 0 
-                        ? "Nema dostupnih upitnika. NAQ upitnik još nije kreiran u sustavu." 
-                        : "NAQ upitnik nije pronađen među dostupnim upitnicima.",
-                      variant: "destructive"
-                    });
-                  }
-                }}
-              >
-                <BarChart3 className="h-6 w-6" />
-                <span className="text-sm">NAQ Upitnik</span>
-              </Button>
-          </div>
-        </CardContent>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button variant="outline" className="h-auto flex-col py-4" onClick={() => navigate('/check-in')}>
+              <ClipboardCheck className="h-8 w-8 mb-2" />
+              <span className="font-medium">Check-in</span>
+              <span className="text-xs text-muted-foreground">Ažurirajte napredak</span>
+            </Button>
+            <Button variant="outline" className="h-auto flex-col py-4" onClick={() => navigate('/my-progress')}>
+              <BarChart3 className="h-8 w-8 mb-2" />
+              <span className="font-medium">Moj napredak</span>
+              <span className="text-xs text-muted-foreground">Pregledajte statistiku</span>
+            </Button>
+            <Button variant="outline" className="h-auto flex-col py-4" onClick={() => navigate('/forms')}>
+              <FileText className="h-8 w-8 mb-2" />
+              <span className="font-medium">Upitnici</span>
+              <span className="text-xs text-muted-foreground">Pristupite upitnicima</span>
+            </Button>
+          </CardContent>
       </Card>
     </div>
   );

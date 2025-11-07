@@ -28,7 +28,9 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
     clientId
   );
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // Enhanced state for pagination
+  const QUESTIONS_PER_PAGE = 10
+  const [currentPage, setCurrentPage] = useState(0)
   const [answers, setAnswers] = useState<Record<string, any>>({});
 
   // Load saved answers
@@ -42,10 +44,10 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
     }
   }, [savedAnswers]);
 
-  // Load draft progress (current question index)
+  // Load draft progress (current page)
   useEffect(() => {
     if (draftData?.current_question_index !== undefined && draftData.current_question_index !== null) {
-      setCurrentIndex(draftData.current_question_index);
+      setCurrentPage(Math.floor(draftData.current_question_index / QUESTIONS_PER_PAGE));
     }
   }, [draftData]);
 
@@ -75,37 +77,43 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
   
   if (visibleQuestions.length === 0) return null;
   
-  const currentQuestion = visibleQuestions[currentIndex];
-  const progress = ((currentIndex + 1) / visibleQuestions.length) * 100;
-  const currentAnswer = answers[currentQuestion.id];
+  const totalPages = Math.ceil(visibleQuestions.length / QUESTIONS_PER_PAGE);
+  const pageStart = currentPage * QUESTIONS_PER_PAGE;
+  const pageEnd = Math.min(pageStart + QUESTIONS_PER_PAGE, visibleQuestions.length);
+  const pageQuestions = visibleQuestions.slice(pageStart, pageEnd);
+  
+  const answeredCount = Object.keys(answers).filter(qId => 
+    answers[qId] !== undefined && answers[qId] !== null
+  ).length;
+  const progress = (answeredCount / visibleQuestions.length) * 100;
 
-  const handleAnswer = async (value: any) => {
-    const newAnswers = { ...answers, [currentQuestion.id]: value };
+  const handleAnswer = async (questionId: string, value: any) => {
+    const newAnswers = { ...answers, [questionId]: value };
     setAnswers(newAnswers);
 
     // Auto-save answer
     await saveAnswer.mutateAsync({
-      questionId: currentQuestion.id,
+      questionId,
       answerValue: value
     });
 
-    // Save draft progress (current question index)
-    await saveDraftProgress(newAnswers, currentIndex);
+    // Save draft progress (current page)
+    await saveDraftProgress(newAnswers, currentPage * QUESTIONS_PER_PAGE);
   };
 
-  const handleNext = () => {
-    if (currentIndex < visibleQuestions.length - 1) {
-      const newIndex = currentIndex + 1;
-      setCurrentIndex(newIndex);
-      saveDraftProgress(answers, newIndex);
+  const handleNextPage = () => {
+    if (currentPage < totalPages - 1) {
+      const newPage = currentPage + 1;
+      setCurrentPage(newPage);
+      saveDraftProgress(answers, newPage * QUESTIONS_PER_PAGE);
     }
   };
 
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      const newIndex = currentIndex - 1;
-      setCurrentIndex(newIndex);
-      saveDraftProgress(answers, newIndex);
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
+      saveDraftProgress(answers, newPage * QUESTIONS_PER_PAGE);
     }
   };
 
@@ -114,46 +122,7 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
     onComplete?.();
   };
 
-  const isAnswered = currentAnswer !== undefined && currentAnswer !== null && 
-    (Array.isArray(currentAnswer) ? currentAnswer.length > 0 : true);
-  const isLastQuestion = currentIndex === visibleQuestions.length - 1;
-
-  // Group questions by section for navigation
-  const sections = Array.from(new Set(visibleQuestions.map(q => q.section)));
-  const currentSection = currentQuestion.section;
-
-  const renderQuestion = () => {
-    const props = {
-      question: currentQuestion,
-      value: currentAnswer,
-      onChange: handleAnswer
-    };
-
-    switch (currentQuestion.question_type) {
-      case 'frequency':
-        return <FrequencyQuestion {...props} />;
-      case 'portion':
-        return <PortionQuestion {...props} />;
-      case 'select_one':
-        return <SelectOneQuestion {...props} />;
-      case 'yes_no':
-        return <YesNoQuestion {...props} />;
-      case 'multi_select':
-        return <MultiSelectQuestion {...props} />;
-      case 'text':
-        return (
-          <Input
-            type="text"
-            value={currentAnswer || ''}
-            onChange={(e) => handleAnswer(e.target.value)}
-            placeholder="Unesite nazive dodataka odvojene zarezom"
-            className="w-full"
-          />
-        );
-      default:
-        return <div>Nepoznat tip pitanja: {currentQuestion.question_type}</div>;
-    }
-  };
+  const isLastPage = currentPage === totalPages - 1;
 
   return (
     <div className="space-y-4">
@@ -163,80 +132,107 @@ export const MicronutrientQuestionnaireForm = ({ clientId, onComplete }: Micronu
             <div>
               <CardTitle>Mikronutritivna Dijagnostika</CardTitle>
               <CardDescription>
-                Pitanje {currentIndex + 1} od {visibleQuestions.length}
+                Stranica {currentPage + 1} od {totalPages} • {answeredCount}/{visibleQuestions.length} odgovoreno
               </CardDescription>
             </div>
-            <Badge variant="outline">{currentSection}</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Progress value={progress} className="h-2" />
-
-          <div className="flex gap-1 flex-wrap">
-            {sections.map((section) => {
-              const sectionQuestions = visibleQuestions.filter(q => q.section === section);
-              const answeredInSection = sectionQuestions.filter(q => answers[q.id] !== undefined).length;
-              return (
-                <Badge
-                  key={section}
-                  variant={section === currentSection ? "default" : "outline"}
-                  className="text-xs"
-                >
-                  {section}: {answeredInSection}/{sectionQuestions.length}
-                </Badge>
-              );
-            })}
-          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <Badge variant="secondary" className="mb-2">
-                {currentQuestion.question_code}
-              </Badge>
-              <CardTitle className="text-lg">{currentQuestion.question_text}</CardTitle>
-              {currentQuestion.category && (
-                <CardDescription className="mt-2">
-                  Kategorija: {currentQuestion.category}
-                </CardDescription>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {renderQuestion()}
+      {/* Questions on current page */}
+      <div className="space-y-4">
+        {pageQuestions.map((question, idx) => (
+          <Card key={question.id}>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="secondary">
+                      {question.question_code}
+                    </Badge>
+                    <Badge variant="outline">
+                      {pageStart + idx + 1}/{visibleQuestions.length}
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-lg">{question.question_text}</CardTitle>
+                  {question.category && (
+                    <CardDescription className="mt-2">
+                      {question.category}
+                    </CardDescription>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const currentAnswer = answers[question.id];
+                const props = {
+                  question,
+                  value: currentAnswer,
+                  onChange: (value: any) => handleAnswer(question.id, value)
+                };
 
-          <div className="flex justify-between items-center mt-6 pt-6 border-t">
+                switch (question.question_type) {
+                  case 'frequency':
+                    return <FrequencyQuestion {...props} />;
+                  case 'portion':
+                    return <PortionQuestion {...props} />;
+                  case 'select_one':
+                    return <SelectOneQuestion {...props} />;
+                  case 'yes_no':
+                    return <YesNoQuestion {...props} />;
+                  case 'multi_select':
+                    return <MultiSelectQuestion {...props} />;
+                  case 'text':
+                    return (
+                      <Input
+                        type="text"
+                        value={currentAnswer || ''}
+                        onChange={(e) => handleAnswer(question.id, e.target.value)}
+                        placeholder="Unesite nazive dodataka odvojene zarezom"
+                        className="w-full"
+                      />
+                    );
+                  default:
+                    return <div>Nepoznat tip pitanja: {question.question_type}</div>;
+                }
+              })()}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Navigation */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex justify-between items-center">
             <Button
               variant="outline"
-              onClick={handlePrevious}
-              disabled={currentIndex === 0}
+              onClick={handlePreviousPage}
+              disabled={currentPage === 0}
             >
               <ChevronLeft className="mr-2 h-4 w-4" />
-              Prethodno
+              Prethodna
             </Button>
 
             <div className="text-sm text-muted-foreground">
-              {Object.keys(answers).length} / {visibleQuestions.length} odgovoreno
+              Stranica {currentPage + 1} / {totalPages}
             </div>
 
-            {isLastQuestion ? (
+            {isLastPage ? (
               <Button
                 onClick={handleSubmit}
-                disabled={!isAnswered || submitFinal.isPending}
+                disabled={submitFinal.isPending}
               >
                 <Check className="mr-2 h-4 w-4" />
                 Završi
               </Button>
             ) : (
-              <Button
-                onClick={handleNext}
-                disabled={!isAnswered}
-              >
-                Sljedeće
+              <Button onClick={handleNextPage}>
+                Sljedeća
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             )}

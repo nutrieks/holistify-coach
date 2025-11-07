@@ -31,7 +31,6 @@ import CheckIn from "./pages/CheckIn";
 import MyProgress from "./pages/MyProgress";
 import NotFound from "./pages/NotFound";
 import QuestionnaireForm from "./pages/QuestionnaireForm";
-import MicronutrientQuestionnaire from "./pages/MicronutrientQuestionnaire";
 import SetPassword from "./pages/SetPassword";
 import ClientForms from "./pages/ClientForms";
 

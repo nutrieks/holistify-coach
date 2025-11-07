@@ -14,7 +14,7 @@ import { useMicronutrientResults } from "@/hooks/useMicronutrientResults"
 import { useSeedNAQQuestions } from "@/hooks/useSeedNAQQuestions"
 import { AssignQuestionnaireModal } from "@/components/AssignQuestionnaireModal"
 import { AssignMicronutrientModal } from "@/components/AssignMicronutrientModal"
-import { FileText, TrendingUp, Calendar, AlertTriangle, Plus, Send, Eye, CheckCircle, Activity } from "lucide-react"
+import { FileText, TrendingUp, Calendar, AlertTriangle, Send, Eye, CheckCircle, Activity } from "lucide-react"
 import { format } from "date-fns"
 import { useNavigate } from "react-router-dom"
 
@@ -29,7 +29,6 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showAssignMicronutrientModal, setShowAssignMicronutrientModal] = useState(false)
   const [showMicronutrientForm, setShowMicronutrientForm] = useState(false)
-  const seedNAQMutation = useSeedNAQQuestions()
 
   // Get micronutrient results
   const { data: micronutrientData } = useMicronutrientResults(clientId)
@@ -134,12 +133,6 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
 
   const latestNAQSubmission = naqSubmissions[0]
 
-  const handleSeedNAQQuestions = async () => {
-    if (latestNAQSubmission?.questionnaires?.id) {
-      await seedNAQMutation.mutateAsync(latestNAQSubmission.questionnaires.id);
-    }
-  };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'sent':
@@ -167,16 +160,12 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Forms & Questionnaires
-            </CardTitle>
-            <Button onClick={() => setShowAssignModal(true)} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Dodijeli upitnik
-            </Button>
-          </div>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Forms & Questionnaires
+              </CardTitle>
+            </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="assigned" className="w-full">
@@ -191,16 +180,10 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
             <TabsContent value="assigned" className="space-y-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Dodijeljeni upitnici</h3>
-                <div className="flex gap-2">
-                  <Button onClick={() => setShowAssignModal(true)} size="sm" variant="outline">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Standardni upitnik
-                  </Button>
-                  <Button onClick={() => setShowAssignMicronutrientModal(true)} size="sm">
-                    <Activity className="h-4 w-4 mr-2" />
-                    Mikronutritivna analiza
-                  </Button>
-                </div>
+                <Button onClick={() => setShowAssignMicronutrientModal(true)} size="sm">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Mikronutritivna analiza
+                </Button>
               </div>
 
               {/* Micronutrient Assignment */}
@@ -309,23 +292,12 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
                         Ispunjeno: {format(new Date(latestNAQSubmission.created_at), 'dd.MM.yyyy HH:mm')}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        onClick={handleSeedNAQQuestions}
-                        disabled={seedNAQMutation.isPending}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        {seedNAQMutation.isPending ? 'Dodajem...' : 'Dopuni pitanja'}
-                      </Button>
-                      <Button 
-                        onClick={() => setSelectedSubmissionId(latestNAQSubmission.id)}
-                        variant={selectedSubmissionId === latestNAQSubmission.id ? "default" : "outline"}
-                      >
-                        Prikaži rezultate
-                      </Button>
-                    </div>
+                    <Button 
+                      onClick={() => setSelectedSubmissionId(latestNAQSubmission.id)}
+                      variant={selectedSubmissionId === latestNAQSubmission.id ? "default" : "outline"}
+                    >
+                      Prikaži rezultate
+                    </Button>
                   </div>
 
                   {selectedSubmissionId === latestNAQSubmission.id && (

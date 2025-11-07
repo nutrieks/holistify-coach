@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useNAQScoring } from "@/hooks/useNAQScoring"
 import { useDraftSaving } from "@/hooks/useDraftSaving"
-import { SeedNAQButton } from "@/components/SeedNAQButton"
+
 
 interface Question {
   id: string
@@ -61,8 +61,9 @@ export default function QuestionnaireForm() {
     lastSaved,
   } = useDraftSaving(id || '', profile?.id || '')
 
-  // Enhanced state for better UX
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  // Enhanced state for better UX with pagination
+  const QUESTIONS_PER_PAGE = 12
+  const [currentPage, setCurrentPage] = useState(0)
   const [answers, setAnswers] = useState<Record<string, any>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentSection, setCurrentSection] = useState('')
@@ -85,7 +86,7 @@ export default function QuestionnaireForm() {
       const mergedAnswers = { ...localAnswers, ...serverAnswers }
       
       setAnswers(mergedAnswers)
-      setCurrentQuestionIndex(draftData.current_question_index || 0)
+      setCurrentPage(Math.floor((draftData.current_question_index || 0) / QUESTIONS_PER_PAGE))
       
       // Clear local storage since we now have server data
       localStorage.removeItem(`questionnaire-draft-${id}-${profile?.id}`)
@@ -97,11 +98,11 @@ export default function QuestionnaireForm() {
     if (!profile?.id || !id || Object.keys(answers).length === 0) return
     
     const timeoutId = setTimeout(() => {
-      autoSave(answers, currentQuestionIndex)
+      autoSave(answers, currentPage * QUESTIONS_PER_PAGE)
     }, 5000) // Auto-save after 5 seconds of inactivity
 
     return () => clearTimeout(timeoutId)
-  }, [answers, currentQuestionIndex, autoSave, profile?.id, id])
+  }, [answers, currentPage, autoSave, profile?.id, id])
 
   // Fetch questionnaire data
   const { data: questionnaire, isLoading, error } = useQuery({
@@ -136,7 +137,9 @@ export default function QuestionnaireForm() {
   // Track current section and calculate sections progress
   useEffect(() => {
     if (questionnaire?.questions && questionnaire.questions.length > 0) {
-      const currentQuestion = questionnaire.questions[currentQuestionIndex]
+      const visibleQs = questionnaire.questions.filter(shouldShowQuestion)
+      const pageStart = currentPage * QUESTIONS_PER_PAGE
+      const currentQuestion = visibleQs[pageStart]
       if (currentQuestion?.section) {
         setCurrentSection(currentQuestion.section)
       }
@@ -164,7 +167,7 @@ export default function QuestionnaireForm() {
 
       setSectionsProgress(progress)
     }
-  }, [questionnaire, currentQuestionIndex, answers])
+  }, [questionnaire, currentPage, answers])
 
   // Check if already submitted
   const { data: existingSubmission } = useQuery({
@@ -254,7 +257,7 @@ export default function QuestionnaireForm() {
         title: "Uspješno poslano!",
         description: isNAQ ? "Vaši odgovori su uspješno zabilježeni i analizirani." : "Vaši odgovori su uspješno zabilježeni."
       })
-      navigate('/dashboard')
+      navigate('/client')
     },
     onError: () => {
       toast({
@@ -281,9 +284,16 @@ export default function QuestionnaireForm() {
   }
 
   const visibleQuestions = questionnaire?.questions.filter(shouldShowQuestion) || []
-  const currentQuestion = visibleQuestions[currentQuestionIndex]
+  const totalPages = Math.ceil(visibleQuestions.length / QUESTIONS_PER_PAGE)
+  const pageStart = currentPage * QUESTIONS_PER_PAGE
+  const pageEnd = Math.min(pageStart + QUESTIONS_PER_PAGE, visibleQuestions.length)
+  const pageQuestions = visibleQuestions.slice(pageStart, pageEnd)
+  
+  const answeredCount = Object.keys(answers).filter(qId => 
+    answers[qId] !== undefined && answers[qId] !== null && answers[qId] !== ''
+  ).length
   const progress = visibleQuestions.length > 0 
-    ? ((currentQuestionIndex + 1) / visibleQuestions.length) * 100 
+    ? (answeredCount / visibleQuestions.length) * 100 
     : 0
 
   const handleAnswerChange = (questionId: string, value: any) => {
@@ -293,15 +303,19 @@ export default function QuestionnaireForm() {
     }))
   }
 
-  const goToNext = () => {
-    if (currentQuestionIndex < visibleQuestions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1)
+  const goToNextPage = () => {
+    if (currentPage < totalPages - 1) {
+      const newPage = currentPage + 1
+      setCurrentPage(newPage)
+      saveDraft(answers, newPage * QUESTIONS_PER_PAGE)
     }
   }
 
-  const goToPrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1)
+  const goToPreviousPage = () => {
+    if (currentPage > 0) {
+      const newPage = currentPage - 1
+      setCurrentPage(newPage)
+      saveDraft(answers, newPage * QUESTIONS_PER_PAGE)
     }
   }
 
@@ -321,7 +335,7 @@ export default function QuestionnaireForm() {
 
   const handleSaveDraft = async () => {
     if (id && profile?.id) {
-      await saveDraft(answers, currentQuestionIndex)
+      await saveDraft(answers, currentPage * QUESTIONS_PER_PAGE)
     }
   }
 
@@ -586,22 +600,14 @@ export default function QuestionnaireForm() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Temporary Seed Button - Remove after testing */}
-      <div className="fixed top-4 right-4 z-50">
-        <SeedNAQButton />
-      </div>
-      
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">{questionnaire.title}</h1>
-              {questionnaire.description && (
-                <p className="text-muted-foreground">{questionnaire.description}</p>
-              )}
             </div>
-            <Button variant="outline" onClick={() => navigate('/dashboard')}>
+            <Button variant="outline" onClick={() => navigate('/client')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Nazad
             </Button>
@@ -610,11 +616,11 @@ export default function QuestionnaireForm() {
       </header>
 
       <div className="container mx-auto px-4 py-6">
-        {/* Current Section and Overall Progress */}
+        {/* Overall Progress */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">
-              Pitanje {currentQuestionIndex + 1} od {questionnaire.questions.length}
+              Stranica {currentPage + 1} od {totalPages}
               {lastSaved && (
                 <span className="ml-4 text-xs text-green-600">
                   • Zadnje spremljeno: {lastSaved.toLocaleTimeString()}
@@ -622,7 +628,7 @@ export default function QuestionnaireForm() {
               )}
             </span>
             <span className="text-sm text-muted-foreground">
-              {Math.round(progress)}% završeno
+              {answeredCount}/{visibleQuestions.length} odgovoreno ({Math.round(progress)}%)
             </span>
           </div>
           <Progress value={progress} className="w-full mb-4" />
@@ -642,63 +648,72 @@ export default function QuestionnaireForm() {
           )}
         </div>
 
-        {/* Question Card */}
-        {currentQuestion && (
-          <Card className="w-full max-w-4xl mx-auto">
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="outline">
-                  {currentQuestionIndex + 1}/{questionnaire.questions.length}
-                </Badge>
-              </div>
-              <CardTitle className="text-lg leading-relaxed">
-                {currentQuestion.question_text}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {renderQuestionInput(currentQuestion)}
-
-              {/* Navigation */}
-              <div className="flex justify-between items-center pt-6">
-                <Button
-                  variant="outline"
-                  onClick={goToPrevious}
-                  disabled={currentQuestionIndex === 0}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Prethodno
-                </Button>
-
-                <div className="flex gap-2">
-                  {Object.keys(answers).length > 0 && (
-                    <Button
-                      variant="outline"
-                      onClick={handleSaveDraft}
-                      disabled={isSaving}
-                    >
-                      {isSaving ? 'Sprema se...' : 'Spremi i nastavi kasnije'}
-                    </Button>
-                  )}
-                  
-                  {currentQuestionIndex === questionnaire.questions.length - 1 ? (
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={isProcessing}
-                      className="min-w-[120px]"
-                    >
-                      {isCalculating ? 'Analizira se...' : isSubmitting ? 'Šalje se...' : 'Završi'}
-                    </Button>
-                  ) : (
-                    <Button onClick={goToNext}>
-                      Sljedeće
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+        {/* Questions on current page */}
+        <div className="space-y-6 mb-6">
+          {pageQuestions.map((question, idx) => (
+            <Card key={question.id} className="w-full max-w-4xl mx-auto">
+              <CardHeader>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="outline">
+                    Pitanje {pageStart + idx + 1}/{visibleQuestions.length}
+                  </Badge>
+                  {question.section && (
+                    <Badge variant="secondary">{question.section}</Badge>
                   )}
                 </div>
+                <CardTitle className="text-lg leading-relaxed">
+                  {question.question_text}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {renderQuestionInput(question)}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Navigation */}
+        <Card className="w-full max-w-4xl mx-auto">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center">
+              <Button
+                variant="outline"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 0}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Prethodna stranica
+              </Button>
+
+              <div className="flex gap-2">
+                {Object.keys(answers).length > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={handleSaveDraft}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? 'Sprema se...' : 'Spremi i nastavi kasnije'}
+                  </Button>
+                )}
+                
+                {currentPage === totalPages - 1 ? (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isProcessing}
+                    className="min-w-[120px]"
+                  >
+                    {isCalculating ? 'Analizira se...' : isSubmitting ? 'Šalje se...' : 'Završi'}
+                  </Button>
+                ) : (
+                  <Button onClick={goToNextPage}>
+                    Sljedeća stranica
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

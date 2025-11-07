@@ -18,22 +18,12 @@ export const useMicronutrientSubmission = (clientId: string) => {
 
       if (assignmentError) throw assignmentError;
       
-      // If no assignment, try to get active questionnaire
-      let questionnaireId = assignment?.questionnaire_id;
-      
-      if (!questionnaireId) {
-        const { data: questionnaire, error: qError } = await supabase
-          .from('micronutrient_questionnaires')
-          .select('id')
-          .eq('is_active', true)
-          .single();
-
-        if (qError || !questionnaire) {
-          throw new Error('Aktivni upitnik nije pronađen');
-        }
-        
-        questionnaireId = questionnaire.id;
+      // Require assignment to proceed
+      if (!assignment || !assignment.questionnaire_id) {
+        throw new Error('Upitnik nije dodijeljen. Kontaktirajte svog savjetnika.');
       }
+      
+      const questionnaireId = assignment.questionnaire_id;
 
       // Check for existing draft or completed submission
       const { data: existing, error: existingError } = await supabase

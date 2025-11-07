@@ -46,8 +46,8 @@ export default function Messages() {
       if (clientError) throw clientError
 
       if (!clientData || !clientData.coach_id) {
-        toast.error("Nemate dodijeljenog trenera", {
-          description: "Kontaktirajte administratora za dodjelu trenera"
+        toast.error("Nemate dodijeljenog savjetnika", {
+          description: "Kontaktirajte administratora za dodjelu savjetnika"
         })
         setCoachInfo(null)
         return
@@ -92,9 +92,9 @@ export default function Messages() {
           <Card>
             <CardContent className="flex items-center justify-center h-64">
               <div className="text-center">
-                <p className="text-muted-foreground">Nemate dodijeljenog trenera</p>
+                <p className="text-muted-foreground">Nemate dodijeljenog savjetnika</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Kontaktirajte administratora za dodjelu trenera
+                  Kontaktirajte administratora za dodjelu savjetnika
                 </p>
               </div>
             </CardContent>
@@ -118,7 +118,7 @@ export default function Messages() {
           </Button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold">Poruke</h1>
-            <p className="text-muted-foreground">Razgovor s trenerom {coachInfo.full_name}</p>
+            <p className="text-muted-foreground">Razgovor sa savjetnikom {coachInfo.full_name}</p>
           </div>
         </div>
 
