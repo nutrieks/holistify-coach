@@ -523,6 +523,50 @@ export default function QuestionnaireForm() {
           </div>
         )
 
+      case 'email':
+        return (
+          <Input
+            type="email"
+            value={currentAnswer || ''}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            placeholder="primjer@email.com"
+            className="w-full"
+          />
+        )
+
+      case 'date':
+        return (
+          <Input
+            type="date"
+            value={currentAnswer || ''}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            className="w-full"
+          />
+        )
+
+      case 'number':
+        return (
+          <Input
+            type="number"
+            value={currentAnswer || ''}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            placeholder="Unesite broj..."
+            className="w-full"
+          />
+        )
+
+      case 'phone':
+        return (
+          <Input
+            type="tel"
+            inputMode="tel"
+            value={currentAnswer || ''}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            placeholder="+385 xx xxx xxxx"
+            className="w-full"
+          />
+        )
+
       case 'short_text':
         return (
           <Input

@@ -117,6 +117,21 @@ export const useMicronutrientSubmission = (clientId: string) => {
 
       if (updateError) throw updateError;
 
+      // Update assigned questionnaire status as well
+      const { error: assignmentError } = await supabase
+        .from('assigned_micronutrient_questionnaires')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
+        .eq('client_id', clientId)
+        .eq('questionnaire_id', submission.questionnaire_id)
+        .eq('status', 'sent');
+
+      if (assignmentError) {
+        console.error('Error updating assignment status:', assignmentError);
+      }
+
       // Trigger calculation
       const { error: calcError } = await supabase.functions.invoke(
         'calculate-micronutrient-assessment',
@@ -128,6 +143,7 @@ export const useMicronutrientSubmission = (clientId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['micronutrient-submission', clientId] });
       queryClient.invalidateQueries({ queryKey: ['micronutrient-results', clientId] });
+      queryClient.invalidateQueries({ queryKey: ['assigned-micronutrient'] });
       toast.success("Upitnik uspješno poslan!", {
         description: "Rezultati su izračunati i dostupni"
       });

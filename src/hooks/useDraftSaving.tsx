@@ -51,12 +51,9 @@ export const useDraftSaving = (questionnaireId: string, clientId: string) => {
       queryClient.invalidateQueries({ queryKey: ['questionnaire-draft', questionnaireId, clientId] });
     },
     onError: (error: any) => {
-      console.error('Error saving draft:', error);
-      toast({
-        title: "Greška",
-        description: "Nije moguće spremiti draft.",
-        variant: "destructive",
-      });
+      console.error('Error saving draft to server:', error);
+      // Silently fallback to localStorage for auto-save
+      // Manual saves will still show error toast
     },
   });
 
@@ -76,16 +73,21 @@ export const useDraftSaving = (questionnaireId: string, clientId: string) => {
     },
   });
 
-  // Auto-save function
+  // Auto-save function (silent, with localStorage fallback)
   const autoSave = useCallback(
     async (answers: Record<string, string | number>, currentQuestionIndex: number) => {
       if (!questionnaireId || !clientId) return;
       
-      await execute(async () => {
+      try {
         await saveDraftMutation.mutateAsync({ answers, currentQuestionIndex });
-      });
+      } catch (error) {
+        // Silently save to localStorage as fallback
+        const localKey = `questionnaire-draft-${questionnaireId}-${clientId}`;
+        localStorage.setItem(localKey, JSON.stringify({ answers, currentQuestionIndex }));
+        setLastSaved(new Date());
+      }
     },
-    [questionnaireId, clientId, saveDraftMutation, execute]
+    [questionnaireId, clientId, saveDraftMutation]
   );
 
   // Manual save function

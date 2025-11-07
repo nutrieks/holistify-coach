@@ -30,34 +30,48 @@ export default function Messages() {
     try {
       setIsLoading(true)
 
-      // Get client record with coach_id relationship
+      // Step 1: Get client record to find coach_id
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
-        .select(`
-          coach_id,
-          profiles!coach_id (
-            id,
-            full_name
-          )
-        `)
+        .select('coach_id')
         .eq('user_id', profile!.id)
         .maybeSingle()
 
-      if (clientError) throw clientError
+      if (clientError) {
+        console.error('Error fetching client:', clientError)
+        throw clientError
+      }
 
-      if (!clientData || !clientData.coach_id) {
-        toast.error("Nemate dodijeljenog savjetnika", {
-          description: "Kontaktirajte administratora za dodjelu savjetnika"
-        })
+      // Step 2: Check if client exists and has coach
+      if (!clientData) {
+        console.log('No client record found for user:', profile!.id)
         setCoachInfo(null)
         return
       }
 
-      const coachProfile = clientData.profiles as any as CoachInfo
+      if (!clientData.coach_id) {
+        console.log('Client has no coach assigned')
+        setCoachInfo(null)
+        return
+      }
+
+      // Step 3: Get coach profile separately
+      const { data: coachProfile, error: coachError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('id', clientData.coach_id)
+        .single()
+
+      if (coachError) {
+        console.error('Error fetching coach profile:', coachError)
+        throw coachError
+      }
+
       setCoachInfo(coachProfile)
     } catch (error) {
       console.error('Error fetching coach:', error)
-      toast.error("Greška pri dohvaćanju podataka")
+      toast.error("Greška pri dohvaćanju podataka savjetnika")
+      setCoachInfo(null)
     } finally {
       setIsLoading(false)
     }
@@ -90,13 +104,19 @@ export default function Messages() {
           </Button>
           
           <Card>
-            <CardContent className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <p className="text-muted-foreground">Nemate dodijeljenog savjetnika</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Kontaktirajte administratora za dodjelu savjetnika
+            <CardContent className="flex flex-col items-center justify-center h-64 text-center space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">Nemate dodijeljenog savjetnika</h3>
+                <p className="text-muted-foreground">
+                  Trenutno vam nije dodijeljen savjetnik za komunikaciju.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Kontaktirajte administratora kako bi vam dodijelio savjetnika i omogućio korištenje sustava poruka.
                 </p>
               </div>
+              <Button onClick={() => navigate('/client')} variant="outline">
+                Povratak na Dashboard
+              </Button>
             </CardContent>
           </Card>
         </div>

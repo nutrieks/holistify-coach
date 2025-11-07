@@ -1,9 +1,10 @@
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { supabase } from "@/integrations/supabase/client"
 import { NAQScoringResults } from "@/components/naq/NAQScoringResults"
 import { NAQAnalytics } from "@/components/naq/NAQAnalytics"
@@ -14,9 +15,10 @@ import { useMicronutrientResults } from "@/hooks/useMicronutrientResults"
 import { useSeedNAQQuestions } from "@/hooks/useSeedNAQQuestions"
 import { AssignQuestionnaireModal } from "@/components/AssignQuestionnaireModal"
 import { AssignMicronutrientModal } from "@/components/AssignMicronutrientModal"
-import { FileText, TrendingUp, Calendar, AlertTriangle, Send, Eye, CheckCircle, Activity } from "lucide-react"
+import { FileText, TrendingUp, Calendar, AlertTriangle, Send, Eye, CheckCircle, Activity, MoreVertical, Pause, Trash2, Edit } from "lucide-react"
 import { format } from "date-fns"
 import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 
 interface FormsTabProps {
   clientId: string
@@ -26,10 +28,48 @@ interface FormsTabProps {
 
 export function FormsTab({ clientId, clientName, isAdminView = false }: FormsTabProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null)
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showAssignMicronutrientModal, setShowAssignMicronutrientModal] = useState(false)
   const [showMicronutrientForm, setShowMicronutrientForm] = useState(false)
+
+  // Mutations for admin actions
+  const pauseQuestionnaire = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      const { error } = await supabase
+        .from('assigned_questionnaires')
+        .update({ status: 'viewed' })
+        .eq('id', assignmentId)
+      
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assigned-questionnaires'] })
+      toast.success("Upitnik odgođen")
+    },
+    onError: () => {
+      toast.error("Greška pri odgađanju upitnika")
+    }
+  })
+
+  const deleteQuestionnaire = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      const { error } = await supabase
+        .from('assigned_questionnaires')
+        .delete()
+        .eq('id', assignmentId)
+      
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assigned-questionnaires'] })
+      toast.success("Upitnik izbrisan")
+    },
+    onError: () => {
+      toast.error("Greška pri brisanju upitnika")
+    }
+  })
 
   // Get micronutrient results
   const { data: micronutrientData } = useMicronutrientResults(clientId)
@@ -262,7 +302,7 @@ export function FormsTab({ clientId, clientName, isAdminView = false }: FormsTab
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          {assigned.status !== 'completed' && (
+                          {!isAdminView && assigned.status !== 'completed' && (
                             <Button 
                               size="sm"
                               onClick={() => navigate(`/questionnaire/${assigned.questionnaires?.id}`)}
@@ -276,9 +316,30 @@ export function FormsTab({ clientId, clientName, isAdminView = false }: FormsTab
                             </Button>
                           )}
                           {isAdminView && (
-                            <Button size="sm" variant="outline">
-                              Postavi dodatno pitanje
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="outline">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => pauseQuestionnaire.mutate(assigned.id)}>
+                                  <Pause className="h-4 w-4 mr-2" />
+                                  Odgodi slanje
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => deleteQuestionnaire.mutate(assigned.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Izbriši zahtjev
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate(`/questionnaire/${assigned.questionnaires?.id}?as=coach&client=${clientId}`)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Ispuni za klijenta
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                         </div>
                       </div>
