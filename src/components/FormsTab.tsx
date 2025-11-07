@@ -21,9 +21,10 @@ import { useNavigate } from "react-router-dom"
 interface FormsTabProps {
   clientId: string
   clientName: string
+  isAdminView?: boolean
 }
 
-export function FormsTab({ clientId, clientName }: FormsTabProps) {
+export function FormsTab({ clientId, clientName, isAdminView = false }: FormsTabProps) {
   const navigate = useNavigate()
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null)
   const [showAssignModal, setShowAssignModal] = useState(false)
@@ -84,10 +85,8 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
 
       if (error) throw error;
       
-      // Filter out NAQ questionnaires
-      return data?.filter(
-        (item: any) => item.questionnaires?.questionnaire_type !== 'naq'
-      ) || [];
+      // Include all questionnaires, including NAQ
+      return data || [];
     },
     enabled: !!clientId
   })
