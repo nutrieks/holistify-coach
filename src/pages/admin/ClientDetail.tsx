@@ -248,7 +248,7 @@ export default function ClientDetail() {
             <TabsTrigger value="training" className="whitespace-nowrap">Trening</TabsTrigger>
             <TabsTrigger value="nutrition" className="whitespace-nowrap">Prehrana</TabsTrigger>
             <TabsTrigger value="checkins" className="whitespace-nowrap">Check Ins</TabsTrigger>
-            <TabsTrigger value="forms" className="whitespace-nowrap">Obrasci</TabsTrigger>
+            <TabsTrigger value="forms" className="whitespace-nowrap">Upitnici</TabsTrigger>
             <TabsTrigger value="notes" className="whitespace-nowrap">Bilješke</TabsTrigger>
             <TabsTrigger value="chat" className="whitespace-nowrap">Chat</TabsTrigger>
           </TabsList>
@@ -529,7 +529,11 @@ export default function ClientDetail() {
 
 
           <TabsContent value="forms">
-            <FormsTab clientId={id!} clientName={client.full_name || 'Klijent'} />
+            <FormsTab 
+              clientId={id!} 
+              clientName={client.full_name || 'Klijent'}
+              isAdminView={true}
+            />
           </TabsContent>
 
           <TabsContent value="notes">

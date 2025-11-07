@@ -27,7 +27,7 @@ export function AssignMicronutrientModal({
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
-  // Fetch active micronutrient questionnaires
+  // Fetch active micronutrient questionnaires (get only the latest one)
   const { data: questionnaires, isLoading } = useQuery({
     queryKey: ['micronutrient-questionnaires-active'],
     queryFn: async () => {
@@ -36,6 +36,7 @@ export function AssignMicronutrientModal({
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false })
+        .limit(1)
 
       if (error) throw error
       return data

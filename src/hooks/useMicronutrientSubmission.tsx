@@ -9,11 +9,13 @@ export const useMicronutrientSubmission = (clientId: string) => {
   const { data: submission, isLoading } = useQuery({
     queryKey: ['micronutrient-submission', clientId],
     queryFn: async () => {
-      // First, check if there's an assigned questionnaire for this client
+      // First, check if there's an assigned questionnaire for this client (get the latest one)
       const { data: assignment, error: assignmentError } = await supabase
         .from('assigned_micronutrient_questionnaires')
-        .select('questionnaire_id')
+        .select('questionnaire_id, status')
         .eq('client_id', clientId)
+        .order('assigned_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (assignmentError) throw assignmentError;

@@ -164,6 +164,17 @@ export function FormsTab({ clientId, clientName, isAdminView = false }: FormsTab
                 <FileText className="h-5 w-5" />
                 Forms & Questionnaires
               </CardTitle>
+              {isAdminView && (
+                <div className="flex gap-2">
+                  <Button onClick={() => setShowAssignModal(true)} size="sm">
+                    Dodijeli upitnik
+                  </Button>
+                  <Button onClick={() => setShowAssignMicronutrientModal(true)} size="sm" variant="outline">
+                    <Activity className="h-4 w-4 mr-2" />
+                    Mikronutritivna analiza
+                  </Button>
+                </div>
+              )}
             </div>
         </CardHeader>
         <CardContent>
@@ -177,14 +188,6 @@ export function FormsTab({ clientId, clientName, isAdminView = false }: FormsTab
             </TabsList>
 
             <TabsContent value="assigned" className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Dodijeljeni upitnici</h3>
-                <Button onClick={() => setShowAssignMicronutrientModal(true)} size="sm">
-                  <Activity className="h-4 w-4 mr-2" />
-                  Mikronutritivna analiza
-                </Button>
-              </div>
-
               {/* Micronutrient Assignment */}
               {assignedMicronutrient && (
                 <Card className="p-4 border-primary/20">
@@ -259,14 +262,24 @@ export function FormsTab({ clientId, clientName, isAdminView = false }: FormsTab
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          {assigned.status !== 'completed' && (
+                            <Button 
+                              size="sm"
+                              onClick={() => navigate(`/questionnaire/${assigned.questionnaires?.id}`)}
+                            >
+                              Ispuni
+                            </Button>
+                          )}
                           {assigned.status === 'completed' && (
                             <Button size="sm" variant="outline">
                               Pregled rezultata
                             </Button>
                           )}
-                          <Button size="sm" variant="outline">
-                            Postavi dodatno pitanje
-                          </Button>
+                          {isAdminView && (
+                            <Button size="sm" variant="outline">
+                              Postavi dodatno pitanje
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </Card>
@@ -416,25 +429,30 @@ export function FormsTab({ clientId, clientName, isAdminView = false }: FormsTab
         </CardContent>
       </Card>
 
-      <AssignQuestionnaireModal
-        open={showAssignModal}
-        onOpenChange={setShowAssignModal}
-        clientId={clientId}
-        onQuestionnaireAssigned={() => {
-          refetchAssigned()
-          setShowAssignModal(false)
-        }}
-      />
+      {/* Modals - only in admin view */}
+      {isAdminView && (
+        <>
+          <AssignQuestionnaireModal
+            open={showAssignModal}
+            onOpenChange={setShowAssignModal}
+            clientId={clientId}
+            onQuestionnaireAssigned={() => {
+              refetchAssigned()
+              setShowAssignModal(false)
+            }}
+          />
 
-      <AssignMicronutrientModal
-        open={showAssignMicronutrientModal}
-        onOpenChange={setShowAssignMicronutrientModal}
-        clientId={clientId}
-        onAssigned={() => {
-          refetchMicronutrient()
-          setShowAssignMicronutrientModal(false)
-        }}
-      />
+          <AssignMicronutrientModal
+            open={showAssignMicronutrientModal}
+            onOpenChange={setShowAssignMicronutrientModal}
+            clientId={clientId}
+            onAssigned={() => {
+              refetchMicronutrient()
+              setShowAssignMicronutrientModal(false)
+            }}
+          />
+        </>
+      )}
       
       {/* Micronutrient Questionnaire Form Modal/View */}
       {showMicronutrientForm && assignedMicronutrient && (
