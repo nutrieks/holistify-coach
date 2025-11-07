@@ -15,7 +15,7 @@ export function calculateContractProgress(
   contractDurationMonths: number | null,
   endDate: string | null
 ): ContractStatus {
-  if (!startDate || !contractDurationMonths) {
+  if (!startDate) {
     return {
       progress: 0,
       daysRemaining: 0,
@@ -28,8 +28,26 @@ export function calculateContractProgress(
   }
 
   const start = new Date(startDate)
-  const end = endDate ? new Date(endDate) : addMonths(start, contractDurationMonths)
   const today = new Date()
+  
+  // Calculate end date: use endDate if provided, otherwise calculate from duration
+  let end: Date
+  if (endDate) {
+    end = new Date(endDate)
+  } else if (contractDurationMonths) {
+    end = addMonths(start, contractDurationMonths)
+  } else {
+    // No end date and no duration - treat as not started
+    return {
+      progress: 0,
+      daysRemaining: 0,
+      totalDays: 0,
+      status: 'not_started',
+      statusText: 'Ugovor nije započet',
+      color: 'hsl(var(--muted-foreground))',
+      bgColor: 'hsl(var(--muted))'
+    }
+  }
   
   const totalDays = differenceInDays(end, start)
   const daysElapsed = differenceInDays(today, start)

@@ -38,14 +38,50 @@ serve(async (req) => {
       );
     }
 
-    console.log('Fetching coach for user:', user.id);
+    console.log('Fetching coach for user:', user.id, 'email:', user.email);
 
-    // Get client record with coach_id
-    const { data: client, error: clientError } = await supabaseClient
+    // Try fetching client by user_id first
+    let { data: client, error: clientError } = await supabaseAdmin
       .from('clients')
-      .select('coach_id')
+      .select('id, coach_id, user_id, email')
       .eq('user_id', user.id)
       .maybeSingle();
+
+    // If not found by user_id, try by email (fallback)
+    if (!client && user.email) {
+      console.log('Client not found by user_id, trying email fallback:', user.email);
+      
+      const { data: clientByEmail, error: emailError } = await supabaseAdmin
+        .from('clients')
+        .select('id, coach_id, user_id, email')
+        .eq('email', user.email)
+        .maybeSingle();
+
+      if (emailError) {
+        console.error('Email fallback fetch error:', emailError);
+      } else if (clientByEmail) {
+        console.log('Client found by email:', clientByEmail.id);
+        
+        // Backfill user_id if it's null or different
+        if (!clientByEmail.user_id || clientByEmail.user_id !== user.id) {
+          console.log('Backfilling user_id from', clientByEmail.user_id, 'to', user.id);
+          
+          const { error: updateError } = await supabaseAdmin
+            .from('clients')
+            .update({ user_id: user.id })
+            .eq('id', clientByEmail.id);
+
+          if (updateError) {
+            console.error('Failed to backfill user_id:', updateError);
+          } else {
+            console.log('Successfully backfilled user_id');
+          }
+        }
+        
+        client = clientByEmail;
+        clientError = null;
+      }
+    }
 
     if (clientError) {
       console.error('Client fetch error:', clientError);
@@ -55,8 +91,13 @@ serve(async (req) => {
       );
     }
 
-    if (!client || !client.coach_id) {
-      console.log('No coach assigned to client');
+    if (!client) {
+      console.log('No client record found for user');
+      return new Response(null, { status: 204, headers: corsHeaders });
+    }
+
+    if (!client.coach_id) {
+      console.log('No coach assigned to client:', client.id);
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
