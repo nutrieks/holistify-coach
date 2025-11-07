@@ -724,6 +724,7 @@ export type Database = {
           archived_by: string | null
           best_contact_time: string | null
           blood_type: string | null
+          coach_id: string | null
           contract_end_date: string | null
           contract_start_date: string | null
           created_at: string | null
@@ -759,6 +760,7 @@ export type Database = {
           archived_by?: string | null
           best_contact_time?: string | null
           blood_type?: string | null
+          coach_id?: string | null
           contract_end_date?: string | null
           contract_start_date?: string | null
           created_at?: string | null
@@ -794,6 +796,7 @@ export type Database = {
           archived_by?: string | null
           best_contact_time?: string | null
           blood_type?: string | null
+          coach_id?: string | null
           contract_end_date?: string | null
           contract_start_date?: string | null
           created_at?: string | null

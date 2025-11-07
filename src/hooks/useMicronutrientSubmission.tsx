@@ -9,38 +9,56 @@ export const useMicronutrientSubmission = (clientId: string) => {
   const { data: submission, isLoading } = useQuery({
     queryKey: ['micronutrient-submission', clientId],
     queryFn: async () => {
-      // First, get active questionnaire
-      const { data: questionnaire, error: qError } = await supabase
-        .from('micronutrient_questionnaires')
-        .select('id')
-        .eq('is_active', true)
-        .single();
+      // First, check if there's an assigned questionnaire for this client
+      const { data: assignment, error: assignmentError } = await supabase
+        .from('assigned_micronutrient_questionnaires')
+        .select('questionnaire_id')
+        .eq('client_id', clientId)
+        .maybeSingle();
 
-      if (qError || !questionnaire) {
-        throw new Error('Aktivni upitnik nije pronađen');
+      if (assignmentError) throw assignmentError;
+      
+      // If no assignment, try to get active questionnaire
+      let questionnaireId = assignment?.questionnaire_id;
+      
+      if (!questionnaireId) {
+        const { data: questionnaire, error: qError } = await supabase
+          .from('micronutrient_questionnaires')
+          .select('id')
+          .eq('is_active', true)
+          .single();
+
+        if (qError || !questionnaire) {
+          throw new Error('Aktivni upitnik nije pronađen');
+        }
+        
+        questionnaireId = questionnaire.id;
       }
 
-      // Check for existing draft
+      // Check for existing draft or completed submission
       const { data: existing, error: existingError } = await supabase
         .from('client_micronutrient_submissions')
         .select('*')
         .eq('client_id', clientId)
-        .eq('questionnaire_id', questionnaire.id)
-        .eq('status', 'draft')
+        .eq('questionnaire_id', questionnaireId)
+        .in('status', ['draft', 'completed'])
+        .order('started_at', { ascending: false })
         .maybeSingle();
 
       if (existingError) throw existingError;
 
-      if (existing) {
+      // If draft exists, return it
+      if (existing && existing.status === 'draft') {
         return existing;
       }
 
+      // If completed exists and no draft, create new draft for retake
       // Create new submission
       const { data: newSubmission, error: createError } = await supabase
         .from('client_micronutrient_submissions')
         .insert({
           client_id: clientId,
-          questionnaire_id: questionnaire.id,
+          questionnaire_id: questionnaireId,
           status: 'draft'
         })
         .select()

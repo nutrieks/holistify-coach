@@ -30,30 +30,33 @@ export default function Messages() {
     try {
       setIsLoading(true)
 
-      // Get user's own profile - this is simplified as we don't have coach relationship in clients table
-      // For now, just find admin users to chat with
-      const { data: adminUsers, error: adminError } = await supabase
-        .from('user_roles')
+      // Get client record with coach_id relationship
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
         .select(`
-          user_id,
-          profiles!inner (
+          coach_id,
+          profiles!coach_id (
             id,
             full_name
           )
         `)
-        .eq('role', 'admin')
-        .limit(1)
-        .single()
+        .eq('user_id', profile!.id)
+        .maybeSingle()
 
-      if (adminError || !adminUsers) {
-        toast.error("Ne mogu dohvatiti informacije o treneru")
+      if (clientError) throw clientError
+
+      if (!clientData || !clientData.coach_id) {
+        toast.error("Nemate dodijeljenog trenera", {
+          description: "Kontaktirajte administratora za dodjelu trenera"
+        })
+        setCoachInfo(null)
         return
       }
 
-      const coachProfile = adminUsers.profiles as any as CoachInfo
+      const coachProfile = clientData.profiles as any as CoachInfo
       setCoachInfo(coachProfile)
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('Error fetching coach:', error)
       toast.error("Greška pri dohvaćanju podataka")
     } finally {
       setIsLoading(false)
@@ -79,7 +82,7 @@ export default function Messages() {
         <div className="max-w-4xl mx-auto">
           <Button
             variant="ghost"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/client')}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -108,7 +111,7 @@ export default function Messages() {
         <div className="flex items-center gap-4 mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/client')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Natrag

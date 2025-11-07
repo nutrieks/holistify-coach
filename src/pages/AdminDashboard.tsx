@@ -6,8 +6,6 @@ import { Users, MessageSquare, Calendar, TrendingUp, PlusCircle, Activity, FileT
 import { AddClientModal } from '@/components/AddClientModal';
 import { ContractsExpiringWidget } from '@/components/ContractsExpiringWidget';
 import { useCreateNAQQuestionnaire } from '@/hooks/useCreateNAQQuestionnaire';
-import { SeedTestDataButton } from '@/components/SeedTestDataButton';
-import { SeedMicronutrientQuestionnaireButton } from '@/components/SeedMicronutrientQuestionnaireButton';
 import { CoachMicronutrientDashboard } from '@/components/micronutrient/CoachMicronutrientDashboard';
 
 const AdminDashboard = () => {
@@ -119,16 +117,8 @@ const AdminDashboard = () => {
           {/* Quick Actions */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Brze akcije</CardTitle>
-                  <CardDescription>Često korištene funkcije</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <SeedTestDataButton />
-                  <SeedMicronutrientQuestionnaireButton />
-                </div>
-              </div>
+              <CardTitle>Brze akcije</CardTitle>
+              <CardDescription>Često korištene funkcije</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">

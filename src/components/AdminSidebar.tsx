@@ -73,10 +73,12 @@ export function AdminSidebar() {
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className={getNavCls(isActive(item.url))}>
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
+                  <NavLink to={item.url} className={`${getNavCls(isActive(item.url))} ${
+                    isActive(item.url) ? 'neon-glow-text neon-border' : ''
+                  }`}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {!collapsed && <span>{item.title}</span>}
+                  </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -103,7 +105,9 @@ export function AdminSidebar() {
                   {manageItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild>
-                        <NavLink to={item.url} className={getNavCls(isActive(item.url))}>
+                        <NavLink to={item.url} className={`${getNavCls(isActive(item.url))} ${
+                          isActive(item.url) ? 'neon-glow-text neon-border' : ''
+                        }`}>
                           <item.icon className="mr-2 h-4 w-4" />
                           {!collapsed && <span>{item.title}</span>}
                         </NavLink>

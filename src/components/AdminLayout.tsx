@@ -24,7 +24,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
             <div className="flex items-center gap-4">
               <SidebarTrigger />
               {title && (
-                <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+                <h1 className="text-2xl font-semibold text-foreground neon-glow-text">{title}</h1>
               )}
             </div>
             

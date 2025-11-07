@@ -197,7 +197,6 @@ const App = () => (
               <Route path="/my-progress" element={<ClientLayout><MyProgress /></ClientLayout>} />
               <Route path="/messages" element={<ClientLayout><Messages /></ClientLayout>} />
               <Route path="/questionnaire/:id" element={<ClientLayout><QuestionnaireForm /></ClientLayout>} />
-              <Route path="/micronutrient-questionnaire" element={<ClientLayout><MicronutrientQuestionnaire /></ClientLayout>} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

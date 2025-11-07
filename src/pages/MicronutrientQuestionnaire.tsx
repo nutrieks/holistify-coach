@@ -66,7 +66,7 @@ export default function MicronutrientQuestionnaire() {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/client-dashboard')}
+              onClick={() => navigate('/client')}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Povratak
@@ -95,7 +95,7 @@ export default function MicronutrientQuestionnaire() {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => navigate('/client-dashboard')}
+            onClick={() => navigate('/client')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Povratak

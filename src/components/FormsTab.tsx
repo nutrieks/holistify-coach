@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { NAQScoringResults } from "@/components/naq/NAQScoringResults"
 import { NAQAnalytics } from "@/components/naq/NAQAnalytics"
 import { MicronutrientResultsView } from "@/components/micronutrient/MicronutrientResultsView"
+import { MicronutrientQuestionnaireForm } from "@/components/micronutrient/MicronutrientQuestionnaireForm"
 import { useNAQResults, useClientNAQHistory } from "@/hooks/useNAQScoring"
 import { useMicronutrientResults } from "@/hooks/useMicronutrientResults"
 import { useSeedNAQQuestions } from "@/hooks/useSeedNAQQuestions"
@@ -27,6 +28,7 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null)
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showAssignMicronutrientModal, setShowAssignMicronutrientModal] = useState(false)
+  const [showMicronutrientForm, setShowMicronutrientForm] = useState(false)
   const seedNAQMutation = useSeedNAQQuestions()
 
   // Get micronutrient results
@@ -233,9 +235,13 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      {assignedMicronutrient.status === 'completed' && micronutrientData && (
-                        <Button size="sm" variant="outline">
+                      {assignedMicronutrient.status === 'completed' && micronutrientData ? (
+                        <Button size="sm" variant="outline" onClick={() => setShowMicronutrientForm(true)}>
                           Pregled rezultata
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={() => setShowMicronutrientForm(true)}>
+                          Ispuni
                         </Button>
                       )}
                     </div>
@@ -458,6 +464,42 @@ export function FormsTab({ clientId, clientName }: FormsTabProps) {
           setShowAssignMicronutrientModal(false)
         }}
       />
+      
+      {/* Micronutrient Questionnaire Form Modal/View */}
+      {showMicronutrientForm && assignedMicronutrient && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>{assignedMicronutrient.micronutrient_questionnaires?.title}</CardTitle>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setShowMicronutrientForm(false)
+                    refetchMicronutrient()
+                  }}
+                >
+                  Zatvori
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {micronutrientData?.results && micronutrientData.results.length > 0 ? (
+                <MicronutrientResultsView clientId={clientId} />
+              ) : (
+                <MicronutrientQuestionnaireForm 
+                  clientId={clientId}
+                  onComplete={() => {
+                    setShowMicronutrientForm(false)
+                    refetchMicronutrient()
+                  }}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
