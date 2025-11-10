@@ -21,6 +21,25 @@ const Index = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
 
+
+  const steps = [
+    {
+      icon: ClipboardCheck,
+      title: "Napredna nutritivna dijagnostika",
+      description: "Detaljan upitnik koji analizira vaše zdravstveno stanje, prehrambene navike i metaboličke parametre"
+    },
+    {
+      icon: FileText,
+      title: "Personalizirani algoritmi",
+      description: "Napredni algoritmi obrađuju vaše podatke i stvaraju individualni plan prilagođen isključivo vašim potrebama"
+    },
+    {
+      icon: Target,
+      title: "Precizno praćenje i optimizacija",
+      description: "Kontinuirano praćenje napretka sa automatskom prilagodbom plana na temelju vaših rezultata"
+    }
+  ];
+
   const features = [
     {
       icon: Heart,
@@ -29,79 +48,54 @@ const Index = () => {
     },
     {
       icon: Users,
-      title: "Personalizirano praćenje",
-      description: "Individualni planovi prehrane i treninga prilagođeni vašim potrebama"
+      title: "Individualna analiza",
+      description: "Napredni algoritmi za maksimalno prilagođenu prehranu na temelju vaših potreba"
     },
     {
       icon: TrendingUp,
-      title: "Napredak u realnom vremenu",
+      title: "Napredak u stvarnom vremenu",
       description: "Pratite svoj napredak kroz detaljne analize i grafove"
     },
     {
       icon: Shield,
       title: "Sigurno i privatno",
-      description: "Vaši podaci su sigurni i privatni sa najnovijim sigurnosnim mjerama"
+      description: "Vaši podaci su sigurni i privatni uz najnovije sigurnosne mjere"
     }
   ];
 
-  const steps = [
-    {
-      icon: ClipboardCheck,
-      title: "Registrujte se i ispunite upitnike",
-      description: "Brza registracija i detaljan upitnik o vašem zdravlju i ciljevima"
-    },
-    {
-      icon: FileText,
-      title: "Dobijte personalizirani plan",
-      description: "Stručnjaci kreiraju plan prehrane i treninga posebno za vas"
-    },
-    {
-      icon: Target,
-      title: "Pratite napredak i ostvarite ciljeve",
-      description: "Real-time praćenje rezultata i prilagodba plana za maksimalan uspjeh"
-    }
-  ];
-
-  const stats = [
-    { number: "500+", label: "Zadovoljnih klijenata" },
-    { number: "1000+", label: "Personaliziranih planova" },
-    { number: "95%", label: "Stopa uspjeha" },
-    { number: "24/7", label: "Podrška" }
-  ];
-
-  const testimonials = [
-    {
-      name: "Marija K.",
-      rating: 5,
-      text: "NutriEkspert mi je promijenio život! Izgubila sam 15kg i nikada se nisam osjećala bolje."
-    },
-    {
-      name: "Ivan P.",
-      rating: 5,
-      text: "Profesionalan pristup i nevjerovatni rezultati. Konačno sam postigao svoje fitness ciljeve!"
-    },
-    {
-      name: "Ana M.",
-      rating: 5,
-      text: "Najbolja investicija u moje zdravlje. Tim je stručan, a platforma jednostavna za korištenje."
-    }
-  ];
-
-  const foodImages = [
-    "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
-    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
-    "https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=400&h=300&fit=crop",
-    "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
-    "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop",
-    "https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=400&h=300&fit=crop"
-  ];
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* Hero Section with Animated Gradient Background */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-accent/20 animate-gradient-x"></div>
-        <div className="absolute inset-0 neon-glow opacity-30"></div>
+      {/* Hero Section with Food Background */}
+      <div className="relative min-h-[90vh] flex items-center">
+        {/* Background Food Images */}
+        <div className="absolute inset-0 grid grid-cols-3 gap-0 opacity-20">
+          <div className="relative overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&h=1200&fit=crop" 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+          <div className="relative overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=1200&fit=crop" 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+          <div className="relative overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=1200&fit=crop" 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+        </div>
+        
+        {/* Dark Teal Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-primary/30"></div>
+        <div className="absolute inset-0 bg-background/80"></div>
         
         <div className="container mx-auto px-4 py-16 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
@@ -120,12 +114,12 @@ const Index = () => {
             </h1>
             
             <p className="text-xl md:text-2xl text-foreground/90 mb-6 animate-fade-in animate-delay-100">
-              Vaša platforma za cjelovito zdravlje i wellness
+              Napredna nutritivna dijagnostika i personalizirani algoritmi
             </p>
             
             <p className="text-lg text-muted-foreground mb-12 animate-fade-in animate-delay-200 max-w-2xl mx-auto">
-              Povezujemo nutricioniste, fitness trenere i njihove klijente u jedinstvenoj platformi 
-              za praćenje i unapređenje holističkog zdravlja.
+              Platforma temeljena na znanstvenim algoritmima koji omogućuju maksimalnu individualnu prilagodbu 
+              prehrane i treninga na temelju napredne nutritivne dijagnostike.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in animate-delay-300">
@@ -150,37 +144,14 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="bg-primary/5 py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map((stat, index) => (
-              <Card 
-                key={index} 
-                className="text-center card-neon animate-fade-in hover-scale"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="pt-6">
-                  <div className="text-4xl md:text-5xl font-bold neon-glow-text mb-2 animate-count">
-                    {stat.number}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {stat.label}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* How It Works Section */}
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-20">
         <div className="text-center mb-12">
-          <Badge className="mb-4 neon-glow">Jednostavno & Efektivno</Badge>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Kako funkcionira?</h2>
+          <Badge className="mb-4 neon-glow">Znanstveni pristup</Badge>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Kako to funkcionira?</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Tri jednostavna koraka do vašeg personaliziranog plana zdravlja
+            Napredna tehnologija i algoritmi za maksimalnu personalizaciju vaše prehrane
           </p>
         </div>
 
@@ -215,12 +186,31 @@ const Index = () => {
       </div>
 
       {/* Features Section - Enhanced */}
-      <div className="bg-accent/5 py-16">
-        <div className="container mx-auto px-4">
+      <div className="relative py-20">
+        {/* Background Food Images with Overlay */}
+        <div className="absolute inset-0 grid grid-cols-2 gap-0 opacity-10">
+          <div className="relative overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=800&h=800&fit=crop" 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+          <div className="relative overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&h=800&fit=crop" 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Zašto odabrati nas?</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Naša platforma omogućuje vam potpunu kontrolu nad vašim zdravljem i wellness putovanjem
+              Platforma temeljena na znanosti, tehnologiji i individualnom pristupu svakom korisniku
             </p>
           </div>
 
@@ -251,80 +241,51 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Food Gallery Section */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <Badge className="mb-4 neon-glow">Zdravi & Ukusni Obroci</Badge>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Inspiracija za vašu prehranu</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Ukusna i zdrava hrana koja vam pomaže da dostignete svoje ciljeve
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {foodImages.map((image, index) => (
-            <div 
-              key={index}
-              className="relative aspect-[4/3] rounded-lg overflow-hidden hover-scale animate-fade-in group"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <img 
-                src={image} 
-                alt={`Healthy food ${index + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 card-neon"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Testimonials Section */}
-      <div className="bg-primary/5 py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Što kažu naši klijenti?</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Pridružite se tisućama zadovoljnih korisnika koji su transformirali svoj život
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((testimonial, index) => (
-              <Card 
-                key={index}
-                className="card-neon animate-fade-in hover-scale"
-                style={{ animationDelay: `${index * 150}ms` }}
-              >
-                <CardHeader>
-                  <div className="flex items-center gap-2 mb-2">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <CardTitle className="text-lg">{testimonial.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground italic">"{testimonial.text}"</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* CTA Section - Enhanced */}
       <div className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary animate-border"></div>
+        {/* Background Food Images */}
+        <div className="absolute inset-0 grid grid-cols-4 gap-0 opacity-15">
+          <div className="relative overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&h=800&fit=crop" 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+          <div className="relative overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=600&h=800&fit=crop" 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+          <div className="relative overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=600&h=800&fit=crop" 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+          <div className="relative overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=800&fit=crop" 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+        </div>
+        
+        <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary animate-border opacity-90"></div>
         <div className="absolute inset-0 neon-glow opacity-40"></div>
+        <div className="absolute inset-0 bg-background/60"></div>
         
         <div className="container mx-auto px-4 text-center relative z-10">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 neon-glow-text animate-scale-in">
-            Spremni ste početi svoje putovanje?
+            Spremni ste započeti?
           </h2>
           <p className="text-lg text-foreground/90 mb-8 max-w-2xl mx-auto animate-fade-in">
-            Pridružite se tisućama zadovoljnih korisnika koji su već transformirali svoj način života
+            Iskusite naprednu nutritivnu dijagnostiku i personalizirane algoritme 
+            koji će transformirati vaš pristup prehrani i zdravlju
           </p>
           <Button 
             size="lg" 
@@ -332,7 +293,7 @@ const Index = () => {
             onClick={() => navigate('/auth')}
           >
             <CheckCircle2 className="mr-2 h-6 w-6" />
-            Registrirajte se besplatno
+            Započnite danas
           </Button>
         </div>
       </div>
@@ -349,8 +310,8 @@ const Index = () => {
                 className="h-16 w-auto mb-4"
               />
               <p className="text-muted-foreground mb-4">
-                Vaša platforma za cjelovito zdravlje i wellness. 
-                Personalizirani planovi prehrane i treninga.
+                Platforma za naprednu nutritivnu dijagnostiku. 
+                Personalizirani algoritmi za maksimalnu individualnu prilagodbu.
               </p>
             </div>
 
