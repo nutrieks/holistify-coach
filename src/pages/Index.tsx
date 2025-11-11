@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -63,39 +64,21 @@ const Index = () => {
     }
   ];
 
-
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Hero Section with Food Background */}
       <div className="relative min-h-[90vh] flex items-center">
-        {/* Background Food Images */}
-        <div className="absolute inset-0 grid grid-cols-3 gap-0 opacity-20">
-          <div className="relative overflow-hidden">
-            <img 
-              src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&h=1200&fit=crop" 
-              alt="" 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </div>
-          <div className="relative overflow-hidden">
-            <img 
-              src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=1200&fit=crop" 
-              alt="" 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </div>
-          <div className="relative overflow-hidden">
-            <img 
-              src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=1200&fit=crop" 
-              alt="" 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </div>
+        {/* Background Food Image - Full Width Cover */}
+        <div className="absolute inset-0">
+          <img 
+            src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1920&h=1080&fit=crop" 
+            alt="" 
+            className="w-full h-full object-cover"
+          />
         </div>
         
-        {/* Dark Teal Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-primary/30"></div>
-        <div className="absolute inset-0 bg-background/80"></div>
+        {/* Lighter Teal Overlay - More transparent */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background/85 via-background/75 to-primary/20"></div>
         
         <div className="container mx-auto px-4 py-16 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
@@ -108,8 +91,8 @@ const Index = () => {
               />
             </div>
 
-            {/* Title with Neon Glow */}
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 neon-glow-text animate-scale-in">
+            {/* Title with Subtle Glow */}
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-scale-in" style={{ textShadow: '0 0 30px hsl(var(--primary) / 0.3)' }}>
               NutriEkspert System
             </h1>
             
@@ -125,7 +108,8 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in animate-delay-300">
               <Button 
                 size="lg" 
-                className="text-lg px-8 py-6 neon-glow pulse-glow hover-scale" 
+                className="text-lg px-8 py-6 hover-scale" 
+                style={{ boxShadow: '0 0 20px hsl(var(--primary) / 0.4)' }}
                 onClick={() => navigate('/auth')}
               >
                 Započnite odmah
@@ -146,157 +130,14 @@ const Index = () => {
 
 
       {/* How It Works Section */}
-      <div className="container mx-auto px-4 py-20">
-        <div className="text-center mb-12">
-          <Badge className="mb-4 neon-glow">Znanstveni pristup</Badge>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Kako to funkcionira?</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Napredna tehnologija i algoritmi za maksimalnu personalizaciju vaše prehrane
-          </p>
-        </div>
-
-        <div className="max-w-4xl mx-auto">
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            return (
-              <div 
-                key={index}
-                className="flex flex-col md:flex-row gap-6 mb-12 animate-fade-in animate-delay-200"
-                style={{ animationDelay: `${index * 200}ms` }}
-              >
-                <div className="flex-shrink-0">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center card-neon">
-                    <Icon className="h-8 w-8 text-primary" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Badge variant="outline">Korak {index + 1}</Badge>
-                    <h3 className="text-xl font-semibold">{step.title}</h3>
-                  </div>
-                  <p className="text-muted-foreground">{step.description}</p>
-                </div>
-                {index < steps.length - 1 && (
-                  <div className="hidden md:block w-px bg-gradient-to-b from-primary/50 to-transparent h-20 ml-8"></div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
+      <HowItWorksSection steps={steps} />
+      
       {/* Features Section - Enhanced */}
-      <div className="relative py-20">
-        {/* Background Food Images with Overlay */}
-        <div className="absolute inset-0 grid grid-cols-2 gap-0 opacity-10">
-          <div className="relative overflow-hidden">
-            <img 
-              src="https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=800&h=800&fit=crop" 
-              alt="" 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </div>
-          <div className="relative overflow-hidden">
-            <img 
-              src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&h=800&fit=crop" 
-              alt="" 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </div>
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background"></div>
-        
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Zašto odabrati nas?</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Platforma temeljena na znanosti, tehnologiji i individualnom pristupu svakom korisniku
-            </p>
-          </div>
+      <FeaturesSection features={features} />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <Card 
-                  key={index} 
-                  className="text-center card-neon hover-scale animate-fade-in"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <CardHeader>
-                    <div className="mx-auto w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center mb-4 neon-glow">
-                      <Icon className="h-8 w-8 text-primary" />
-                    </div>
-                    <CardTitle className="text-xl">{feature.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-base">
-                      {feature.description}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </div>
 
       {/* CTA Section - Enhanced */}
-      <div className="relative py-20 overflow-hidden">
-        {/* Background Food Images */}
-        <div className="absolute inset-0 grid grid-cols-4 gap-0 opacity-15">
-          <div className="relative overflow-hidden">
-            <img 
-              src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&h=800&fit=crop" 
-              alt="" 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </div>
-          <div className="relative overflow-hidden">
-            <img 
-              src="https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=600&h=800&fit=crop" 
-              alt="" 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </div>
-          <div className="relative overflow-hidden">
-            <img 
-              src="https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=600&h=800&fit=crop" 
-              alt="" 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </div>
-          <div className="relative overflow-hidden">
-            <img 
-              src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=800&fit=crop" 
-              alt="" 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </div>
-        </div>
-        
-        <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary animate-border opacity-90"></div>
-        <div className="absolute inset-0 neon-glow opacity-40"></div>
-        <div className="absolute inset-0 bg-background/60"></div>
-        
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 neon-glow-text animate-scale-in">
-            Spremni ste započeti?
-          </h2>
-          <p className="text-lg text-foreground/90 mb-8 max-w-2xl mx-auto animate-fade-in">
-            Iskusite naprednu nutritivnu dijagnostiku i personalizirane algoritme 
-            koji će transformirati vaš pristup prehrani i zdravlju
-          </p>
-          <Button 
-            size="lg" 
-            className="text-xl px-12 py-7 neon-glow pulse-glow hover-scale animate-fade-in" 
-            onClick={() => navigate('/auth')}
-          >
-            <CheckCircle2 className="mr-2 h-6 w-6" />
-            Započnite danas
-          </Button>
-        </div>
-      </div>
+      <CTASection navigate={navigate} />
 
       {/* Footer - Enhanced */}
       <footer className="border-t border-primary/20 py-12">
@@ -343,6 +184,151 @@ const Index = () => {
           </div>
         </div>
       </footer>
+    </div>
+  );
+};
+
+// Separate animated sections components
+const HowItWorksSection = ({ steps }: { steps: any[] }) => {
+  const { elementRef, isVisible } = useScrollAnimation();
+  
+  return (
+    <div ref={elementRef} className="container mx-auto px-4 py-20">
+      <div className={`text-center mb-12 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <Badge className="mb-4" style={{ boxShadow: '0 0 15px hsl(var(--primary) / 0.3)' }}>Znanstveni pristup</Badge>
+        <h2 className="text-3xl md:text-4xl font-bold mb-4">Kako to funkcionira?</h2>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Napredna tehnologija i algoritmi za maksimalnu personalizaciju vaše prehrane
+        </p>
+      </div>
+
+      <div className="max-w-4xl mx-auto">
+        {steps.map((step, index) => {
+          const Icon = step.icon;
+          return (
+            <div 
+              key={index}
+              className={`flex flex-col md:flex-row gap-6 mb-12 transition-all duration-700 delay-${index * 100}`}
+              style={{
+                opacity: isVisible ? 1 : 0,
+                transform: isVisible ? 'translateX(0)' : `translateX(${index % 2 === 0 ? '-50px' : '50px'})`,
+                transitionDelay: `${index * 150}ms`
+              }}
+            >
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border border-primary/30">
+                  <Icon className="h-8 w-8 text-primary" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <Badge variant="outline">Korak {index + 1}</Badge>
+                  <h3 className="text-xl font-semibold">{step.title}</h3>
+                </div>
+                <p className="text-muted-foreground">{step.description}</p>
+              </div>
+              {index < steps.length - 1 && (
+                <div className="hidden md:block w-px bg-gradient-to-b from-primary/50 to-transparent h-20 ml-8"></div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const FeaturesSection = ({ features }: { features: any[] }) => {
+  const { elementRef, isVisible } = useScrollAnimation();
+  
+  return (
+    <div ref={elementRef} className="relative py-20">
+      {/* Background Food Image - Full Width */}
+      <div className="absolute inset-0">
+        <img 
+          src="https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=1920&h=1080&fit=crop" 
+          alt="" 
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/85 to-background/90"></div>
+      
+      <div className="container mx-auto px-4 relative z-10">
+        <div className={`text-center mb-12 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Zašto odabrati nas?</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Platforma temeljena na znanosti, tehnologiji i individualnom pristupu svakom korisniku
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <Card 
+                key={index} 
+                className="text-center hover-scale border-primary/20 transition-all duration-700"
+                style={{
+                  opacity: isVisible ? 1 : 0,
+                  transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(30px) scale(0.9)',
+                  transitionDelay: `${index * 100}ms`
+                }}
+              >
+                <CardHeader>
+                  <div className="mx-auto w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center mb-4 border border-primary/20">
+                    <Icon className="h-8 w-8 text-primary" />
+                  </div>
+                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-base">
+                    {feature.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CTASection = ({ navigate }: { navigate: any }) => {
+  const { elementRef, isVisible } = useScrollAnimation();
+  
+  return (
+    <div ref={elementRef} className="relative py-20 overflow-hidden">
+      {/* Background Food Image - Full Width */}
+      <div className="absolute inset-0">
+        <img 
+          src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=1920&h=1080&fit=crop" 
+          alt="" 
+          className="w-full h-full object-cover"
+        />
+      </div>
+      
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20"></div>
+      <div className="absolute inset-0 bg-background/70"></div>
+      
+      <div className={`container mx-auto px-4 text-center relative z-10 transition-all duration-1000 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+        <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ textShadow: '0 0 30px hsl(var(--primary) / 0.3)' }}>
+          Spremni ste započeti?
+        </h2>
+        <p className="text-lg text-foreground/90 mb-8 max-w-2xl mx-auto">
+          Iskusite naprednu nutritivnu dijagnostiku i personalizirane algoritme 
+          koji će transformirati vaš pristup prehrani i zdravlju
+        </p>
+        <Button 
+          size="lg" 
+          className="text-xl px-12 py-7 hover-scale" 
+          style={{ boxShadow: '0 0 25px hsl(var(--primary) / 0.4)' }}
+          onClick={() => navigate('/auth')}
+        >
+          <CheckCircle2 className="mr-2 h-6 w-6" />
+          Započnite danas
+        </Button>
+      </div>
     </div>
   );
 };
